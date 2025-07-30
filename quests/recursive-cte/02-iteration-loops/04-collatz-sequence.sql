@@ -5,7 +5,7 @@
 -- Calculate Collatz sequence for number 27
 WITH RECURSIVE collatz AS (
     -- Base case: start number
-    SELECT 27 as num, 1 as step, CAST('27' AS VARCHAR(100)) as sequence
+    SELECT 27 as num, 1 as step, CAST('27' AS VARCHAR(1000)) as sequence
     
     UNION ALL
     
@@ -20,7 +20,7 @@ WITH RECURSIVE collatz AS (
              CASE 
                  WHEN num % 2 = 0 THEN (num / 2)::VARCHAR
                  ELSE (3 * num + 1)::VARCHAR
-             END AS VARCHAR(100))
+             END AS VARCHAR(1000))
     FROM collatz
     WHERE num > 1  -- Stop when we reach 1
 )
