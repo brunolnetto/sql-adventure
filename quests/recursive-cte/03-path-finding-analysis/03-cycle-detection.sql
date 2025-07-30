@@ -44,7 +44,7 @@ WITH RECURSIVE cycle_detection AS (
         from_node as start_node,
         from_node as current_node,
         ARRAY[from_node] as path,
-        ARRAY[gn.node_name] as path_names,
+        ARRAY[gn.node_name]::VARCHAR[] as path_names,
         0 as depth
     FROM graph_edges ge
     INNER JOIN graph_nodes gn ON ge.from_node = gn.node_id

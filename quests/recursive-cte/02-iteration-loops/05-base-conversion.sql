@@ -5,7 +5,7 @@
 -- Convert decimal 42 to binary
 WITH RECURSIVE binary_conversion AS (
     -- Base case: start with the number and empty result
-    SELECT 42 as decimal_num, 0 as position, '' as binary_result
+    SELECT 42 as decimal_num, 0 as position, CAST('' AS VARCHAR(50)) as binary_result
     
     UNION ALL
     
@@ -18,12 +18,8 @@ WITH RECURSIVE binary_conversion AS (
     WHERE decimal_num > 0
 )
 SELECT 
-    decimal_num,
-    position,
-    binary_result,
-    CASE 
-        WHEN decimal_num = 0 THEN binary_result
-        ELSE NULL
-    END as final_binary
+    decimal_num as original_decimal,
+    binary_result as binary_representation,
+    '42 in binary is: ' || binary_result as explanation
 FROM binary_conversion
-WHERE decimal_num = 0 OR position = 1; 
+WHERE decimal_num = 0; 

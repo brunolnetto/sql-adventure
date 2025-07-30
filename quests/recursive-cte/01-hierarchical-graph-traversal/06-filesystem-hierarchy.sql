@@ -108,16 +108,25 @@ WITH RECURSIVE directory_sizes AS (
     FROM filesystem f
     INNER JOIN directory_sizes ds ON f.id = ds.parent_id
     WHERE f.is_directory
+),
+final_sizes AS (
+    -- Get the final size for each directory (highest level)
+    SELECT DISTINCT
+        id,
+        parent_id,
+        MAX(total_size) OVER (PARTITION BY id) as total_size,
+        MAX(level) OVER (PARTITION BY id) as max_level
+    FROM directory_sizes
 )
 SELECT 
     f.name as directory_name,
-    ds.total_size as total_size_bytes,
-    ROUND(ds.total_size / 1024.0, 2) as total_size_kb,
-    ROUND(ds.total_size / 1024.0 / 1024.0, 2) as total_size_mb
-FROM directory_sizes ds
-INNER JOIN filesystem f ON ds.id = f.id
+    fs.total_size as total_size_bytes,
+    ROUND(fs.total_size / 1024.0, 2) as total_size_kb,
+    ROUND(fs.total_size / 1024.0 / 1024.0, 2) as total_size_mb
+FROM final_sizes fs
+INNER JOIN filesystem f ON fs.id = f.id
 WHERE f.is_directory
-ORDER BY ds.total_size DESC;
+ORDER BY fs.total_size DESC;
 
 -- Clean up
 DROP TABLE IF EXISTS filesystem CASCADE; 

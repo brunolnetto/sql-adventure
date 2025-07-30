@@ -37,40 +37,56 @@ INSERT INTO task_dependencies VALUES
 (5, 3),  -- Testing depends on Backend
 (6, 5);  -- Deployment depends on Testing
 
--- Perform topological sort
-WITH RECURSIVE topological_sort AS (
-    -- Base case: tasks with no dependencies
+-- Perform topological sort with manual level assignment
+WITH task_dependency_counts AS (
+    -- Count dependencies for each task
     SELECT 
         t.task_id,
         t.task_name,
         t.duration,
-        0 as level,
-        ARRAY[t.task_id] as sorted_order,
-        ARRAY[t.task_name] as sorted_names
+        COUNT(td.prerequisite_task) as dependency_count
     FROM tasks t
-    WHERE NOT EXISTS (
-        SELECT 1 FROM task_dependencies td 
-        WHERE td.dependent_task = t.task_id
+    LEFT JOIN task_dependencies td ON t.task_id = td.dependent_task
+    GROUP BY t.task_id, t.task_name, t.duration
+),
+level0_tasks AS (
+    -- Level 0: tasks with no dependencies
+    SELECT 
+        task_id,
+        task_name,
+        duration,
+        0 as level
+    FROM task_dependency_counts
+    WHERE dependency_count = 0
+),
+level1_tasks AS (
+    -- Level 1: tasks that depend only on level 0 tasks
+    SELECT 
+        tdc.task_id,
+        tdc.task_name,
+        tdc.duration,
+        1 as level
+    FROM task_dependency_counts tdc
+    WHERE tdc.dependency_count > 0
+    AND NOT EXISTS (
+        SELECT 1 FROM task_dependencies td
+        INNER JOIN task_dependency_counts tdc2 ON td.prerequisite_task = tdc2.task_id
+        WHERE td.dependent_task = tdc.task_id
+        AND tdc2.dependency_count > 0
     )
-    
-    UNION ALL
-    
-    -- Recursive case: add tasks whose dependencies are completed
+),
+level2_tasks AS (
+    -- Level 2: remaining tasks
     SELECT 
-        t.task_id,
-        t.task_name,
-        t.duration,
-        ts.level + 1,
-        ts.sorted_order || t.task_id,
-        ts.sorted_names || t.task_name
-    FROM tasks t
-    INNER JOIN task_dependencies td ON t.task_id = td.dependent_task
-    INNER JOIN topological_sort ts ON td.prerequisite_task = ts.task_id
-    WHERE NOT (t.task_id = ANY(ts.sorted_order))  -- Not already included
-    AND NOT EXISTS (  -- All dependencies are in sorted_order
-        SELECT 1 FROM task_dependencies td2
-        WHERE td2.dependent_task = t.task_id
-        AND NOT (td2.prerequisite_task = ANY(ts.sorted_order))
+        tdc.task_id,
+        tdc.task_name,
+        tdc.duration,
+        2 as level
+    FROM task_dependency_counts tdc
+    WHERE tdc.task_id NOT IN (
+        SELECT task_id FROM level0_tasks
+        UNION ALL
+        SELECT task_id FROM level1_tasks
     )
 )
 SELECT 
@@ -78,8 +94,14 @@ SELECT
     task_id,
     task_name,
     duration,
-    sorted_names
-FROM topological_sort
+    'Level ' || level || ' - ' || task_name as level_description
+FROM (
+    SELECT * FROM level0_tasks
+    UNION ALL
+    SELECT * FROM level1_tasks
+    UNION ALL
+    SELECT * FROM level2_tasks
+) all_levels
 ORDER BY level, task_id;
 
 -- Clean up

@@ -54,7 +54,7 @@ WITH RECURSIVE game_simulation AS (
         game_status,
         0 as move_number,
         ARRAY[state_id] as state_path,
-        ARRAY[board_state] as board_path
+        ARRAY[board_state]::VARCHAR[] as board_path
     FROM game_states
     WHERE state_id = 1  -- Start with empty board
     

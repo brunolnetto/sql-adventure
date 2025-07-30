@@ -33,10 +33,10 @@ WITH RECURSIVE spiral_matrix AS (
         -- Update matrix (simplified representation)
         sm.matrix as matrix,
         CASE 
-            WHEN sm.direction = 'right' AND sm.x >= sm.step THEN 'up'
-            WHEN sm.direction = 'up' AND sm.y <= -sm.step THEN 'left'
-            WHEN sm.direction = 'left' AND sm.x <= -sm.step THEN 'down'
-            WHEN sm.direction = 'down' AND sm.y >= sm.step THEN 'right'
+            WHEN sm.direction = 'right' AND sm.x >= 1 THEN 'up'
+            WHEN sm.direction = 'up' AND sm.y <= -1 THEN 'left'
+            WHEN sm.direction = 'left' AND sm.x <= -1 THEN 'down'
+            WHEN sm.direction = 'down' AND sm.y >= 1 THEN 'right'
             ELSE sm.direction
         END as direction
     FROM spiral_matrix sm

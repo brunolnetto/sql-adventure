@@ -29,7 +29,8 @@ WITH RECURSIVE package_deps AS (
         depends_on_id,
         version,
         1 as level,
-        CAST(depends_on_id AS VARCHAR(100)) as dep_chain
+        CAST(depends_on_id AS VARCHAR(100)) as dep_chain,
+        ARRAY[depends_on_id] as dep_path
     FROM dependencies 
     WHERE package_id = 1
     
@@ -41,9 +42,12 @@ WITH RECURSIVE package_deps AS (
         d.depends_on_id,
         d.version,
         pd.level + 1,
-        CAST(pd.dep_chain || ' → ' || d.depends_on_id AS VARCHAR(100))
+        CAST(pd.dep_chain || ' → ' || d.depends_on_id AS VARCHAR(100)),
+        pd.dep_path || d.depends_on_id
     FROM dependencies d
     INNER JOIN package_deps pd ON d.package_id = pd.depends_on_id
+    WHERE pd.level < 10  -- Limit to 10 levels
+    AND NOT (d.depends_on_id = ANY(pd.dep_path))  -- Prevent cycles
 )
 SELECT 
     level,

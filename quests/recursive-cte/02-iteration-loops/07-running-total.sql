@@ -26,7 +26,7 @@ WITH RECURSIVE running_total AS (
     SELECT 
         date_id,
         amount,
-        amount as running_sum,
+        CAST(amount AS DECIMAL(10,2)) as running_sum,
         1 as row_num
     FROM sales
     WHERE date_id = (SELECT MIN(date_id) FROM sales)
@@ -37,7 +37,7 @@ WITH RECURSIVE running_total AS (
     SELECT 
         s.date_id,
         s.amount,
-        rt.running_sum + s.amount,
+        CAST(rt.running_sum + s.amount AS DECIMAL(10,2)),
         rt.row_num + 1
     FROM sales s
     INNER JOIN running_total rt ON s.date_id = rt.date_id + 1

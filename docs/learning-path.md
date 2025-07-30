@@ -1,6 +1,6 @@
 # Learning Path 📖
 
-A structured progression from beginner to advanced SQL concepts.
+A structured progression from beginner to advanced SQL concepts with specific examples from SQL Adventure.
 
 ## 🥇 Beginner Level
 
@@ -26,11 +26,55 @@ A structured progression from beginner to advanced SQL concepts.
 
 ## 🥈 Intermediate Level
 
-### 1. Recursive CTEs
-- **Hierarchical data** - Organization charts, family trees
-- **Iterative operations** - Number series, date sequences
-- **Graph traversal** - Path finding, dependency resolution
-- **Data transformation** - String parsing, JSON processing
+### 1. Recursive CTEs (31 Examples Available!)
+**Start Here**: [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)
+
+#### 🏗️ Hierarchical Data Traversal (7 examples)
+- **Employee Hierarchy** - [01-employee-hierarchy.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql)
+- **Bill of Materials** - [02-bill-of-materials.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/02-bill-of-materials.sql)
+- **Category Tree** - [03-category-tree.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/03-category-tree.sql)
+- **Graph Reachability** - [04-graph-reachability.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/04-graph-reachability.sql)
+- **Dependency Resolution** - [05-dependency-resolution.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/05-dependency-resolution.sql)
+- **Filesystem Hierarchy** - [06-filesystem-hierarchy.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/06-filesystem-hierarchy.sql)
+- **Family Tree** - [07-family-tree.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/07-family-tree.sql)
+
+#### 🔄 Iteration & Loops (7 examples)
+- **Number Series** - [01-number-series.sql](../quests/recursive-cte/02-iteration-loops/01-number-series.sql)
+- **Date Series** - [02-date-series.sql](../quests/recursive-cte/02-iteration-loops/02-date-series.sql)
+- **Fibonacci Sequence** - [03-fibonacci-sequence.sql](../quests/recursive-cte/02-iteration-loops/03-fibonacci-sequence.sql)
+- **Collatz Sequence** - [04-collatz-sequence.sql](../quests/recursive-cte/02-iteration-loops/04-collatz-sequence.sql)
+- **Base Conversion** - [05-base-conversion.sql](../quests/recursive-cte/02-iteration-loops/05-base-conversion.sql)
+- **Factorial Calculation** - [06-factorial-calculation.sql](../quests/recursive-cte/02-iteration-loops/06-factorial-calculation.sql)
+- **Running Total** - [07-running-total.sql](../quests/recursive-cte/02-iteration-loops/07-running-total.sql)
+
+#### 🛤️ Path Finding & Analysis (3 examples)
+- **Shortest Path** - [01-shortest-path.sql](../quests/recursive-cte/03-path-finding-analysis/01-shortest-path.sql)
+- **Topological Sort** - [02-topological-sort.sql](../quests/recursive-cte/03-path-finding-analysis/02-topological-sort.sql)
+- **Cycle Detection** - [03-cycle-detection.sql](../quests/recursive-cte/03-path-finding-analysis/03-cycle-detection.sql)
+
+#### 🔧 Data Transformation (3 examples)
+- **String Splitting** - [01-string-splitting.sql](../quests/recursive-cte/04-data-transformation-parsing/01-string-splitting.sql)
+- **Transitive Closure** - [02-transitive-closure.sql](../quests/recursive-cte/04-data-transformation-parsing/02-transitive-closure.sql)
+- **JSON Parsing** - [03-json-parsing.sql](../quests/recursive-cte/04-data-transformation-parsing/03-json-parsing.sql)
+
+#### 🎮 Simulation & State Machines (2 examples)
+- **Inventory Simulation** - [01-inventory-simulation.sql](../quests/recursive-cte/05-simulation-state-machines/01-inventory-simulation.sql)
+- **Game Simulation** - [02-game-simulation.sql](../quests/recursive-cte/05-simulation-state-machines/02-game-simulation.sql)
+
+#### 🔧 Data Repair & Healing (3 examples)
+- **Sequence Gaps** - [01-sequence-gaps.sql](../quests/recursive-cte/06-data-repair-healing/01-sequence-gaps.sql)
+- **Forward Fill Nulls** - [02-forward-fill-nulls.sql](../quests/recursive-cte/06-data-repair-healing/02-forward-fill-nulls.sql)
+- **Interval Coalescing** - [03-interval-coalescing.sql](../quests/recursive-cte/06-data-repair-healing/03-interval-coalescing.sql)
+
+#### 📊 Mathematical & Theoretical (3 examples)
+- **Fibonacci Sequence** - [01-fibonacci-sequence.sql](../quests/recursive-cte/07-mathematical-theoretical/01-fibonacci-sequence.sql)
+- **Prime Numbers** - [02-prime-numbers.sql](../quests/recursive-cte/07-mathematical-theoretical/02-prime-numbers.sql)
+- **Permutation Generation** - [03-permutation-generation.sql](../quests/recursive-cte/07-mathematical-theoretical/03-permutation-generation.sql)
+
+#### 🎯 Bonus Quirky Examples (3 examples)
+- **Work Streak** - [01-work-streak.sql](../quests/recursive-cte/08-bonus-quirky-examples/01-work-streak.sql)
+- **Password Generator** - [02-password-generator.sql](../quests/recursive-cte/08-bonus-quirky-examples/02-password-generator.sql)
+- **Spiral Matrix** - [03-spiral-matrix.sql](../quests/recursive-cte/08-bonus-quirky-examples/03-spiral-matrix.sql)
 
 ### 2. Advanced Joins
 - **Self-joins** - Joining table to itself
@@ -67,24 +111,76 @@ A structured progression from beginner to advanced SQL concepts.
 ## 🎯 Learning Resources
 
 ### Interactive Learning
-- **SQL Adventure Quests** - Hands-on examples
-- **Docker Environment** - Isolated practice environment
-- **Real-world Scenarios** - Industry-specific problems
+- **SQL Adventure Quests** - Hands-on examples with Docker
+- **Recursive CTE Cheatsheet** - [Quick Reference](./recursive-cte-cheatsheet.md)
+- **Real-world Scenarios** - [Industry Applications](./use-cases.md)
 
 ### Practice Exercises
-- **Category-specific examples** - Focused learning
-- **Progressive difficulty** - Building complexity
-- **Idempotent design** - Safe experimentation
+- **Category-specific examples** - Focused learning by topic
+- **Progressive difficulty** - Building complexity step by step
+- **Idempotent design** - Safe experimentation and repetition
 
 ### Advanced Topics
-- **Performance tuning** - Query optimization
-- **Advanced analytics** - Window functions
-- **Data engineering** - ETL processes
+- **Performance tuning** - Query optimization techniques
+- **Advanced analytics** - Window functions and complex aggregations
+- **Data engineering** - ETL processes and data pipelines
 
 ## 🚀 Getting Started
 
-1. **Start with Basic Concepts** - Master fundamental SQL
-2. **Practice with Examples** - Use the provided quests
-3. **Build Real Projects** - Apply knowledge to practical problems
-4. **Optimize Performance** - Learn advanced techniques
-5. **Contribute Back** - Share your knowledge with the community
+### Step 1: Environment Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd sql-adventure
+
+# Start the Docker environment
+docker-compose up -d
+
+# Connect to PostgreSQL
+PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
+```
+
+### Step 2: Start with Basics
+1. **Review the cheatsheet** - [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)
+2. **Run simple examples** - Start with number series and date generation
+3. **Understand patterns** - Learn the base case + recursive case structure
+
+### Step 3: Progress Through Categories
+1. **Hierarchical Data** - Employee hierarchies and family trees
+2. **Iteration & Loops** - Mathematical sequences and series
+3. **Path Finding** - Graph algorithms and shortest paths
+4. **Data Transformation** - String parsing and JSON processing
+5. **Simulations** - State machines and business logic
+6. **Data Repair** - Cleaning and fixing data issues
+7. **Mathematical** - Advanced algorithms and patterns
+8. **Bonus Examples** - Creative and quirky applications
+
+### Step 4: Apply to Real Problems
+1. **Choose your industry** - [Use Cases by Industry](./use-cases.md)
+2. **Adapt examples** - Customize for your specific needs
+3. **Optimize performance** - Learn advanced techniques
+4. **Contribute back** - Share your knowledge with the community
+
+## 📊 Progress Tracking
+
+### Beginner Milestones
+- [ ] Complete basic SQL concepts
+- [ ] Run first recursive CTE example
+- [ ] Understand base case vs recursive case
+- [ ] Complete 5 simple examples
+
+### Intermediate Milestones
+- [ ] Complete all 31 recursive CTE examples
+- [ ] Understand hierarchical data patterns
+- [ ] Master iteration and loop techniques
+- [ ] Apply to real-world scenarios
+
+### Advanced Milestones
+- [ ] Optimize query performance
+- [ ] Design complex data models
+- [ ] Create custom recursive patterns
+- [ ] Mentor others in the community
+
+---
+
+*Ready to start your SQL Adventure? Begin with the [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)! 🚀*

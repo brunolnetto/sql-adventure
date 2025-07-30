@@ -30,7 +30,7 @@ WITH RECURSIVE interval_coalescing AS (
         interval_id,
         start_time,
         end_time,
-        category,
+        CAST(category AS VARCHAR(200)) as category,
         0 as coalesce_step,
         ARRAY[interval_id] as coalesced_intervals
     FROM time_intervals
@@ -43,7 +43,7 @@ WITH RECURSIVE interval_coalescing AS (
         ic.interval_id,
         LEAST(ic.start_time, ti.start_time) as start_time,
         GREATEST(ic.end_time, ti.end_time) as end_time,
-        ic.category || ' + ' || ti.category as category,
+        CAST(ic.category || ' + ' || ti.category AS VARCHAR(200)) as category,
         ic.coalesce_step + 1,
         ic.coalesced_intervals || ti.interval_id
     FROM time_intervals ti
