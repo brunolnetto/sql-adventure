@@ -5,12 +5,12 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](./README.md) - Main project README
-- [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md) - Quick reference for interviews
-- [Learning Path](./learning-path.md) - Structured learning progression with 31 examples
-- [Use Cases](./use-cases.md) - Industry-specific applications
-- [Run Examples](./run-examples.md) - How to run examples with full output
-- [Git Workflow](./git-workflow.md) - Development and contribution guidelines
-- [Roadmap](./ROADMAP.md) - Future development plans
+- [Recursive CTE Cheatsheet](./docs/recursive-cte-cheatsheet.md) - Quick reference for interviews
+- [Learning Path](./docs/learning-path.md) - Structured learning progression with 31 examples
+- [Use Cases](./docs/use-cases.md) - Industry-specific applications
+- [Run Examples](./docs/run-examples.md) - How to run examples with full output
+- [Git Workflow](./docs/git-workflow.md) - Development and contribution guidelines
+- [Roadmap](./docs/ROADMAP.md) - Future development plans
 
 ## 🎯 What You'll Learn
 
@@ -31,6 +31,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 1. **Follow the [Learning Path](./learning-path.md)** - Structured progression from beginner to advanced
 2. **Explore by category** - Choose your focus area (hierarchical, iteration, path finding, etc.)
 3. **Apply to your industry** - See [Use Cases](./use-cases.md) for real-world applications
+4. **Run examples** - Use [Run Examples](./run-examples.md) to execute with full output
 
 ## 📊 Project Statistics
 
