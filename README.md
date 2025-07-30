@@ -5,12 +5,12 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](./README.md) - Main project README
-- [Recursive CTE Cheatsheet](./docs/recursive-cte-cheatsheet.md) - Quick reference for interviews
-- [Learning Path](./docs/learning-path.md) - Structured learning progression with 31 examples
-- [Use Cases](./docs/use-cases.md) - Industry-specific applications
-- [Run Examples](./docs/run-examples.md) - How to run examples with full output
-- [Git Workflow](./docs/git-workflow.md) - Development and contribution guidelines
-- [Roadmap](./docs/ROADMAP.md) - Future development plans
+- [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md) - Quick reference for interviews
+- [Learning Path](./learning-path.md) - Structured learning progression with 31 examples
+- [Use Cases](./use-cases.md) - Industry-specific applications
+- [Run Examples](./run-examples.md) - How to run examples with full output
+- [Git Workflow](./git-workflow.md) - Development and contribution guidelines
+- [Roadmap](./ROADMAP.md) - Future development plans
 
 ## 🎯 What You'll Learn
 
