@@ -1,1 +1,123 @@
- 
+-- =====================================================
+-- Filesystem Hierarchy Example
+-- =====================================================
+
+-- Clean up existing tables (idempotent)
+DROP TABLE IF EXISTS filesystem CASCADE;
+
+-- Create table to represent filesystem structure
+CREATE TABLE filesystem (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    parent_id INT,
+    is_directory BOOLEAN,
+    size_bytes BIGINT,
+    created_date TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES filesystem(id)
+);
+
+-- Insert sample filesystem data
+INSERT INTO filesystem VALUES
+(1, 'root', NULL, TRUE, 0, '2024-01-01 00:00:00'),
+(2, 'home', 1, TRUE, 0, '2024-01-01 00:00:00'),
+(3, 'user1', 2, TRUE, 0, '2024-01-01 00:00:00'),
+(4, 'Documents', 3, TRUE, 0, '2024-01-01 00:00:00'),
+(5, 'Projects', 3, TRUE, 0, '2024-01-01 00:00:00'),
+(6, 'Downloads', 3, TRUE, 0, '2024-01-01 00:00:00'),
+(7, 'report.pdf', 4, FALSE, 1024000, '2024-01-15 10:30:00'),
+(8, 'presentation.pptx', 4, FALSE, 2048000, '2024-01-16 14:20:00'),
+(9, 'sql-adventure', 5, TRUE, 0, '2024-01-20 09:00:00'),
+(10, 'README.md', 9, FALSE, 5120, '2024-01-20 09:00:00'),
+(11, 'docker-compose.yml', 9, FALSE, 2048, '2024-01-20 09:00:00'),
+(12, 'image.jpg', 6, FALSE, 512000, '2024-01-18 16:45:00'),
+(13, 'music.mp3', 6, FALSE, 8192000, '2024-01-19 11:15:00'),
+(14, 'src', 9, TRUE, 0, '2024-01-20 09:00:00'),
+(15, 'main.py', 14, FALSE, 15360, '2024-01-20 09:00:00'),
+(16, 'config.json', 14, FALSE, 1024, '2024-01-20 09:00:00');
+
+-- Find complete filesystem hierarchy with full paths
+WITH RECURSIVE filesystem_tree AS (
+    -- Base case: root directory
+    SELECT 
+        id,
+        name,
+        parent_id,
+        is_directory,
+        size_bytes,
+        created_date,
+        0 as level,
+        CAST(name AS VARCHAR(500)) as full_path,
+        size_bytes as total_size
+    FROM filesystem 
+    WHERE parent_id IS NULL
+    
+    UNION ALL
+    
+    -- Recursive case: child files and directories
+    SELECT 
+        f.id,
+        f.name,
+        f.parent_id,
+        f.is_directory,
+        f.size_bytes,
+        f.created_date,
+        ft.level + 1,
+        CAST(ft.full_path || '/' || f.name AS VARCHAR(500)),
+        CASE 
+            WHEN f.is_directory THEN 0
+            ELSE f.size_bytes
+        END as total_size
+    FROM filesystem f
+    INNER JOIN filesystem_tree ft ON f.parent_id = ft.id
+)
+SELECT 
+    level,
+    name,
+    CASE 
+        WHEN is_directory THEN 'Directory'
+        ELSE 'File'
+    END as type,
+    full_path,
+    CASE 
+        WHEN is_directory THEN 'N/A'
+        ELSE size_bytes::VARCHAR || ' bytes'
+    END as size,
+    created_date
+FROM filesystem_tree
+ORDER BY full_path;
+
+-- Calculate directory sizes (including subdirectories)
+WITH RECURSIVE directory_sizes AS (
+    -- Base case: files (leaf nodes)
+    SELECT 
+        id,
+        parent_id,
+        size_bytes as total_size,
+        0 as level
+    FROM filesystem
+    WHERE NOT is_directory
+    
+    UNION ALL
+    
+    -- Recursive case: aggregate sizes up the tree
+    SELECT 
+        f.id,
+        f.parent_id,
+        ds.total_size + COALESCE(f.size_bytes, 0),
+        ds.level + 1
+    FROM filesystem f
+    INNER JOIN directory_sizes ds ON f.id = ds.parent_id
+    WHERE f.is_directory
+)
+SELECT 
+    f.name as directory_name,
+    ds.total_size as total_size_bytes,
+    ROUND(ds.total_size / 1024.0, 2) as total_size_kb,
+    ROUND(ds.total_size / 1024.0 / 1024.0, 2) as total_size_mb
+FROM directory_sizes ds
+INNER JOIN filesystem f ON ds.id = f.id
+WHERE f.is_directory
+ORDER BY ds.total_size DESC;
+
+-- Clean up
+DROP TABLE IF EXISTS filesystem CASCADE; 

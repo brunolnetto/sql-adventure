@@ -6,7 +6,7 @@ This directory contains various SQL learning quests and examples.
 
 ### 🚀 [Recursive CTE Examples](./recursive-cte/)
 
-A comprehensive collection of **31 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
+A comprehensive collection of **32 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
 
 **Features:**
 - 🐳 **Docker-ready** with PostgreSQL and pgAdmin

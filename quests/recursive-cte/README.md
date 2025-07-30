@@ -49,7 +49,7 @@ docker-compose ps
 ### 5. View Examples
 Once connected to pgAdmin, you can:
 1. Navigate to the "Recursive CTE Database" server
-2. Query `SELECT * FROM example_summary;` to see all available examples
+2. Browse the individual example files in the category folders
 3. Browse the logs in `/workspace/logs/` for execution results
 
 ## 🗂️ File Structure
