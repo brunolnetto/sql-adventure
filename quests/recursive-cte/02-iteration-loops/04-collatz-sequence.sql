@@ -1,0 +1,32 @@
+-- =====================================================
+-- Collatz Sequence Example
+-- =====================================================
+
+-- Calculate Collatz sequence for number 27
+WITH RECURSIVE collatz AS (
+    -- Base case: start number
+    SELECT 27 as num, 1 as step, CAST('27' AS VARCHAR(100)) as sequence
+    
+    UNION ALL
+    
+    -- Recursive case: apply Collatz rules
+    SELECT 
+        CASE 
+            WHEN num % 2 = 0 THEN num / 2  -- Even: divide by 2
+            ELSE 3 * num + 1               -- Odd: multiply by 3 and add 1
+        END,
+        step + 1,
+        CAST(sequence || ' → ' || 
+             CASE 
+                 WHEN num % 2 = 0 THEN (num / 2)::VARCHAR
+                 ELSE (3 * num + 1)::VARCHAR
+             END AS VARCHAR(100))
+    FROM collatz
+    WHERE num > 1  -- Stop when we reach 1
+)
+SELECT 
+    step,
+    num,
+    sequence
+FROM collatz
+ORDER BY step; 

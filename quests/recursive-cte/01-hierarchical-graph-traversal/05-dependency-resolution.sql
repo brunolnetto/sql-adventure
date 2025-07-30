@@ -1,0 +1,57 @@
+-- =====================================================
+-- Dependency Resolution Example
+-- =====================================================
+
+-- Clean up existing tables (idempotent)
+DROP TABLE IF EXISTS dependencies CASCADE;
+
+-- Create table
+CREATE TABLE dependencies (
+    package_id INT,
+    depends_on_id INT,
+    version VARCHAR(20)
+);
+
+-- Insert sample data
+INSERT INTO dependencies VALUES
+(1, 2, '1.0.0'),  -- Package 1 depends on Package 2
+(1, 3, '2.1.0'),  -- Package 1 depends on Package 3
+(2, 4, '0.9.0'),  -- Package 2 depends on Package 4
+(3, 4, '0.9.0'),  -- Package 3 depends on Package 4
+(3, 5, '1.5.0'),  -- Package 3 depends on Package 5
+(5, 6, '2.0.0');  -- Package 5 depends on Package 6
+
+-- Find all dependencies for a specific package
+WITH RECURSIVE package_deps AS (
+    -- Base case: direct dependencies
+    SELECT 
+        package_id,
+        depends_on_id,
+        version,
+        1 as level,
+        CAST(depends_on_id AS VARCHAR(100)) as dep_chain
+    FROM dependencies 
+    WHERE package_id = 1
+    
+    UNION ALL
+    
+    -- Recursive case: transitive dependencies
+    SELECT 
+        pd.package_id,
+        d.depends_on_id,
+        d.version,
+        pd.level + 1,
+        CAST(pd.dep_chain || ' → ' || d.depends_on_id AS VARCHAR(100))
+    FROM dependencies d
+    INNER JOIN package_deps pd ON d.package_id = pd.depends_on_id
+)
+SELECT 
+    level,
+    depends_on_id,
+    version,
+    dep_chain
+FROM package_deps
+ORDER BY level, depends_on_id;
+
+-- Clean up
+DROP TABLE IF EXISTS dependencies CASCADE; 
