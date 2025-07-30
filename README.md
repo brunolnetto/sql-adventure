@@ -114,7 +114,3 @@ We welcome contributions! Here's how you can help:
 - **PostgreSQL Community** - For the excellent database engine
 - **Docker Team** - For containerization technology
 - **SQL Community** - For sharing knowledge and best practices
-
----
-
-*Ready to start your SQL Adventure? Begin with the [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)! 🚀* 
