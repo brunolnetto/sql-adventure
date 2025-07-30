@@ -1,0 +1,50 @@
+# Git Commit Message Template
+# 
+# Format: <type>(<scope>): <subject>
+# 
+# Types:
+#   feat     - New feature
+#   fix      - Bug fix
+#   docs     - Documentation changes
+#   style    - Code style changes (formatting, etc.)
+#   refactor - Code refactoring
+#   test     - Adding or updating tests
+#   chore    - Maintenance tasks
+#   perf     - Performance improvements
+#   ci       - CI/CD changes
+#   build    - Build system changes
+# 
+# Scopes (examples):
+#   docs     - Documentation
+#   sql      - SQL examples/queries
+#   docker   - Docker configuration
+#   scripts  - Scripts and automation
+#   config   - Configuration files
+#   ui       - User interface
+#   api      - API changes
+#   db       - Database changes
+# 
+# Rules:
+# - Keep subject line under 50 characters
+# - Use imperative mood ("add" not "added")
+# - Don't end with period
+# - Be specific and concise
+# 
+# Examples:
+#   feat(sql): add recursive CTE cheatsheet
+#   fix(docs): correct typo in learning path
+#   docs(sql): improve example documentation
+#   refactor(scripts): simplify docker setup
+#   test(sql): add validation for CTE examples
+# 
+# Delete all lines starting with # to commit
+
+<type>(<scope>): <subject>
+
+# Optional: Add detailed description below (separated by blank line)
+# 
+# - What was changed and why
+# - Any breaking changes
+# - Related issues or tickets
+# 
+# Keep each line under 72 characters 
