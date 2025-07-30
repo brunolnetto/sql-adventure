@@ -13,14 +13,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Default values
-DB_HOST="localhost"
-DB_PORT="5433"
-DB_USER="postgres"
-DB_NAME="sql_adventure_db"
-DB_PASSWORD="postgres"
-QUESTS_DIR="quests"
-
 # Function to print colored output
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -38,6 +30,66 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Function to load environment variables from .env file
+load_env() {
+    local env_file=".env"
+    
+    if [ -f "$env_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} Loading configuration from $env_file"
+        # Source the .env file, but handle potential errors gracefully
+        set -a  # automatically export all variables
+        source "$env_file" 2>/dev/null || true
+        set +a  # stop automatically exporting
+    else
+        echo -e "${YELLOW}[WARNING]${NC} No .env file found, using default values"
+        echo -e "${BLUE}[INFO]${NC} You can copy env.example to .env and customize the settings"
+    fi
+}
+
+# Load environment variables
+load_env
+
+# Default values (fallback if .env is not available)
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${HOST_PORT:-5432}"
+DB_USER="${POSTGRES_USER:-postgres}"
+DB_NAME="${POSTGRES_DB:-sql_adventure_db}"
+DB_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
+QUESTS_DIR="quests"
+VERBOSE=true
+
+# Function to display current configuration
+show_config() {
+    echo "Current Configuration:"
+    echo "  Database Host: $DB_HOST"
+    echo "  Database Port: $DB_PORT"
+    echo "  Database User: $DB_USER"
+    echo "  Database Name: $DB_NAME"
+    echo "  Password: ${DB_PASSWORD:0:3}***"
+    echo "  Quests Directory: $QUESTS_DIR"
+    echo "  Verbose Mode: $VERBOSE"
+    echo ""
+}
+
+# Function to test database connection
+test_connection() {
+    print_status "Testing database connection..."
+    
+    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+        -c "\pset pager off" \
+        -c "SELECT 1 as connection_test;" > /dev/null 2>&1; then
+        print_success "Database connection successful"
+        return 0
+    else
+        print_error "Database connection failed"
+        print_error "Please check:"
+        print_error "  1. Docker containers are running: docker-compose up -d"
+        print_error "  2. Database credentials in .env file"
+        print_error "  3. Database host and port settings"
+        return 1
+    fi
+}
+
 # Function to run a single example
 run_example() {
     local file="$1"
@@ -45,12 +97,39 @@ run_example() {
     
     print_status "Running: $filename"
     
-    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$file" > /dev/null 2>&1; then
-        print_success "Completed: $filename"
+    if [ "$VERBOSE" = true ]; then
+        echo "----------------------------------------"
+        # Configure psql to show all output without truncation
+        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+            -c "\pset expanded off" \
+            -c "\pset format unaligned" \
+            -c "\pset fieldsep ' | '" \
+            -c "\pset null '(null)'" \
+            -c "\pset recordsep '\n'" \
+            -c "\pset tuples_only off" \
+            -c "\pset title on" \
+            -c "\pset tableattr 'border=1'" \
+            -c "\pset pager off" \
+            -f "$file"; then
+            echo "----------------------------------------"
+            print_success "Completed: $filename"
+        else
+            echo "----------------------------------------"
+            print_error "Failed: $filename"
+            return 1
+        fi
     else
-        print_error "Failed: $filename"
-        return 1
+        # Quiet mode - only show status
+        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+            -c "\pset pager off" \
+            -f "$file" > /dev/null 2>&1; then
+            print_success "Completed: $filename"
+        else
+            print_error "Failed: $filename"
+            return 1
+        fi
     fi
+    echo ""
 }
 
 # Function to run all examples in a quest category
@@ -60,6 +139,9 @@ run_quest_category() {
     local folder="$QUESTS_DIR/$quest_name/$category"
     
     print_status "Running quest: $quest_name, category: $category"
+    if [ "$VERBOSE" = true ]; then
+        echo "========================================"
+    fi
     
     if [ ! -d "$folder" ]; then
         print_error "Category folder not found: $folder"
@@ -72,7 +154,11 @@ run_quest_category() {
         fi
     done
     
+    if [ "$VERBOSE" = true ]; then
+        echo "========================================"
+    fi
     print_success "Completed quest: $quest_name, category: $category"
+    echo ""
 }
 
 # Function to run all examples in a quest
@@ -81,6 +167,9 @@ run_quest() {
     local quest_dir="$QUESTS_DIR/$quest_name"
     
     print_status "Running all examples in quest: $quest_name"
+    if [ "$VERBOSE" = true ]; then
+        echo "========================================"
+    fi
     
     if [ ! -d "$quest_dir" ]; then
         print_error "Quest directory not found: $quest_dir"
@@ -95,7 +184,11 @@ run_quest() {
         fi
     done
     
+    if [ "$VERBOSE" = true ]; then
+        echo "========================================"
+    fi
     print_success "Completed all examples in quest: $quest_name"
+    echo ""
 }
 
 # Function to show usage
@@ -106,6 +199,8 @@ show_usage() {
     echo "  quest <name> [category]  Run examples in a specific quest (and optionally category)"
     echo "  list [quest]             List all available quests and examples"
     echo "  example <file>           Run a specific example file"
+    echo "  test                     Test database connection"
+    echo "  config                   Show current configuration"
     echo ""
     echo "Examples:"
     echo "  $0 quest recursive-cte                    # Run all recursive-cte examples"
@@ -113,14 +208,23 @@ show_usage() {
     echo "  $0 list                                  # List all quests"
     echo "  $0 list recursive-cte                    # List recursive-cte examples"
     echo "  $0 example quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql"
+    echo "  $0 test                                  # Test database connection"
+    echo "  $0 config                                # Show current configuration"
     echo ""
     echo "Options:"
-    echo "  -h, --host HOST       Database host (default: localhost)"
-    echo "  -p, --port PORT       Database port (default: 5433)"
-    echo "  -u, --user USER       Database user (default: postgres)"
-    echo "  -d, --database DB     Database name (default: sql_adventure_db)"
-    echo "  -w, --password PASS   Database password (default: postgres)"
+    echo "  -h, --host HOST       Database host (overrides .env)"
+    echo "  -p, --port PORT       Database port (overrides .env)"
+    echo "  -u, --user USER       Database user (overrides .env)"
+    echo "  -d, --database DB     Database name (overrides .env)"
+    echo "  -w, --password PASS   Database password (overrides .env)"
+    echo "  -v, --verbose         Show SQL output (default: true)"
+    echo "  -q, --quiet           Hide SQL output, show only status"
     echo "  --help                Show this help message"
+    echo ""
+    echo "Configuration:"
+    echo "  The script loads database credentials from .env file"
+    echo "  Copy env.example to .env and customize as needed"
+    echo "  Command line options override .env values"
     echo ""
     echo "Note: Make sure Docker containers are running with 'docker-compose up -d'"
 }
@@ -195,9 +299,25 @@ while [[ $# -gt 0 ]]; do
             DB_PASSWORD="$2"
             shift 2
             ;;
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -q|--quiet)
+            VERBOSE=false
+            shift
+            ;;
         --help)
             show_usage
             exit 0
+            ;;
+        test)
+            COMMAND="test"
+            shift
+            ;;
+        config)
+            COMMAND="config"
+            shift
             ;;
         quest)
             COMMAND="quest"
@@ -240,6 +360,12 @@ fi
 
 # Execute command
 case $COMMAND in
+    test)
+        test_connection
+        ;;
+    config)
+        show_config
+        ;;
     quest)
         if [ -z "$QUEST_NAME" ]; then
             print_error "Quest name not specified"
