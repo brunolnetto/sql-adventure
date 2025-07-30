@@ -14,9 +14,9 @@ NC='\033[0m' # No Color
 
 # Default values
 DB_HOST="localhost"
-DB_PORT="5432"
+DB_PORT="5433"
 DB_USER="postgres"
-DB_NAME="recursive_cte_db"
+DB_NAME="sql_adventure_db"
 DB_PASSWORD="postgres"
 
 # Function to print colored output
@@ -81,7 +81,6 @@ show_usage() {
     echo "  category <name>        Run examples in a specific category"
     echo "  example <file>         Run a specific example file"
     echo "  list                   List all available examples"
-    echo "  summary                Show example summary from database"
     echo ""
     echo "Categories:"
     echo "  hierarchical           Hierarchical & Graph Traversal"
@@ -95,11 +94,13 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  -h, --host HOST       Database host (default: localhost)"
-    echo "  -p, --port PORT       Database port (default: 5432)"
+    echo "  -p, --port PORT       Database port (default: 5433)"
     echo "  -u, --user USER       Database user (default: postgres)"
-    echo "  -d, --database DB     Database name (default: recursive_cte_db)"
+    echo "  -d, --database DB     Database name (default: sql_adventure_db)"
     echo "  -w, --password PASS   Database password (default: postgres)"
     echo "  --help                Show this help message"
+    echo ""
+    echo "Note: Make sure Docker containers are running with 'docker-compose up -d'"
 }
 
 # Function to list all examples
@@ -163,10 +164,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         list)
             COMMAND="list"
-            shift
-            ;;
-        summary)
-            COMMAND="summary"
             shift
             ;;
         *)
