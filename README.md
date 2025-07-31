@@ -5,7 +5,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](./README.md) - Main project README
-- [Learning Path](./docs/learning-path.md) - Structured learning progression with 31 examples
+- [Learning Path](./docs/learning-path.md) - Structured learning progression
 - [Use Cases](./docs/use-cases.md) - Industry-specific applications
 - [Run Examples](./docs/run-examples.md) - How to run examples with full output
 - [Git Workflow](./docs/git-workflow.md) - Development and contribution guidelines
