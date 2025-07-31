@@ -1,119 +1,106 @@
 -- =====================================================
--- Window Functions: Basic Row Numbering
+-- Window Functions: Sales Ranking with ROW_NUMBER()
 -- =====================================================
 
--- Clean up existing tables (idempotent)
-DROP TABLE IF EXISTS products CASCADE;
+-- Context: This example demonstrates how to use ROW_NUMBER() 
+--          to rank sales data by amount within categories.
+-- Purpose: Teach basic window function ranking concepts
+-- Learning Outcome: Students will understand how to use 
+--                   ROW_NUMBER() for ranking data and creating
+--                   unique sequential numbers for each row
 
--- Create sample products table
-CREATE TABLE products (
-    product_id INT PRIMARY KEY,
+-- Expected Results:
+-- 1. Products should be ranked by sales amount (highest first)
+-- 2. Each category should have its own ranking sequence
+-- 3. No ties should occur (ROW_NUMBER() gives unique ranks)
+-- 4. Electronics category should have 3 products ranked 1,2,3
+-- 5. Clothing category should have 2 products ranked 1,2
+-- 6. Overall ranking should show Laptop Pro as #1 (highest amount)
+
+-- Clean up existing tables (idempotent)
+DROP TABLE IF EXISTS sales_data CASCADE;
+
+-- Create sample sales table
+CREATE TABLE sales_data (
+    sale_id INT PRIMARY KEY,
     product_name VARCHAR(100),
     category VARCHAR(50),
-    price DECIMAL(10,2),
-    stock_quantity INT
+    sale_amount DECIMAL(10,2),
+    sale_date DATE
 );
 
 -- Insert sample data
-INSERT INTO products VALUES
-(1, 'Laptop Pro', 'Electronics', 1299.99, 25),
-(2, 'Wireless Mouse', 'Electronics', 45.00, 150),
-(3, 'Office Chair', 'Furniture', 299.99, 30),
-(4, 'Desk Lamp', 'Furniture', 89.99, 75),
-(5, 'Gaming Keyboard', 'Electronics', 150.00, 40),
-(6, 'Coffee Table', 'Furniture', 199.99, 15),
-(7, 'Bluetooth Headphones', 'Electronics', 120.00, 60),
-(8, 'Bookshelf', 'Furniture', 159.99, 20);
+INSERT INTO sales_data VALUES
+(1, 'Laptop Pro', 'Electronics', 1200.00, '2024-01-15'),
+(2, 'Wireless Mouse', 'Electronics', 45.00, '2024-01-16'),
+(3, 'Office Chair', 'Furniture', 299.99, '2024-01-17'),
+(4, 'Desk Lamp', 'Furniture', 89.99, '2024-01-18'),
+(5, 'Gaming Keyboard', 'Electronics', 150.00, '2024-01-19');
 
--- =====================================================
--- Example 1: Basic Row Numbering
--- =====================================================
-
--- Simple row numbering by price (highest to lowest)
+-- Demonstrate window functions
 SELECT 
     product_name,
     category,
-    price,
-    ROW_NUMBER() OVER (ORDER BY price DESC) as price_rank
-FROM products
-ORDER BY price DESC;
+    sale_amount,
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as overall_rank,
+    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+FROM sales_data
+ORDER BY sale_amount DESC;
 
--- =====================================================
--- Example 2: Row Numbering by Category
--- =====================================================
-
--- Row numbering within each category by price
+-- Validation: Verify expected results
+-- Validation 1: Check that Electronics has 3 products
 SELECT 
-    product_name,
     category,
-    price,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC) as category_rank
-FROM products
-ORDER BY category, price DESC;
+    COUNT(*) as product_count
+FROM sales_data 
+WHERE category = 'Electronics'
+GROUP BY category;
 
--- =====================================================
--- Example 3: Multiple Rankings
--- =====================================================
-
--- Show both overall rank and category rank
-SELECT 
-    product_name,
-    category,
-    price,
-    ROW_NUMBER() OVER (ORDER BY price DESC) as overall_rank,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC) as category_rank
-FROM products
-ORDER BY price DESC;
-
--- =====================================================
--- Example 4: Ranking by Multiple Criteria
--- =====================================================
-
--- Rank by price, then by stock quantity (for same prices)
-SELECT 
-    product_name,
-    category,
-    price,
-    stock_quantity,
-    ROW_NUMBER() OVER (ORDER BY price DESC, stock_quantity DESC) as rank
-FROM products
-ORDER BY price DESC, stock_quantity DESC;
-
--- =====================================================
--- Example 5: Top N Products by Category
--- =====================================================
-
--- Get top 2 products from each category
-WITH ranked_products AS (
+-- Validation 2: Check that highest sale amount is ranked 1 overall
+WITH ranked_data AS (
     SELECT 
         product_name,
-        category,
-        price,
-        ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC) as category_rank
-    FROM products
+        sale_amount,
+        ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as rank
+    FROM sales_data
 )
 SELECT 
     product_name,
+    sale_amount,
+    rank
+FROM ranked_data
+WHERE rank = 1;
+
+-- Validation 3: Verify no duplicate ranks within categories
+WITH category_ranks AS (
+    SELECT 
+        category,
+        ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+    FROM sales_data
+)
+SELECT 
     category,
-    price,
-    category_rank
-FROM ranked_products
-WHERE category_rank <= 2
-ORDER BY category, category_rank;
+    COUNT(*) as total_products,
+    COUNT(DISTINCT category_rank) as unique_ranks
+FROM category_ranks
+GROUP BY category;
 
--- =====================================================
--- Example 6: Ranking with Filtering
--- =====================================================
-
--- Rank only electronics products by price
+-- Validation 4: Verify Electronics category ranking sequence
 SELECT 
     product_name,
-    category,
-    price,
-    ROW_NUMBER() OVER (ORDER BY price DESC) as electronics_rank
-FROM products
+    sale_amount,
+    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+FROM sales_data
 WHERE category = 'Electronics'
-ORDER BY price DESC;
+ORDER BY sale_amount DESC;
+
+-- Validation 5: Verify overall ranking sequence
+SELECT 
+    product_name,
+    sale_amount,
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as overall_rank
+FROM sales_data
+ORDER BY sale_amount DESC;
 
 -- Clean up
-DROP TABLE IF EXISTS products CASCADE; 
+DROP TABLE IF EXISTS sales_data CASCADE; 

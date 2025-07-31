@@ -334,14 +334,10 @@ analyze_query_output() {
         echo "Output captured successfully"
         echo "Output size: $(wc -l < "$output_file") lines"
         
-        # Show sample of output (first 20 lines)
+        # Show full output
         echo ""
-        print_status "📄 SAMPLE OUTPUT (first 20 lines):"
-        head -20 "$output_file"
-        
-        if [ $(wc -l < "$output_file") -gt 20 ]; then
-            echo "... (output truncated)"
-        fi
+        print_status "📄 FULL OUTPUT:"
+        cat "$output_file"
         
         # Check for common patterns in output
         echo ""
