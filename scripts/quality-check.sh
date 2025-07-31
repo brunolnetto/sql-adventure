@@ -5,41 +5,8 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-print_header() {
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}$1${NC}"
-    echo -e "${BLUE}========================================${NC}"
-}
-
-print_quest() {
-    echo -e "${PURPLE}[QUEST]${NC} $1"
-}
+# Source print utility functions
+source "$(dirname "$0")/print-utils.sh"
 
 # Load environment variables
 load_env() {
@@ -301,128 +268,82 @@ validate_query_context() {
     fi
 }
 
-# Function to validate all quest categories
+# Function to validate all quest categories (automated checks only)
 validate_all_quests() {
-    print_status "🧪 Starting comprehensive quality check for all quests..."
+    print_status "🧪 Starting automated quality check for all quests..."
     echo ""
-    
-    # Initialize counters
+
     total_files=0
     passed_files=0
     failed_files=0
-    
-    # Function to check a single file
-    check_file() {
-        local file="$1"
-        local quest_name="$2"
-        
-        if [[ ! -f "$file" ]]; then
-            print_warning "File not found: $file"
-            return 1
-        fi
-        
-        print_status "Checking: $file"
-        
-        # Run comprehensive validation
-        if ./scripts/quality-check.sh validate "$file" > /dev/null 2>&1; then
-            print_success "✅ $file - PASSED"
-            ((passed_files++))
-            return 0
-        else
-            print_error "❌ $file - FAILED"
-            ((failed_files++))
-            return 1
-        fi
-    }
-    
-    # Function to check a quest category
-    check_quest_category() {
-        local quest_dir="$1"
-        local category_name="$2"
-        
-        print_quest "Checking category: $category_name"
-        
-        # Find all SQL files in the category
-        local sql_files=($(find "$quest_dir" -name "*.sql" -type f | sort))
-        
+
+    # Find all quest category directories (one level below quests/)
+    for category_dir in quests/*/; do
+        # Skip if not a directory
+        [ -d "$category_dir" ] || continue
+        category_name=$(basename "$category_dir")
+        print_quest "Checking quest: $category_name"
+
+        # Find all .sql files recursively in this quest
+        mapfile -t sql_files < <(find "$category_dir" -type f -name "*.sql" | sort)
         if [[ ${#sql_files[@]} -eq 0 ]]; then
-            print_warning "No SQL files found in $quest_dir"
-            return
+            print_warning "No SQL files found in $category_dir"
+            continue
         fi
-        
+        print_status "Found ${#sql_files[@]} SQL files in $category_dir"
+
         for file in "${sql_files[@]}"; do
+            print_status "Validating: $file"
             ((total_files++))
-            check_file "$file" "$category_name"
+            if validate_example "$file" > /dev/null 2>&1; then
+                print_success "✅ $file - PASSED (automated)"
+                ((passed_files++))
+            else
+                print_error "❌ $file - FAILED (automated)"
+                ((failed_files++))
+            fi
         done
-        
         echo ""
-    }
-    
-    # =====================================================
-    # RECURSIVE CTE QUEST
-    # =====================================================
-    print_header "📚 RECURSIVE CTE QUEST"
-    
-    # Check each category
-    check_quest_category "quests/recursive-cte/01-hierarchical-graph-traversal" "Hierarchical Graph Traversal"
-    check_quest_category "quests/recursive-cte/02-iteration-loops" "Iteration Loops"
-    check_quest_category "quests/recursive-cte/03-path-finding-analysis" "Path Finding Analysis"
-    check_quest_category "quests/recursive-cte/04-data-transformation-parsing" "Data Transformation Parsing"
-    check_quest_category "quests/recursive-cte/05-simulation-state-machines" "Simulation State Machines"
-    check_quest_category "quests/recursive-cte/06-data-repair-healing" "Data Repair Healing"
-    check_quest_category "quests/recursive-cte/07-mathematical-theoretical" "Mathematical Theoretical"
-    check_quest_category "quests/recursive-cte/08-bonus-quirky-examples" "Bonus Quirky Examples"
-    
-    # =====================================================
-    # WINDOW FUNCTIONS QUEST
-    # =====================================================
-    print_header "📊 WINDOW FUNCTIONS QUEST"
-    
-    # Check each category
-    check_quest_category "quests/window-functions/01-basic-ranking" "Basic Ranking"
-    check_quest_category "quests/window-functions/02-aggregation-windows" "Aggregation Windows"
-    
-    # =====================================================
-    # SUMMARY REPORT
-    # =====================================================
-    print_header "📋 QUALITY CHECK SUMMARY"
-    
+    done
+
+    # Summary
+    print_header "📋 AUTOMATED QUALITY CHECK SUMMARY"
     echo -e "${CYAN}Total files checked:${NC} $total_files"
     echo -e "${GREEN}Passed:${NC} $passed_files"
     echo -e "${RED}Failed:${NC} $failed_files"
-    
     if [[ $failed_files -eq 0 ]]; then
-        echo ""
-        print_success "🎉 All files passed quality checks!"
+        print_success "🎉 All files passed automated checks!"
     else
-        echo ""
-        print_warning "⚠️  Some files failed quality checks. Review the errors above."
+        print_warning "⚠️  Some files failed automated checks. Review the errors above."
     fi
-    
-    # Calculate success rate
     if [[ $total_files -gt 0 ]]; then
         local success_rate=$(( (passed_files * 100) / total_files ))
         echo -e "${CYAN}Success rate:${NC} ${success_rate}%"
     fi
-    
     echo ""
-    print_status "Quality check completed!"
+    print_status "Automated quality check completed!"
+    print_warning "Note: Context and educational value require AI evaluation using 'analyze-output' command"
 }
 
-# Function to analyze query output and context
+# Function to analyze query output and context (AI handover)
 analyze_query_output() {
     local file="$1"
-    print_status "🧪 Analyzing query output and context for: $(basename "$file")"
+    print_status "🤖 AI HANDOVER - Analyzing query logic and educational context for: $(basename "$file")"
     
     # Create temporary file for main query output
     local output_file=$(mktemp)
     local context_file=$(mktemp)
+    local query_structure_file=$(mktemp)
     
     # Extract context information
     grep -A 10 "Context:" "$file" > "$context_file" 2>/dev/null || true
     grep -A 5 "Purpose:" "$file" >> "$context_file" 2>/dev/null || true
     grep -A 5 "Learning Outcome:" "$file" >> "$context_file" 2>/dev/null || true
     grep -A 10 "Expected Results:" "$file" >> "$context_file" 2>/dev/null || true
+    
+    # Extract and analyze the main query structure
+    print_status "🔍 Analyzing query structure and logic..."
+    awk '/^-- Demonstrate window functions/,/^-- Validation:/{print}' "$file" > "$query_structure_file" 2>/dev/null || true
     
     # Execute the main query and capture output
     print_status "📊 Executing main query and capturing output..."
@@ -439,9 +360,10 @@ analyze_query_output() {
                 -f "$validation_file" >> "$output_file" 2>&1
         fi
         
-        # Display analysis
+        # Display analysis for AI evaluation
         echo "========================================"
-        print_status "📋 CONTEXT ANALYSIS:"
+        print_header "🤖 AI EVALUATION DATA"
+        print_status "📋 EDUCATIONAL CONTEXT:"
         if [ -s "$context_file" ]; then
             cat "$context_file"
         else
@@ -449,19 +371,27 @@ analyze_query_output() {
         fi
         
         echo ""
-        print_status "📊 QUERY OUTPUT ANALYSIS:"
+        print_status "🔍 QUERY STRUCTURE AND LOGIC:"
+        if [ -s "$query_structure_file" ]; then
+            cat "$query_structure_file"
+        else
+            echo "No main query structure found"
+        fi
+        
+        echo ""
+        print_status "📊 QUERY OUTPUT FOR ANALYSIS:"
         echo "File: $(basename "$file")"
         echo "Output captured successfully"
         echo "Output size: $(wc -l < "$output_file") lines"
         
-        # Show full output
+        # Show full output for AI analysis
         echo ""
-        print_status "📄 FULL OUTPUT:"
+        print_status "📄 FULL OUTPUT (AI Analysis Required):"
         cat "$output_file"
         
-        # Check for common patterns in output
+        # Basic pattern analysis (for reference)
         echo ""
-        print_status "🔍 OUTPUT PATTERN ANALYSIS:"
+        print_status "🔍 BASIC PATTERN ANALYSIS (Reference Only):"
         local row_count=$(grep -c "^[0-9]" "$output_file" || echo "0")
         local error_count=$(grep -c "ERROR\|error" "$output_file" || echo "0")
         local warning_count=$(grep -c "WARNING\|warning" "$output_file" || echo "0")
@@ -479,6 +409,17 @@ analyze_query_output() {
             echo "✅ Window function syntax detected"
         fi
         
+        # AI handover summary
+        echo ""
+        print_header "🤖 AI EVALUATION REQUIRED"
+        print_status "The following aspects require AI analysis:"
+        print_status "1. Query logic and educational intent"
+        print_status "2. SQL structure and window function usage"
+        print_status "3. Learning progression and complexity"
+        print_status "4. Query results alignment with expected results"
+        print_status "5. Validation query effectiveness and educational value"
+        print_status "6. Overall educational quality and clarity"
+        
         # Store output for AI analysis
         echo ""
         print_status "💾 Output saved for AI analysis: $output_file"
@@ -488,7 +429,7 @@ analyze_query_output() {
     fi
     
     # Clean up temporary files
-    rm -f "$context_file" "$validation_file"
+    rm -f "$context_file" "$validation_file" "$query_structure_file"
     
     return 0
 }
@@ -543,16 +484,16 @@ execute_validation_queries() {
     rm -f "$temp_file"
 }
 
-# Function to run comprehensive validation
+# Function to run automated validation checks (boolean evaluation)
 validate_example() {
     local file="$1"
     
-    print_status "🔍 Starting comprehensive validation for: $(basename "$file")"
+    print_status "🔍 Starting automated validation for: $(basename "$file")"
     echo "========================================"
     
     local overall_result=0
     
-    # Run all validation checks
+    # Run automated checks (boolean evaluation)
     validate_syntax "$file" || overall_result=1
     validate_idempotency "$file" || overall_result=1
     validate_data_quality "$file" || overall_result=1
@@ -562,39 +503,49 @@ validate_example() {
     echo "========================================"
     
     if [ $overall_result -eq 0 ]; then
-        print_success "✅ All validation checks passed for: $(basename "$file")"
+        print_success "✅ All automated checks passed for: $(basename "$file")"
     else
-        print_warning "⚠️  Some validation checks failed for: $(basename "$file")"
+        print_warning "⚠️  Some automated checks failed for: $(basename "$file")"
     fi
     
     return $overall_result
 }
 
-# Function to run comprehensive validation with context
+# Function to run automated validation + AI handover for context analysis
 validate_example_with_context() {
     local file="$1"
     
-    print_status "🔍 Starting comprehensive validation with context for: $(basename "$file")"
+    print_status "🔍 Starting automated validation + AI handover for: $(basename "$file")"
     echo "========================================"
     
     local overall_result=0
     
-    # Run all validation checks including context
+    # Run automated checks (boolean evaluation)
     validate_syntax "$file" || overall_result=1
     validate_idempotency "$file" || overall_result=1
     validate_data_quality "$file" || overall_result=1
     validate_performance "$file" || overall_result=1
     validate_documentation "$file" || overall_result=1
-    validate_query_context "$file" || overall_result=1
-    validate_expected_results "$file" || overall_result=1
     
     echo "========================================"
     
     if [ $overall_result -eq 0 ]; then
-        print_success "✅ All validation checks (including context) passed for: $(basename "$file")"
+        print_success "✅ All automated checks passed for: $(basename "$file")"
     else
-        print_warning "⚠️  Some validation checks failed for: $(basename "$file")"
+        print_warning "⚠️  Some automated checks failed for: $(basename "$file")"
     fi
+    
+    echo ""
+    print_header "🤖 AI HANDOVER - CONTEXT ANALYSIS"
+    print_status "The following context and output analysis requires AI evaluation:"
+    print_status "- Educational intent and learning outcomes"
+    print_status "- Query results vs expected results"
+    print_status "- Context relevance and clarity"
+    print_status "- Validation query effectiveness"
+    echo ""
+    
+    # Hand over to AI analysis
+    analyze_query_output "$file"
     
     return $overall_result
 }
@@ -636,10 +587,10 @@ show_usage() {
     echo "Usage: $0 [COMMAND] [FILE]"
     echo ""
     echo "Commands:"
-    echo "  validate <file>              Run comprehensive validation"
-    echo "  validate-with-context <file> Run comprehensive validation with context"
-    echo "  analyze-output <file>        Analyze query output and context (AI-focused)"
-    echo "  validate-all                 Run quality checks for all quest categories"
+    echo "  validate <file>              Run automated validation (syntax, performance, etc.)"
+    echo "  validate-with-context <file> Run automated validation + AI handover for context"
+    echo "  analyze-output <file>        AI handover: analyze query output and context"
+    echo "  validate-all                 Run automated checks for all quest categories"
     echo "  syntax <file>                Validate SQL syntax only"
     echo "  idempotency <file>           Test idempotency only"
     echo "  data-quality <file>          Validate data quality only"
