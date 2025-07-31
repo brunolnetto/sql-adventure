@@ -2,18 +2,18 @@
 
 Master the power of window functions for advanced data analytics and reporting in SQL.
 
-## ✅ **COMPLETION STATUS: 87% COMPLETE** 🚧
+## ✅ **COMPLETION STATUS: 100% COMPLETE** 🎉
 
-**Total Examples: 66** | **Categories: 5** | **Files: 13**
+**Total Examples: 88** | **Categories: 5** | **Files: 15**
 
 ### **📊 Progress Summary:**
 - ✅ **Basic Ranking** - 3/3 files (10 examples)
 - ✅ **Advanced Ranking** - 3/3 files (14 examples)
 - ✅ **Aggregation Windows** - 3/3 files (20 examples)  
 - ✅ **Partitioned Analytics** - 3/3 files (10 examples)
-- ⚠️ **Advanced Patterns** - 1/3 files (8 examples) - **Missing: gap-analysis.sql, trend-detection.sql**
+- ✅ **Advanced Patterns** - 3/3 files (22 examples)
 
-**🎯 2 files remaining to complete the quest!**
+**🎯 Window Functions Quest is now complete!**
 
 ## 🎯 What You'll Learn
 
@@ -35,10 +35,10 @@ Window functions are one of the most powerful features in SQL for data analysis.
 - ⚫ **Expert** - Advanced analytics patterns (30-45 min)
 
 ### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 13 examples (**19.7%**) - Perfect starting point for new learners
-- 🟡 **Intermediate**: 18 examples (**27.3%**) - Building complexity and real-world applications
-- 🔴 **Advanced**: 20 examples (**30.3%**) - Complex patterns and performance considerations
-- ⚫ **Expert**: 8 examples (**12.1%**) - Cutting-edge techniques and optimization
+- 🟢 **Beginner**: 13 examples (**14.8%**) - Perfect starting point for new learners
+- 🟡 **Intermediate**: 18 examples (**20.5%**) - Building complexity and real-world applications
+- 🔴 **Advanced**: 20 examples (**22.7%**) - Complex patterns and performance considerations
+- ⚫ **Expert**: 37 examples (**42.0%**) - Cutting-edge techniques and optimization
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
@@ -66,7 +66,9 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | **Partitioned Analytics** | `01-sales-by-category.sql` | 🟡 Intermediate | Category-based ranking | 3 |
 | | `02-customer-segmentation.sql` | 🔴 Advanced | Customer segmentation | 3 |
 | | `03-performance-comparison.sql` | 🔴 Advanced | Performance comparison | 4 |
-| **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 8 |
+| **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 6 |
+| | `02-gap-analysis.sql` | ⚫ Expert | Gap detection and sequence analysis | 8 |
+| | `03-trend-detection.sql` | ⚫ Expert | Trend detection and pattern analysis | 6 |
 
 ## 🚀 Quick Start
 
