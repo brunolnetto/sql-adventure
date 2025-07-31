@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:17
     restart: unless-stopped
     container_name: sql-adventure-postgres
     env_file:
