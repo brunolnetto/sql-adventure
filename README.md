@@ -13,10 +13,12 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 ## 🎯 What You'll Learn
 
-- **Advanced SQL Patterns** - Learn complex query techniques
-- **Performance Optimization** - Write efficient, scalable queries
+- **Recursive CTEs** - Master hierarchical data and complex iterations
+- **Window Functions** - Advanced analytics and ranking operations
+- **JSON Operations** - Modern PostgreSQL data handling
+- **Performance Tuning** - Write efficient, scalable queries
+- **Data Modeling** - Understand database design and relationships
 - **Real-world Applications** - Solve practical business problems
-- **Database Design** - Understand data modeling and relationships
 
 ## 🚀 Quick Start
 
@@ -27,17 +29,18 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 ### For Deep Learning
 1. **Follow the [Learning Path](./learning-path.md)** - Structured progression from beginner to advanced
-2. **Explore by category** - Choose your focus area (hierarchical, iteration, path finding, etc.)
+2. **Explore by category** - Choose your focus area (recursive CTEs, window functions, JSON, etc.)
 3. **Apply to your industry** - See [Use Cases](./use-cases.md) for real-world applications
 4. **Run examples** - Use [Run Examples](./run-examples.md) to execute with full output
 
 ## 📊 Project Statistics
 
- - **31 Working Examples** - 100% tested and verified
- - **8 Categories** - Comprehensive coverage of recursive CTE patterns
+ - **32+ Working Examples** - 100% tested and verified
+ - **9+ Categories** - Comprehensive coverage of SQL patterns
  - **100% Idempotent** - Safe to run multiple times
  - **Docker Ready** - Easy setup and deployment
  - **Industry Focused** - Real-world business applications
+ - **Expanding Repertoire** - Beyond recursive CTEs to comprehensive SQL learning
 
 ## 🛠️ Technology Stack
 

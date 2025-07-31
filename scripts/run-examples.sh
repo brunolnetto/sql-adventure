@@ -242,7 +242,18 @@ list_quests() {
     for quest_dir in "$QUESTS_DIR"/*; do
         if [ -d "$quest_dir" ]; then
             local quest_name=$(basename "$quest_dir")
-            echo "🎮 $quest_name"
+            local quest_status=""
+            
+            # Check quest status based on content
+            if [ "$quest_name" = "recursive-cte" ]; then
+                quest_status=" ✅ Complete"
+            elif [ "$quest_name" = "window-functions" ]; then
+                quest_status=" 🚧 In Progress"
+            else
+                quest_status=" 📋 Planned"
+            fi
+            
+            echo "🎮 $quest_name$quest_status"
         fi
     done
     echo ""
