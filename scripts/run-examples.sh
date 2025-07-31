@@ -6,43 +6,22 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+# Source print utility functions
+source "$(dirname "$0")/print-utils.sh"
 
 # Function to load environment variables from .env file
 load_env() {
     local env_file=".env"
     
     if [ -f "$env_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} Loading configuration from $env_file"
+        print_status "Loading configuration from $env_file"
         # Source the .env file, but handle potential errors gracefully
         set -a  # automatically export all variables
         source "$env_file" 2>/dev/null || true
         set +a  # stop automatically exporting
     else
-        echo -e "${YELLOW}[WARNING]${NC} No .env file found, using default values"
-        echo -e "${BLUE}[INFO]${NC} You can copy env.example to .env and customize the settings"
+        print_warning "No .env file found, using default values"
+        print_info "You can copy env.example to .env and customize the settings"
     fi
 }
 
@@ -176,8 +155,8 @@ run_quest() {
         return 1
     fi
     
-    # Find all numbered category folders
-    for folder in "$quest_dir"/[0-9]*; do
+    # Find all category folders (agnostic approach)
+    for folder in "$quest_dir"/*; do
         if [ -d "$folder" ]; then
             local category_name=$(basename "$folder")
             run_quest_category "$quest_name" "$category_name"
@@ -272,8 +251,8 @@ list_quest_examples() {
     echo "Examples in quest: $quest_name"
     echo ""
     
-    # Find all numbered category folders
-    for folder in "$quest_dir"/[0-9]*; do
+    # Find all category folders (agnostic approach)
+    for folder in "$quest_dir"/*; do
         if [ -d "$folder" ]; then
             local category_name=$(basename "$folder")
             echo "📁 $category_name"

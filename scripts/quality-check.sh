@@ -341,18 +341,20 @@ analyze_query_output() {
     grep -A 5 "Learning Outcome:" "$file" >> "$context_file" 2>/dev/null || true
     grep -A 10 "Expected Results:" "$file" >> "$context_file" 2>/dev/null || true
     
-    # Extract and analyze the main query structure
+    # Extract and analyze the main query structure (agnostic approach)
     print_status "🔍 Analyzing query structure and logic..."
-    awk '/^-- Demonstrate window functions/,/^-- Validation:/{print}' "$file" > "$query_structure_file" 2>/dev/null || true
+    # Extract main SQL statements (excluding validation queries)
+    awk '/^[[:space:]]*(SELECT|WITH|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)/{if(!/Validation/) {flag=1; print}} /^[[:space:]]*--[[:space:]]*Validation:/{flag=0} flag{print}' "$file" > "$query_structure_file" 2>/dev/null || true
     
     # Execute the main query and capture output
     print_status "📊 Executing main query and capturing output..."
     if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
         -f "$file" > "$output_file" 2>&1; then
         
-        # Extract validation queries and execute them
+        # Extract validation queries and execute them (agnostic approach)
         local validation_file=$(mktemp)
-        awk '/^-- Validation:/{flag=1; next} /^-- [^V]/{flag=0} flag{print}' "$file" > "$validation_file"
+        # Extract any SQL statements after "-- Validation:" comments
+        awk '/^[[:space:]]*--[[:space:]]*Validation:/{flag=1; next} /^[[:space:]]*--[[:space:]]*[^V]/{flag=0} flag{print}' "$file" > "$validation_file"
         
         if [ -s "$validation_file" ]; then
             print_status "🔍 Executing validation queries and capturing results..."
@@ -399,15 +401,6 @@ analyze_query_output() {
         echo "Data rows returned: $row_count"
         echo "Error messages: $error_count"
         echo "Warning messages: $warning_count"
-        
-        # Check if output contains expected patterns
-        if grep -q "ROW_NUMBER\|RANK\|DENSE_RANK" "$output_file" 2>/dev/null; then
-            echo "✅ Window function output detected"
-        fi
-        
-        if grep -q "PARTITION BY\|ORDER BY" "$output_file" 2>/dev/null; then
-            echo "✅ Window function syntax detected"
-        fi
         
         # AI handover summary
         echo ""
