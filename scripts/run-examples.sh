@@ -183,7 +183,8 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 quest recursive-cte                    # Run all recursive-cte examples"
-    echo "  $0 quest recursive-cte hierarchical       # Run hierarchical category only"
+    echo "  $0 quest window-functions                 # Run all window-functions examples"
+    echo "  $0 quest recursive-cte 01-hierarchical-graph-traversal  # Run specific category"
     echo "  $0 list                                  # List all quests"
     echo "  $0 list recursive-cte                    # List recursive-cte examples"
     echo "  $0 example quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql"
@@ -208,6 +209,30 @@ show_usage() {
     echo "Note: Make sure Docker containers are running with 'docker-compose up -d'"
 }
 
+# Function to determine quest status dynamically (agnostic approach)
+# Simple logic: if it has examples, it's in progress; if it has run-all-examples.sql, it's complete
+get_quest_status() {
+    local quest_dir="$1"
+    local quest_name="$2"
+    
+    # Check if quest has any SQL files
+    local total_files=$(find "$quest_dir" -name "*.sql" | wc -l)
+    
+    if [ "$total_files" -eq 0 ]; then
+        echo " 📋 Planned"
+        return
+    fi
+    
+    # Check if quest has a run-all-examples.sql file (indicates completion)
+    if [ -f "$quest_dir/run-all-examples.sql" ]; then
+        echo " ✅ Complete"
+        return
+    fi
+    
+    # If it has examples but no run-all file, it's in progress
+    echo " 🚧 In Progress"
+}
+
 # Function to list all quests
 list_quests() {
     echo "Available quests:"
@@ -221,16 +246,7 @@ list_quests() {
     for quest_dir in "$QUESTS_DIR"/*; do
         if [ -d "$quest_dir" ]; then
             local quest_name=$(basename "$quest_dir")
-            local quest_status=""
-            
-            # Check quest status based on content
-            if [ "$quest_name" = "recursive-cte" ]; then
-                quest_status=" ✅ Complete"
-            elif [ "$quest_name" = "window-functions" ]; then
-                quest_status=" 🚧 In Progress"
-            else
-                quest_status=" 📋 Planned"
-            fi
+            local quest_status=$(get_quest_status "$quest_dir" "$quest_name")
             
             echo "🎮 $quest_name$quest_status"
         fi
@@ -248,14 +264,22 @@ list_quest_examples() {
         return 1
     fi
     
-    echo "Examples in quest: $quest_name"
+    # Get quest statistics
+    local total_files=$(find "$quest_dir" -name "*.sql" | wc -l)
+    local category_count=$(find "$quest_dir" -maxdepth 1 -type d | wc -l)
+    category_count=$((category_count - 1))  # Subtract 1 for the quest directory itself
+    local quest_status=$(get_quest_status "$quest_dir" "$quest_name")
+    
+    echo "Examples in quest: $quest_name$quest_status"
+    echo "📊 Statistics: $total_files examples across $category_count categories"
     echo ""
     
     # Find all category folders (agnostic approach)
     for folder in "$quest_dir"/*; do
         if [ -d "$folder" ]; then
             local category_name=$(basename "$folder")
-            echo "📁 $category_name"
+            local category_files=$(find "$folder" -name "*.sql" | wc -l)
+            echo "📁 $category_name ($category_files examples)"
             for file in "$folder"/*.sql; do
                 if [ -f "$file" ]; then
                     echo "  📄 $(basename "$file")"
