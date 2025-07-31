@@ -4,7 +4,7 @@
 
 ## 🎯 **Overview**
 
-This document defines the operational workflow for maintaining high-quality SQL examples in SQL Adventure, covering both **execution quality** and **data quality** standards.
+This document defines the operational workflow for maintaining high-quality SQL examples in SQL Adventure, covering both **execution quality** and **data quality** standards, including **query purpose validation** and **expected result testing**.
 
 ## 📋 **Quality Assurance Checklist**
 
@@ -13,17 +13,21 @@ This document defines the operational workflow for maintaining high-quality SQL 
 - [ ] **Difficulty Level** - Appropriate complexity for target audience
 - [ ] **Industry Relevance** - Real-world application identified
 - [ ] **Data Requirements** - Sample data needs specified
+- [ ] **Expected Results** - Expected output and learning outcomes defined
 
 ### **Development Checklist**
 - [ ] **Idempotent Design** - Safe to run multiple times
 - [ ] **Error Handling** - Proper cleanup and error management
 - [ ] **Documentation** - Clear comments and explanations
 - [ ] **Data Realism** - Realistic and meaningful sample data
+- [ ] **Query Context** - Educational purpose clearly stated
+- [ ] **Expected Values** - Known expected results for validation
 
 ### **Testing Checklist**
 - [ ] **Syntax Validation** - SQL syntax is correct
 - [ ] **Execution Testing** - Query runs without errors
-- [ ] **Result Validation** - Output is expected and meaningful
+- [ ] **Result Validation** - Output matches expected results
+- [ ] **Context Validation** - Query serves intended educational purpose
 - [ ] **Performance Check** - Query executes in reasonable time
 - [ ] **Data Integrity** - Sample data is consistent and realistic
 
@@ -32,6 +36,7 @@ This document defines the operational workflow for maintaining high-quality SQL 
 - [ ] **Difficulty Rating** - Accurate complexity assessment
 - [ ] **Integration Test** - Works with existing examples
 - [ ] **User Experience** - Easy to understand and follow
+- [ ] **Learning Outcome** - Achieves educational objectives
 
 ---
 
@@ -39,93 +44,95 @@ This document defines the operational workflow for maintaining high-quality SQL 
 
 ### **Phase 1: Development & Initial Testing**
 
-#### **Step 1: Query Development**
+#### **Step 1: Query Development with Context**
 ```bash
-# 1. Create new example file
+# 1. Create new example file with context header
 touch quests/[quest-name]/[category]/[example-name].sql
 
-# 2. Follow template structure
-# - Header with description
+# 2. Follow enhanced template structure
+# - Context header with educational purpose
+# - Expected results specification
 # - Clean up existing tables (idempotent)
 # - Create sample data
 # - Execute query with clear examples
+# - Validation queries for expected results
 # - Clean up tables
 ```
 
-#### **Step 2: Local Testing**
+#### **Step 2: Local Testing with Context Validation**
 ```bash
-# Test individual example
-./scripts/run-examples.sh example quests/[quest-name]/[category]/[example-name].sql
+# Test individual example with context validation
+./scripts/quality-check.sh validate-with-context quests/[quest-name]/[category]/[example-name].sql
 
-# Test entire category
-./scripts/run-examples.sh quest [quest-name] [category]
+# Test entire category with context validation
+./scripts/quality-check.sh quest-with-context [quest-name] [category]
 
-# Test entire quest
-./scripts/run-examples.sh quest [quest-name]
+# Test entire quest with context validation
+./scripts/quality-check.sh quest-with-context [quest-name]
 ```
 
-#### **Step 3: Quality Validation**
+#### **Step 3: Quality Validation with Expected Results**
 ```bash
-# Run quality assurance checks
-./scripts/quality-check.sh validate [example-file]
+# Run comprehensive quality assurance checks including context
+./scripts/quality-check.sh validate-with-context [example-file]
 
-# Check for common issues
-./scripts/quality-check.sh lint [example-file]
+# Check for common issues and context compliance
+./scripts/quality-check.sh lint-with-context [example-file]
 ```
 
-### **Phase 2: Automated Testing**
+### **Phase 2: Automated Testing with Context**
 
-#### **Step 4: CI/CD Integration**
+#### **Step 4: CI/CD Integration with Context Validation**
 ```bash
-# Automated testing on commit
-./scripts/ci-test.sh
+# Automated testing on commit with context validation
+./scripts/ci-test-with-context.sh
 
-# Performance benchmarking
-./scripts/performance-test.sh [example-file]
+# Performance benchmarking with context validation
+./scripts/performance-test-with-context.sh [example-file]
 ```
 
-#### **Step 5: Regression Testing**
+#### **Step 5: Regression Testing with Context**
 ```bash
-# Test all examples
-./scripts/regression-test.sh
+# Test all examples with context validation
+./scripts/regression-test-with-context.sh
 
-# Validate no breaking changes
-./scripts/breaking-changes.sh
+# Validate no breaking changes and context compliance
+./scripts/breaking-changes-with-context.sh
 ```
 
-### **Phase 3: Documentation & Review**
+### **Phase 3: Documentation & Review with Context**
 
-#### **Step 6: Documentation Update**
+#### **Step 6: Documentation Update with Context**
 ```bash
-# Update README files
-./scripts/update-docs.sh
+# Update README files with context information
+./scripts/update-docs-with-context.sh
 
-# Generate example index
-./scripts/generate-index.sh
+# Generate example index with context
+./scripts/generate-index-with-context.sh
 ```
 
-#### **Step 7: Final Review**
+#### **Step 7: Final Review with Context Validation**
 ```bash
-# Code review checklist
-./scripts/review-checklist.sh [example-file]
+# Code review checklist with context validation
+./scripts/review-checklist-with-context.sh [example-file]
 
-# User experience validation
-./scripts/ux-validation.sh [example-file]
+# User experience validation with context
+./scripts/ux-validation-with-context.sh [example-file]
 ```
 
 ---
 
-## 🔧 **Quality Assurance Scripts**
+## 🔧 **Enhanced Quality Assurance Scripts**
 
-### **1. Quality Check Script** (`scripts/quality-check.sh`)
+### **1. Enhanced Quality Check Script** (`scripts/quality-check.sh`)
 
 ```bash
 #!/bin/bash
-# Quality assurance validation script
+# Enhanced Quality assurance validation script with context validation
 
 # Usage: ./scripts/quality-check.sh [command] [file]
 
-validate_example() {
+validate_example_with_context() {
     local file="$1"
     
     # Check syntax
@@ -142,122 +149,175 @@ validate_example() {
     
     # Check documentation
     validate_documentation "$file"
+    
+    # NEW: Check query context and purpose
+    validate_query_context "$file"
+    
+    # NEW: Validate expected results
+    validate_expected_results "$file"
 }
 
-validate_syntax() {
+validate_query_context() {
     local file="$1"
-    echo "🔍 Validating SQL syntax..."
+    echo "🎯 Validating query context and purpose..."
     
-    # Use PostgreSQL parser to check syntax
-    if psql -h localhost -p 5433 -U postgres -d sql_adventure_db \
-        -c "\i $file" > /dev/null 2>&1; then
-        echo "✅ Syntax validation passed"
+    # Check for context header
+    local has_context=$(grep -c "Context:" "$file" || echo "0")
+    local has_purpose=$(grep -c "Purpose:" "$file" || echo "0")
+    local has_learning_outcome=$(grep -c "Learning Outcome:" "$file" || echo "0")
+    
+    local issues=0
+    
+    if [ $has_context -eq 0 ]; then
+        echo "❌ No context section found"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $has_purpose -eq 0 ]; then
+        echo "❌ No purpose section found"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $has_learning_outcome -eq 0 ]; then
+        echo "❌ No learning outcome specified"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $issues -eq 0 ]; then
+        echo "✅ Query context validation passed"
+        return 0
     else
-        echo "❌ Syntax validation failed"
+        echo "⚠️  Query context validation: $issues issues found"
         return 1
     fi
 }
 
-validate_idempotency() {
+validate_expected_results() {
     local file="$1"
-    echo "🔄 Testing idempotency..."
+    echo "🧪 Validating expected results..."
     
-    # Run example twice and compare results
-    # Implementation details...
-}
-
-validate_data_quality() {
-    local file="$1"
-    echo "📊 Validating data quality..."
+    # Check for expected results section
+    local has_expected_results=$(grep -c "Expected Results:" "$file" || echo "0")
+    local has_validation_queries=$(grep -c "Validation:" "$file" || echo "0")
     
-    # Check for realistic data
-    # Check for proper data types
-    # Check for meaningful relationships
-}
-
-validate_performance() {
-    local file="$1"
-    echo "⚡ Testing performance..."
+    local issues=0
     
-    # Measure execution time
-    # Check for potential performance issues
-}
-
-validate_documentation() {
-    local file="$1"
-    echo "📝 Validating documentation..."
+    if [ $has_expected_results -eq 0 ]; then
+        echo "❌ No expected results section found"
+        issues=$((issues + 1))
+    fi
     
-    # Check for required comments
-    # Check for clear explanations
-    # Check for proper formatting
-}
-```
-
-### **2. Performance Test Script** (`scripts/performance-test.sh`)
-
-```bash
-#!/bin/bash
-# Performance testing and benchmarking
-
-benchmark_example() {
-    local file="$1"
-    local iterations=10
+    if [ $has_validation_queries -eq 0 ]; then
+        echo "❌ No validation queries found"
+        issues=$((issues + 1))
+    fi
     
-    echo "🏃 Benchmarking $file..."
+    # Execute validation queries if they exist
+    if [ $has_validation_queries -gt 0 ]; then
+        execute_validation_queries "$file"
+    fi
     
-    # Measure execution time
-    local total_time=0
-    for i in $(seq 1 $iterations); do
-        local start_time=$(date +%s.%N)
-        psql -h localhost -p 5433 -U postgres -d sql_adventure_db \
-            -c "\i $file" > /dev/null 2>&1
-        local end_time=$(date +%s.%N)
-        local execution_time=$(echo "$end_time - $start_time" | bc)
-        total_time=$(echo "$total_time + $execution_time" | bc)
-    done
-    
-    local avg_time=$(echo "scale=3; $total_time / $iterations" | bc)
-    echo "⏱️  Average execution time: ${avg_time}s"
-    
-    # Performance thresholds
-    if (( $(echo "$avg_time > 5.0" | bc -l) )); then
-        echo "⚠️  Performance warning: Execution time > 5s"
+    if [ $issues -eq 0 ]; then
+        echo "✅ Expected results validation passed"
+        return 0
+    else
+        echo "⚠️  Expected results validation: $issues issues found"
+        return 1
     fi
 }
+
+execute_validation_queries() {
+    local file="$1"
+    echo "🔍 Executing validation queries..."
+    
+    # Extract and execute validation queries
+    # This would parse the file and run validation queries
+    # Implementation details would depend on the validation format
+}
 ```
 
-### **3. Regression Test Script** (`scripts/regression-test.sh`)
+### **2. Enhanced Example Template with Context**
 
-```bash
-#!/bin/bash
-# Regression testing for all examples
+```sql
+-- =====================================================
+-- Window Functions: Sales Ranking Example
+-- =====================================================
 
-run_regression_tests() {
-    echo "🧪 Running regression tests..."
-    
-    # Test all quests
-    for quest in quests/*/; do
-        local quest_name=$(basename "$quest")
-        echo "Testing quest: $quest_name"
-        
-        # Test all examples in quest
-        ./scripts/run-examples.sh quest "$quest_name" --quiet
-        
-        if [ $? -eq 0 ]; then
-            echo "✅ $quest_name: All tests passed"
-        else
-            echo "❌ $quest_name: Tests failed"
-            return 1
-        fi
-    done
-    
-    echo "🎉 All regression tests passed!"
-}
+-- Context: This example demonstrates how to use ROW_NUMBER() 
+--          to rank sales data by amount within categories.
+-- Purpose: Teach basic window function ranking concepts
+-- Learning Outcome: Students will understand how to use 
+--                   ROW_NUMBER() for ranking data
+
+-- Expected Results:
+-- 1. Products should be ranked by sales amount (highest first)
+-- 2. Each category should have its own ranking sequence
+-- 3. No ties should occur (ROW_NUMBER() gives unique ranks)
+-- 4. Electronics category should have 3 products ranked 1,2,3
+-- 5. Clothing category should have 2 products ranked 1,2
+
+-- Clean up existing tables (idempotent)
+DROP TABLE IF EXISTS sales_data CASCADE;
+
+-- Create sample sales table
+CREATE TABLE sales_data (
+    sale_id INT PRIMARY KEY,
+    product_name VARCHAR(100),
+    category VARCHAR(50),
+    sale_amount DECIMAL(10,2),
+    sale_date DATE
+);
+
+-- Insert sample data
+INSERT INTO sales_data VALUES
+(1, 'Laptop Pro', 'Electronics', 1200.00, '2024-01-15'),
+(2, 'Wireless Mouse', 'Electronics', 45.00, '2024-01-16'),
+(3, 'Office Chair', 'Furniture', 299.99, '2024-01-17'),
+(4, 'Desk Lamp', 'Furniture', 89.99, '2024-01-18'),
+(5, 'Gaming Keyboard', 'Electronics', 150.00, '2024-01-19');
+
+-- Demonstrate window functions
+SELECT 
+    product_name,
+    category,
+    sale_amount,
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as overall_rank,
+    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+FROM sales_data
+ORDER BY sale_amount DESC;
+
+-- Validation: Verify expected results
+-- Validation 1: Check that Electronics has 3 products
+SELECT 
+    category,
+    COUNT(*) as product_count
+FROM sales_data 
+WHERE category = 'Electronics'
+GROUP BY category;
+
+-- Validation 2: Check that highest sale amount is ranked 1
+SELECT 
+    product_name,
+    sale_amount,
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as rank
+FROM sales_data
+WHERE ROW_NUMBER() OVER (ORDER BY sale_amount DESC) = 1;
+
+-- Validation 3: Verify no duplicate ranks within categories
+SELECT 
+    category,
+    COUNT(*) as total_products,
+    COUNT(DISTINCT ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC)) as unique_ranks
+FROM sales_data
+GROUP BY category;
+
+-- Clean up
+DROP TABLE IF EXISTS sales_data CASCADE;
 ```
 
 ---
 
-## 📊 **Quality Metrics & Standards**
+## 📊 **Enhanced Quality Metrics & Standards**
 
 ### **Execution Quality Standards**
 
@@ -279,6 +339,29 @@ run_regression_tests() {
 - **Consistent formatting** - Follows project style guide
 - **Clear naming** - Descriptive table and column names
 
+### **Context & Purpose Quality Standards**
+
+#### **Educational Context Requirements**
+- **Clear context section** - Explains what the example demonstrates
+- **Defined purpose** - States the learning objective
+- **Learning outcomes** - Specifies what students will learn
+- **Difficulty level** - Appropriate for target audience
+- **Industry relevance** - Real-world application identified
+
+#### **Expected Results Requirements**
+- **Expected results section** - Describes what output should look like
+- **Validation queries** - SQL queries to verify expected results
+- **Edge case handling** - Covers unusual scenarios
+- **Performance expectations** - Reasonable execution time
+- **Data integrity checks** - Ensures data consistency
+
+#### **Documentation Quality**
+- **Clear explanations** - Comments explain the "why" not just "what"
+- **Step-by-step breakdown** - Complex queries broken into logical parts
+- **Real-world context** - Business scenarios and use cases
+- **Best practices** - Industry-standard approaches
+- **Common pitfalls** - Warnings about potential issues
+
 ### **Data Quality Standards**
 
 #### **Sample Data Requirements**
@@ -286,28 +369,33 @@ run_regression_tests() {
 - **Proper relationships** - Logical data connections
 - **Appropriate volumes** - Sufficient data for demonstration
 - **Diverse scenarios** - Covers edge cases and variations
+- **Educational value** - Data that clearly demonstrates concepts
 
 #### **Data Integrity**
 - **Referential integrity** - Proper foreign key relationships
 - **Data type consistency** - Appropriate column types
 - **Constraint validation** - Meaningful constraints
 - **Null handling** - Proper NULL value usage
+- **Data validation** - Checks for data quality
 
 #### **Educational Value**
 - **Clear patterns** - Demonstrates intended concepts
 - **Progressive complexity** - Builds from simple to complex
 - **Real-world relevance** - Practical business scenarios
 - **Learning outcomes** - Achieves educational objectives
+- **Context alignment** - Data supports learning objectives
 
 ---
 
-## 🚨 **Quality Gates**
+## 🚨 **Enhanced Quality Gates**
 
 ### **Pre-Commit Quality Gates**
 - [ ] **Syntax validation** passes
 - [ ] **Idempotency test** passes
 - [ ] **Performance benchmark** within thresholds
 - [ ] **Documentation review** complete
+- [ ] **Context validation** passes
+- [ ] **Expected results validation** passes
 - [ ] **Code review** approved
 
 ### **Pre-Release Quality Gates**
@@ -316,85 +404,96 @@ run_regression_tests() {
 - [ ] **Documentation completeness** verified
 - [ ] **User experience** validated
 - [ ] **Integration testing** complete
+- [ ] **Context compliance** verified
+- [ ] **Learning outcomes** validated
 
 ### **Post-Release Quality Gates**
 - [ ] **User feedback** collected and reviewed
 - [ ] **Performance monitoring** active
 - [ ] **Issue tracking** implemented
 - [ ] **Continuous improvement** process active
+- [ ] **Educational effectiveness** measured
 
 ---
 
-## 🔄 **Continuous Improvement**
+## 🔄 **Continuous Improvement with Context**
 
 ### **Quality Monitoring**
-- **Automated testing** on every commit
+- **Automated testing** on every commit with context validation
 - **Performance tracking** over time
 - **User feedback** collection and analysis
 - **Issue tracking** and resolution
+- **Educational effectiveness** measurement
 
 ### **Quality Metrics Dashboard**
 - **Test coverage** percentage
 - **Performance trends** over time
 - **User satisfaction** scores
 - **Issue resolution** times
+- **Learning outcome achievement** rates
+- **Context compliance** scores
 
 ### **Quality Improvement Process**
 - **Regular reviews** of quality metrics
 - **Process refinement** based on feedback
 - **Tool and script updates** as needed
 - **Training and documentation** updates
+- **Educational effectiveness** optimization
 
 ---
 
-## 📚 **Quality Assurance Tools**
+## 📚 **Enhanced Quality Assurance Tools**
 
 ### **Required Tools**
 - **PostgreSQL 15+** - Database engine
 - **psql** - Command-line interface
 - **pgAdmin** - GUI interface for testing
 - **Docker** - Containerized testing environment
+- **Context validation scripts** - Educational purpose validation
+- **Result validation scripts** - Expected output testing
 
 ### **Optional Tools**
 - **pgTAP** - PostgreSQL testing framework
 - **pg_stat_statements** - Query performance monitoring
 - **pgBadger** - PostgreSQL log analysis
 - **pg_qualstats** - Query quality statistics
+- **Educational assessment tools** - Learning outcome measurement
 
 ### **Development Tools**
 - **VS Code** - Code editor with SQL extensions
 - **Git** - Version control
 - **Bash** - Scripting and automation
 - **Markdown** - Documentation
+- **Context templates** - Standardized context formats
 
 ---
 
 ## 🎯 **Implementation Roadmap**
 
 ### **Phase 1: Foundation (Week 1-2)**
-- [ ] Create quality assurance scripts
-- [ ] Implement basic validation checks
-- [ ] Set up automated testing framework
-- [ ] Define quality standards and metrics
+- [ ] Create enhanced quality assurance scripts with context validation
+- [ ] Implement context validation checks
+- [ ] Set up expected results testing framework
+- [ ] Define enhanced quality standards and metrics
 
 ### **Phase 2: Automation (Week 3-4)**
-- [ ] Integrate with CI/CD pipeline
-- [ ] Implement performance benchmarking
-- [ ] Add regression testing
-- [ ] Create quality dashboard
+- [ ] Integrate with CI/CD pipeline with context validation
+- [ ] Implement expected results testing
+- [ ] Add context compliance checking
+- [ ] Create enhanced quality dashboard
 
 ### **Phase 3: Optimization (Week 5-6)**
-- [ ] Refine quality metrics
+- [ ] Refine quality metrics with context validation
 - [ ] Optimize testing processes
-- [ ] Implement continuous monitoring
-- [ ] Create quality improvement workflows
+- [ ] Implement continuous monitoring with context
+- [ ] Create enhanced quality improvement workflows
 
 ### **Phase 4: Maintenance (Ongoing)**
-- [ ] Regular quality reviews
-- [ ] Process improvements
+- [ ] Regular quality reviews with context validation
+- [ ] Process improvements based on educational effectiveness
 - [ ] Tool updates and enhancements
-- [ ] Team training and documentation
+- [ ] Team training and documentation updates
 
 ---
 
-*This quality assurance workflow ensures that all SQL examples in SQL Adventure meet the highest standards of execution quality, data integrity, and educational value.* 
+*This enhanced quality assurance workflow ensures that all SQL examples in SQL Adventure meet the highest standards of execution quality, data integrity, educational value, and context compliance.* 

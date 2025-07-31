@@ -122,10 +122,10 @@ quests/json-operations/
   - ✅ `02-rank-dense-rank.sql` - Ranking with ties (10 examples)
   - ✅ `03-percent-rank.sql` - Percentile calculations (10 examples)
 
-- ✅ **02-aggregation-windows/** - 1/3 examples complete
+- ✅ **02-aggregation-windows/** - 3/3 examples complete
   - ✅ `01-running-totals.sql` - Cumulative sums (10 examples)
-  - 📋 `02-moving-averages.sql` - Rolling averages
-  - 📋 `03-cumulative-sums.sql` - Complex aggregations
+  - ✅ `02-moving-averages.sql` - Rolling averages (5 examples)
+  - ✅ `03-cumulative-sums.sql` - Complex aggregations (5 examples)
 
 
 
@@ -140,7 +140,7 @@ quests/json-operations/
   - 📋 `03-trend-detection.sql` - Trend identification
 
 ### **Content Expansion Targets**
-- **Q1 2024:** Window Functions Quest (12 examples) - 🟢 **ON TRACK**
+- **Q1 2024:** Window Functions Quest (12 examples) - 🟢 **50% COMPLETE**
 - **Q2 2024:** JSON Operations Quest (12 examples) - 📋 **PLANNED**
 - **Q3 2024:** Performance Tuning Quest (12 examples) - 📋 **PLANNED**
 - **Q4 2024:** Data Modeling Quest (12 examples) - 📋 **PLANNED**
