@@ -10,6 +10,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Function to print colored output
@@ -27,6 +29,16 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_header() {
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}$1${NC}"
+    echo -e "${BLUE}========================================${NC}"
+}
+
+print_quest() {
+    echo -e "${PURPLE}[QUEST]${NC} $1"
 }
 
 # Load environment variables
@@ -289,6 +301,114 @@ validate_query_context() {
     fi
 }
 
+# Function to validate all quest categories
+validate_all_quests() {
+    print_status "🧪 Starting comprehensive quality check for all quests..."
+    echo ""
+    
+    # Initialize counters
+    total_files=0
+    passed_files=0
+    failed_files=0
+    
+    # Function to check a single file
+    check_file() {
+        local file="$1"
+        local quest_name="$2"
+        
+        if [[ ! -f "$file" ]]; then
+            print_warning "File not found: $file"
+            return 1
+        fi
+        
+        print_status "Checking: $file"
+        
+        # Run comprehensive validation
+        if ./scripts/quality-check.sh validate "$file" > /dev/null 2>&1; then
+            print_success "✅ $file - PASSED"
+            ((passed_files++))
+            return 0
+        else
+            print_error "❌ $file - FAILED"
+            ((failed_files++))
+            return 1
+        fi
+    }
+    
+    # Function to check a quest category
+    check_quest_category() {
+        local quest_dir="$1"
+        local category_name="$2"
+        
+        print_quest "Checking category: $category_name"
+        
+        # Find all SQL files in the category
+        local sql_files=($(find "$quest_dir" -name "*.sql" -type f | sort))
+        
+        if [[ ${#sql_files[@]} -eq 0 ]]; then
+            print_warning "No SQL files found in $quest_dir"
+            return
+        fi
+        
+        for file in "${sql_files[@]}"; do
+            ((total_files++))
+            check_file "$file" "$category_name"
+        done
+        
+        echo ""
+    }
+    
+    # =====================================================
+    # RECURSIVE CTE QUEST
+    # =====================================================
+    print_header "📚 RECURSIVE CTE QUEST"
+    
+    # Check each category
+    check_quest_category "quests/recursive-cte/01-hierarchical-graph-traversal" "Hierarchical Graph Traversal"
+    check_quest_category "quests/recursive-cte/02-iteration-loops" "Iteration Loops"
+    check_quest_category "quests/recursive-cte/03-path-finding-analysis" "Path Finding Analysis"
+    check_quest_category "quests/recursive-cte/04-data-transformation-parsing" "Data Transformation Parsing"
+    check_quest_category "quests/recursive-cte/05-simulation-state-machines" "Simulation State Machines"
+    check_quest_category "quests/recursive-cte/06-data-repair-healing" "Data Repair Healing"
+    check_quest_category "quests/recursive-cte/07-mathematical-theoretical" "Mathematical Theoretical"
+    check_quest_category "quests/recursive-cte/08-bonus-quirky-examples" "Bonus Quirky Examples"
+    
+    # =====================================================
+    # WINDOW FUNCTIONS QUEST
+    # =====================================================
+    print_header "📊 WINDOW FUNCTIONS QUEST"
+    
+    # Check each category
+    check_quest_category "quests/window-functions/01-basic-ranking" "Basic Ranking"
+    check_quest_category "quests/window-functions/02-aggregation-windows" "Aggregation Windows"
+    
+    # =====================================================
+    # SUMMARY REPORT
+    # =====================================================
+    print_header "📋 QUALITY CHECK SUMMARY"
+    
+    echo -e "${CYAN}Total files checked:${NC} $total_files"
+    echo -e "${GREEN}Passed:${NC} $passed_files"
+    echo -e "${RED}Failed:${NC} $failed_files"
+    
+    if [[ $failed_files -eq 0 ]]; then
+        echo ""
+        print_success "🎉 All files passed quality checks!"
+    else
+        echo ""
+        print_warning "⚠️  Some files failed quality checks. Review the errors above."
+    fi
+    
+    # Calculate success rate
+    if [[ $total_files -gt 0 ]]; then
+        local success_rate=$(( (passed_files * 100) / total_files ))
+        echo -e "${CYAN}Success rate:${NC} ${success_rate}%"
+    fi
+    
+    echo ""
+    print_status "Quality check completed!"
+}
+
 # Function to analyze query output and context
 analyze_query_output() {
     local file="$1"
@@ -519,6 +639,7 @@ show_usage() {
     echo "  validate <file>              Run comprehensive validation"
     echo "  validate-with-context <file> Run comprehensive validation with context"
     echo "  analyze-output <file>        Analyze query output and context (AI-focused)"
+    echo "  validate-all                 Run quality checks for all quest categories"
     echo "  syntax <file>                Validate SQL syntax only"
     echo "  idempotency <file>           Test idempotency only"
     echo "  data-quality <file>          Validate data quality only"
@@ -564,6 +685,9 @@ case "${1:-help}" in
             exit 1
         fi
         analyze_query_output "$2"
+        ;;
+    validate-all)
+        validate_all_quests
         ;;
     syntax)
         if [ -z "$2" ]; then
