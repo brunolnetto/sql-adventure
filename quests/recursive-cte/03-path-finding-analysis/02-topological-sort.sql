@@ -1,6 +1,14 @@
 -- =====================================================
 -- Topological Sort Example
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for dependency resolution and topological sorting
+-- LEARNING OUTCOMES: 
+--   - Understand dependency graphs and topological ordering
+--   - Learn to resolve task dependencies and prerequisites
+--   - Master level-based dependency resolution
+-- EXPECTED RESULTS: Sort tasks by dependency levels (0, 1, 2) for project planning
+-- DIFFICULTY: Advanced
+-- CONCEPTS: Dependency resolution, topological sorting, project planning
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS task_dependencies CASCADE;

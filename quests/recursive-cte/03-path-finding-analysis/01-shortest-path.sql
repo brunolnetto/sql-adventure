@@ -1,6 +1,14 @@
 -- =====================================================
 -- Shortest Path Example (BFS style)
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for graph traversal and shortest path finding
+-- LEARNING OUTCOMES: 
+--   - Understand breadth-first search (BFS) algorithm
+--   - Learn graph traversal with cycle detection
+--   - Master path tracking and distance calculation
+-- EXPECTED RESULTS: Find shortest path from node A to node H in the graph
+-- DIFFICULTY: Advanced
+-- CONCEPTS: Graph algorithms, BFS, path finding, cycle detection
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS graph_edges CASCADE;

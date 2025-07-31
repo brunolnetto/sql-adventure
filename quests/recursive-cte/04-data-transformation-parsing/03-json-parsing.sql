@@ -1,6 +1,14 @@
 -- =====================================================
 -- JSON-like Structure Parsing Example
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for parsing nested JSON-like structures
+-- LEARNING OUTCOMES: 
+--   - Understand hierarchical data parsing and flattening
+--   - Learn to traverse nested object structures
+--   - Master recursive data transformation patterns
+-- EXPECTED RESULTS: Flatten nested JSON structure into path-based representation
+-- DIFFICULTY: Advanced
+-- CONCEPTS: JSON parsing, hierarchical data, recursive flattening
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS json_data CASCADE;

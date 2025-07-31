@@ -1,6 +1,14 @@
 -- =====================================================
 -- String Splitting Example
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for parsing and splitting delimited strings
+-- LEARNING OUTCOMES: 
+--   - Understand string parsing and tokenization
+--   - Learn to extract values from delimited strings
+--   - Master iterative string processing
+-- EXPECTED RESULTS: Split "apple,banana,cherry,date,elderberry" into 5 individual values
+-- DIFFICULTY: Intermediate
+-- CONCEPTS: String parsing, tokenization, iterative processing
 
 -- Split a comma-separated string into individual values
 WITH RECURSIVE string_split AS (

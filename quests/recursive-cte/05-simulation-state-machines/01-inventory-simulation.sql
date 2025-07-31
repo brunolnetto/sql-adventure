@@ -1,6 +1,14 @@
 -- =====================================================
 -- Inventory Simulation Example
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for business process simulation
+-- LEARNING OUTCOMES: 
+--   - Understand business process simulation and state management
+--   - Learn to model inventory depletion and reorder logic
+--   - Master multi-step business rule implementation
+-- EXPECTED RESULTS: Simulate 5 days of inventory management with reorder triggers
+-- DIFFICULTY: Advanced
+-- CONCEPTS: Business simulation, state machines, inventory management
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS daily_demand CASCADE;

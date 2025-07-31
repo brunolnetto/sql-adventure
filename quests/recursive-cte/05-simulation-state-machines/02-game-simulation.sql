@@ -1,6 +1,14 @@
 -- =====================================================
 -- Game Simulation Example (Tic-tac-toe)
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for game state simulation and path analysis
+-- LEARNING OUTCOMES: 
+--   - Understand game state management and progression
+--   - Learn to model turn-based game logic
+--   - Master state transition tracking and path analysis
+-- EXPECTED RESULTS: Simulate tic-tac-toe game progression and find winning paths
+-- DIFFICULTY: Advanced
+-- CONCEPTS: Game simulation, state machines, turn-based logic
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS game_moves CASCADE;

@@ -1,3 +1,11 @@
+-- PURPOSE: Demonstrate recursive CTE for generating all permutations of a set
+-- LEARNING OUTCOMES:
+--   - Understand combinatorial algorithms in SQL
+--   - Learn to generate all possible orderings of a set
+--   - Master recursive construction of permutations
+-- EXPECTED RESULTS: Generate all 6 permutations of the set {A, B, C}
+-- DIFFICULTY: Advanced
+-- CONCEPTS: Permutation generation, combinatorics, recursive algorithms
 -- =====================================================
 -- Permutation Generation Example
 -- =====================================================

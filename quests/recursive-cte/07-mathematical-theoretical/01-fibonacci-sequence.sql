@@ -1,3 +1,11 @@
+-- PURPOSE: Demonstrate recursive CTE for generating the Fibonacci sequence
+-- LEARNING OUTCOMES:
+--   - Understand mathematical recursion in SQL
+--   - Learn to generate sequences where each value depends on previous values
+--   - Master iterative sequence generation
+-- EXPECTED RESULTS: Generate the first 15 Fibonacci numbers (0, 1, 1, 2, 3, 5, ...)
+-- DIFFICULTY: Intermediate
+-- CONCEPTS: Mathematical recursion, sequence generation, Fibonacci numbers
 -- =====================================================
 -- Fibonacci Sequence Example
 -- =====================================================

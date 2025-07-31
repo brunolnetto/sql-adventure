@@ -1,6 +1,14 @@
 -- =====================================================
 -- Running Total Example
 -- =====================================================
+-- PURPOSE: Demonstrate recursive CTE for cumulative calculations
+-- LEARNING OUTCOMES: 
+--   - Understand cumulative sum calculations
+--   - Learn to maintain running totals across rows
+--   - Master sequential data processing patterns
+-- EXPECTED RESULTS: Calculate running totals and averages for sales data
+-- DIFFICULTY: Intermediate
+-- CONCEPTS: Cumulative calculations, running totals, sequential processing
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS sales CASCADE;

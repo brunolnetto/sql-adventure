@@ -1,3 +1,11 @@
+-- PURPOSE: Demonstrate recursive CTE for forward-filling missing values in time series data
+-- LEARNING OUTCOMES:
+--   - Understand data imputation and forward fill techniques
+--   - Learn to propagate last known value for NULLs
+--   - Master recursive data repair for time series
+-- EXPECTED RESULTS: Fill all NULLs in temperature, humidity, and pressure columns using previous values
+-- DIFFICULTY: Intermediate
+-- CONCEPTS: Data imputation, forward fill, time series repair
 -- =====================================================
 -- Forward Fill Nulls Example
 -- =====================================================
