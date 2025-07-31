@@ -1,6 +1,20 @@
 -- =====================================================
--- Password Generation Example
+-- Recursive CTE: Password Generation with Pattern Rules
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for generating password patterns
+--          with specific character set rules and complexity requirements
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    pattern generation, string building, and implementing
+--                    complex generation rules with character set tracking
+-- EXPECTED RESULTS:
+-- 1. 12-character passwords generated with pattern rules
+-- 2. Character set diversity tracking (uppercase, lowercase, numbers, special)
+-- 3. Password strength assessment based on character variety
+-- 4. Pattern-based character placement (every 2nd, 3rd, 4th position)
+-- 5. Complex generation rules implementation
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, pattern generation, string building, character sets, password complexity, generation rules
 
 -- Generate password patterns recursively
 WITH RECURSIVE password_generator AS (

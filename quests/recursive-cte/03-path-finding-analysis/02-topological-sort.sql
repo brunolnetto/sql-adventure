@@ -7,7 +7,7 @@
 --   - Learn to resolve task dependencies and prerequisites
 --   - Master level-based dependency resolution
 -- EXPECTED RESULTS: Sort tasks by dependency levels (0, 1, 2) for project planning
--- DIFFICULTY: Advanced
+-- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Dependency resolution, topological sorting, project planning
 
 -- Clean up existing tables (idempotent)

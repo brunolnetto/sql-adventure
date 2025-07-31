@@ -1,6 +1,20 @@
 -- =====================================================
--- Dependency Resolution Example
+-- Recursive CTE: Dependency Resolution and Chain Analysis
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for resolving package dependencies
+--          and analyzing dependency chains in software systems
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    dependency resolution, chain analysis, and managing
+--                    complex dependency relationships
+-- EXPECTED RESULTS:
+-- 1. Complete dependency chains resolved recursively
+-- 2. Dependency levels tracked for complexity analysis
+-- 3. Cycle detection in dependency chains
+-- 4. Dependency path tracking and visualization
+-- 5. Transitive dependency resolution
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Recursive CTE, dependency resolution, chain analysis, cycle detection, transitive dependencies, path tracking
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS dependencies CASCADE;

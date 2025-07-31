@@ -2,13 +2,24 @@
 -- Window Functions: Moving Averages & Rolling Calculations
 -- =====================================================
 
--- Clean up existing tables (idempotent)
+-- PURPOSE: Demonstrate window function aggregation for moving averages
+--          and rolling calculations across different time windows
+-- LEARNING OUTCOMES: Students will understand how to use AVG() OVER() 
+--                    for moving averages, rolling statistics, and trend analysis
+-- EXPECTED RESULTS:
+-- 1. Simple moving averages with different window sizes
+-- 2. Rolling statistics (mean, std dev, volatility)
+-- 3. Trend analysis and momentum indicators
+-- 4. Anomaly detection using rolling metrics
+-- 5. Financial analysis with moving averages
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: AVG() OVER(), ROWS BETWEEN, rolling windows, moving averages, trend analysis
 DROP TABLE IF EXISTS stock_prices CASCADE;
 DROP TABLE IF EXISTS website_traffic CASCADE;
 DROP TABLE IF EXISTS sensor_readings CASCADE;
 
 -- =====================================================
--- 1. Stock Price Moving Averages
+-- Example 1: Stock Price Moving Averages
 -- =====================================================
 
 -- Create stock prices table
@@ -66,7 +77,7 @@ FROM stock_prices
 ORDER BY date;
 
 -- =====================================================
--- 2. Website Traffic Analysis
+-- Example 2: Website Traffic Analysis
 -- =====================================================
 
 -- Create website traffic table
@@ -140,7 +151,7 @@ FROM website_traffic
 ORDER BY page_url, date;
 
 -- =====================================================
--- 3. Sensor Data Analysis
+-- Example 3: Sensor Data Analysis
 -- =====================================================
 
 -- Create sensor readings table
@@ -228,7 +239,7 @@ FROM sensor_readings
 ORDER BY timestamp;
 
 -- =====================================================
--- 4. Advanced Moving Average Patterns
+-- Example 4: Advanced Moving Average Patterns
 -- =====================================================
 
 -- Demonstrate exponential moving average simulation
@@ -276,7 +287,7 @@ WHERE date >= '2024-01-05'  -- Only show dates with enough history
 ORDER BY date;
 
 -- =====================================================
--- 5. Rolling Statistics and Volatility
+-- Example 5: Rolling Statistics and Volatility
 -- =====================================================
 
 -- Calculate rolling statistics for stock prices

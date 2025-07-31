@@ -2,6 +2,19 @@
 -- Window Functions: Running Totals and Cumulative Sums
 -- =====================================================
 
+-- PURPOSE: Demonstrate basic window function aggregation for running totals
+--          and cumulative calculations across time series data
+-- LEARNING OUTCOMES: Students will understand how to use SUM() OVER() 
+--                    for running totals, cumulative sums, and time-based aggregations
+-- EXPECTED RESULTS:
+-- 1. Running totals calculated across time periods
+-- 2. Cumulative sums with and without partitioning
+-- 3. Running averages and percentages
+-- 4. Financial analysis with cumulative metrics
+-- 5. Customer transaction analysis with running balances
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: SUM() OVER(), PARTITION BY, ORDER BY, ROWS UNBOUNDED PRECEDING, cumulative calculations
+
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS daily_sales CASCADE;
 DROP TABLE IF EXISTS monthly_revenue CASCADE;

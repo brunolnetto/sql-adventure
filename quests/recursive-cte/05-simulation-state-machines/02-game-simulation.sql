@@ -7,7 +7,7 @@
 --   - Learn to model turn-based game logic
 --   - Master state transition tracking and path analysis
 -- EXPECTED RESULTS: Simulate tic-tac-toe game progression and find winning paths
--- DIFFICULTY: Advanced
+-- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Game simulation, state machines, turn-based logic
 
 -- Clean up existing tables (idempotent)

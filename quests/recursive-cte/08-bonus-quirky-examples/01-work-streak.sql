@@ -1,6 +1,20 @@
 -- =====================================================
--- Longest Work Streak Analysis Example
+-- Recursive CTE: Longest Work Streak Analysis
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for analyzing continuous work streaks
+--          and identifying patterns in employee attendance data
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    pattern recognition, streak analysis, and identifying
+--                    continuous sequences in time series data
+-- EXPECTED RESULTS:
+-- 1. Longest continuous work streaks identified for each employee
+-- 2. Streak start and end dates calculated
+-- 3. Total hours worked during streaks
+-- 4. Pattern recognition in attendance data
+-- 5. Continuous sequence analysis in time series
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, pattern recognition, streak analysis, time series, continuous sequences, attendance tracking
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS employee_attendance CASCADE;

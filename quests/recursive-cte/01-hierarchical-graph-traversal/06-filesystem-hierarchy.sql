@@ -1,6 +1,15 @@
 -- =====================================================
 -- Filesystem Hierarchy Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for filesystem hierarchy traversal and size calculation
+-- LEARNING OUTCOMES:
+--   - Understand complex hierarchical data traversal
+--   - Learn to calculate aggregated values in hierarchical structures
+--   - Master recursive CTE with multiple aggregation patterns
+-- EXPECTED RESULTS: Complete filesystem hierarchy with full paths and directory sizes
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, Hierarchical Aggregation, Path Manipulation, Size Calculation
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS filesystem CASCADE;

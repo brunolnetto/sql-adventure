@@ -1,14 +1,15 @@
--- PURPOSE: Demonstrate recursive CTE for generating prime numbers using the sieve method
--- LEARNING OUTCOMES:
---   - Understand prime number generation and primality testing
---   - Learn to use arrays and recursion for mathematical algorithms
---   - Master iterative filtering and sequence building
--- EXPECTED RESULTS: Generate all prime numbers up to 20
--- DIFFICULTY: Advanced
--- CONCEPTS: Prime number generation, sieve algorithms, mathematical recursion
 -- =====================================================
 -- Prime Number Generation Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for generating prime numbers using the sieve method
+-- LEARNING OUTCOMES:
+--   - Understand prime number generation and primality testing algorithms
+--   - Learn to use arrays and recursion for mathematical algorithms
+--   - Master iterative filtering and sequence building for prime numbers
+-- EXPECTED RESULTS: Generate all prime numbers up to 20
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Prime number generation, sieve algorithms, mathematical recursion, primality testing
 
 -- Generate prime numbers using a simpler approach
 WITH RECURSIVE prime_generation AS (

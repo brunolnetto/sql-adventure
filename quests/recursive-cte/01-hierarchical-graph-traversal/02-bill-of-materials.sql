@@ -1,6 +1,20 @@
 -- =====================================================
--- Bill of Materials (BOM) Example
+-- Recursive CTE: Bill of Materials (BOM) Cost Calculation
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for calculating total product costs
+--          including subcomponent costs in a bill of materials structure
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    hierarchical cost calculations, aggregating values up
+--                    the hierarchy, and managing complex product structures
+-- EXPECTED RESULTS:
+-- 1. Total cost calculation including direct and component costs
+-- 2. Hierarchical cost aggregation from leaf components to final products
+-- 3. Level tracking for component depth analysis
+-- 4. Cost breakdown showing direct vs component costs
+-- 5. Complex product structure cost analysis
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, hierarchical aggregation, cost calculation, bill of materials, component analysis
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS bom CASCADE;

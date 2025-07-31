@@ -7,7 +7,7 @@
 --   - Learn to compute indirect relationships through direct ones
 --   - Master relationship path analysis and hop counting
 -- EXPECTED RESULTS: Find all indirect relationships and shortest path lengths
--- DIFFICULTY: Advanced
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
 -- CONCEPTS: Transitive closure, relationship graphs, path analysis
 
 -- Clean up existing tables (idempotent)

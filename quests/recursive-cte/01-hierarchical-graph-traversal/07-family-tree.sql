@@ -1,6 +1,15 @@
 -- =====================================================
 -- Family Tree Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for complex family relationship analysis
+-- LEARNING OUTCOMES:
+--   - Understand multi-relationship hierarchical data traversal
+--   - Learn to handle complex family tree structures with multiple parent types
+--   - Master recursive CTE with multiple relationship paths
+-- EXPECTED RESULTS: Complete family tree with generations and lineage paths
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, Complex Hierarchies, Multiple Relationships, Lineage Analysis
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS family_members CASCADE;

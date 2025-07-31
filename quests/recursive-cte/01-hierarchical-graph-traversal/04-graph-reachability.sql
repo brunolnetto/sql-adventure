@@ -1,6 +1,20 @@
 -- =====================================================
--- Graph Reachability Example
+-- Recursive CTE: Graph Reachability Analysis
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for analyzing graph reachability
+--          and finding all nodes reachable from a starting point
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    graph traversal, path tracking, and reachability analysis
+--                    in directed graph structures
+-- EXPECTED RESULTS:
+-- 1. All nodes reachable from starting node identified
+-- 2. Shortest path distances calculated
+-- 3. Path tracking from source to destination nodes
+-- 4. Graph traversal with distance measurement
+-- 5. Reachability analysis in directed graphs
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Recursive CTE, graph traversal, reachability analysis, path finding, distance calculation, directed graphs
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS graph_edges CASCADE;

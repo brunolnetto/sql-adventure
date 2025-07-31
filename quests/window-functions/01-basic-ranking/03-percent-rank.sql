@@ -2,6 +2,25 @@
 -- Window Functions: PERCENT_RANK and NTILE
 -- =====================================================
 
+-- PURPOSE: Demonstrate PERCENT_RANK() and NTILE() functions for percentile
+--          calculations and creating equal-sized groups for salary analysis
+-- LEARNING OUTCOMES: Students will understand how to use PERCENT_RANK() for
+--                    percentile calculations and NTILE() for creating equal-sized
+--                    groups for salary analysis and performance tiers
+-- EXPECTED RESULTS:
+-- 1. PERCENT_RANK() calculates percentile ranks for salary distribution
+-- 2. NTILE() creates salary quartiles and quintiles
+-- 3. Department-based percentile analysis
+-- 4. Performance tiers based on percentile ranks
+-- 5. Salary bands created using NTILE
+-- 6. Top performers identified by percentile
+-- 7. Salary equity analysis using percentiles
+-- 8. Multiple percentile functions compared
+-- 9. Salary distribution analysis across departments
+-- 10. Market positioning analysis using percentiles
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: PERCENT_RANK(), NTILE(), PARTITION BY, percentile calculations, salary analysis, performance tiers, equity analysis
+
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS employee_salaries CASCADE;
 

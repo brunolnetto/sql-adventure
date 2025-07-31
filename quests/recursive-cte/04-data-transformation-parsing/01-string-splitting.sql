@@ -7,7 +7,7 @@
 --   - Learn to extract values from delimited strings
 --   - Master iterative string processing
 -- EXPECTED RESULTS: Split "apple,banana,cherry,date,elderberry" into 5 individual values
--- DIFFICULTY: Intermediate
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: String parsing, tokenization, iterative processing
 
 -- Split a comma-separated string into individual values

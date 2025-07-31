@@ -2,6 +2,21 @@
 -- Window Functions: RANK and DENSE_RANK
 -- =====================================================
 
+-- PURPOSE: Demonstrate RANK() and DENSE_RANK() functions for handling ties
+--          and understanding the differences between ranking methods
+-- LEARNING OUTCOMES: Students will understand how to use RANK() and DENSE_RANK()
+--                    for ranking data with ties, and when to use each function
+-- EXPECTED RESULTS:
+-- 1. RANK() shows gaps in ranking when ties occur
+-- 2. DENSE_RANK() shows consecutive ranking without gaps
+-- 3. ROW_NUMBER() provides unique sequential numbers
+-- 4. Ranking within partitions by subject
+-- 5. Multiple ranking functions compared side by side
+-- 6. Top N students identified using ranking functions
+-- 7. Percentile ranking calculations using RANK and DENSE_RANK
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: RANK(), DENSE_RANK(), ROW_NUMBER(), PARTITION BY, ranking with ties, percentile calculations
+
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS student_scores CASCADE;
 

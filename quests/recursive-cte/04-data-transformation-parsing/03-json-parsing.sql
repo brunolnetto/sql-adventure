@@ -7,7 +7,7 @@
 --   - Learn to traverse nested object structures
 --   - Master recursive data transformation patterns
 -- EXPECTED RESULTS: Flatten nested JSON structure into path-based representation
--- DIFFICULTY: Advanced
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
 -- CONCEPTS: JSON parsing, hierarchical data, recursive flattening
 
 -- Clean up existing tables (idempotent)

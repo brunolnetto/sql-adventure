@@ -6,13 +6,19 @@ This directory contains various SQL learning quests and examples.
 
 ### 🚀 [Recursive CTE Examples](./recursive-cte/)
 
-A comprehensive collection of **32 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
+A comprehensive collection of **26 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
 
 **Features:**
 - 🐳 **Docker-ready** with PostgreSQL and pgAdmin
 - 📚 **8 categories** covering all recursive CTE use cases
 - 🔄 **Idempotent examples** that can be run multiple times safely
 - 🎯 **Real-world scenarios** from hierarchical data to mathematical sequences
+
+**Difficulty Distribution:**
+- 🟢 **Beginner (5-10 min):** 7 examples (26.9%)
+- 🟡 **Intermediate (10-20 min):** 8 examples (30.8%)
+- 🔴 **Advanced (15-30 min):** 7 examples (26.9%)
+- ⚫ **Expert (30-45 min):** 4 examples (15.4%)
 
 **Quick Start:**
 ```bash
@@ -36,6 +42,23 @@ cd recursive-cte
 6. **Data Repair & Self-Healing** - Sequence gaps, forward fill, interval coalescing
 7. **Mathematical & Theoretical** - Fibonacci, prime numbers, permutations
 8. **Bonus Quirky Examples** - Work streaks, password generation, spiral matrices
+
+### 🪟 [Window Functions Examples](./window-functions/)
+
+A comprehensive collection of **26+ practical examples** demonstrating Window Functions in SQL.
+
+**Features:**
+- 🐳 **Docker-ready** with PostgreSQL and pgAdmin
+- 📚 **5 categories** covering all window function use cases
+- 🔄 **Idempotent examples** that can be run multiple times safely
+- 🎯 **Real-world scenarios** from ranking to advanced analytics
+
+**Current Status:**
+- ✅ **2 files with standardized difficulty headers**
+- 🔄 **24+ files need difficulty header standardization**
+- 📊 **Difficulty percentages will be updated once all files are standardized**
+
+**Note:** The window functions quest has many examples but needs standardization of difficulty headers and time estimates to match the recursive CTE quest format.
 
 ---
 

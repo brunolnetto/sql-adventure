@@ -1,6 +1,15 @@
 -- =====================================================
 -- Collatz Sequence Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for conditional mathematical sequence generation
+-- LEARNING OUTCOMES:
+--   - Understand conditional logic in recursive CTEs
+--   - Learn to implement mathematical algorithms with branching logic
+--   - Master complex iterative calculations with termination conditions
+-- EXPECTED RESULTS: Complete Collatz sequence for number 27 with step-by-step progression
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, Conditional Logic, Mathematical Algorithms, Sequence Generation
 
 -- Calculate Collatz sequence for number 27
 WITH RECURSIVE collatz AS (

@@ -1,14 +1,15 @@
 -- =====================================================
 -- Base Conversion Example (Decimal to Binary)
 -- =====================================================
--- PURPOSE: Demonstrate recursive CTE for number base conversion
--- LEARNING OUTCOMES: 
+-- 
+-- PURPOSE: Demonstrate recursive CTE for number base conversion algorithms
+-- LEARNING OUTCOMES:
 --   - Understand iterative division for base conversion
---   - Learn to build strings from right to left
---   - Master recursive number manipulation
+--   - Learn to build strings from right to left using recursion
+--   - Master recursive number manipulation and string construction
 -- EXPECTED RESULTS: Convert decimal 42 to binary 101010
--- DIFFICULTY: Intermediate
--- CONCEPTS: Recursive division, string concatenation, base conversion
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive division, string concatenation, base conversion, iterative algorithms
 
 -- Convert decimal 42 to binary
 WITH RECURSIVE binary_conversion AS (

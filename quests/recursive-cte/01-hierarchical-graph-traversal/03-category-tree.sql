@@ -1,6 +1,20 @@
 -- =====================================================
--- Category Tree Example
+-- Recursive CTE: Category Tree Navigation
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for navigating hierarchical category
+--          structures and building complete category paths
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    tree navigation, building hierarchical paths, and
+--                    managing nested category structures
+-- EXPECTED RESULTS:
+-- 1. Complete category tree with hierarchical levels
+-- 2. Full category paths from root to leaf categories
+-- 3. Tree navigation from parent to child categories
+-- 4. Hierarchical category structure analysis
+-- 5. Category path building and display
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: Recursive CTE, tree navigation, hierarchical paths, category structure, parent-child relationships
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS categories CASCADE;

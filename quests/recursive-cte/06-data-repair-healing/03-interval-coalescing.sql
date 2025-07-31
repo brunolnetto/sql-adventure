@@ -1,14 +1,15 @@
--- PURPOSE: Demonstrate recursive CTE for merging overlapping or adjacent intervals
--- LEARNING OUTCOMES:
---   - Understand interval coalescing and data consolidation
---   - Learn to detect and merge overlapping or adjacent time intervals
---   - Master recursive aggregation for time-based data
--- EXPECTED RESULTS: Coalesce overlapping meetings into single intervals with combined categories
--- DIFFICULTY: Advanced
--- CONCEPTS: Interval coalescing, data consolidation, recursive aggregation
 -- =====================================================
 -- Interval Coalescing Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for merging overlapping or adjacent intervals
+-- LEARNING OUTCOMES:
+--   - Understand interval coalescing and data consolidation techniques
+--   - Learn to detect and merge overlapping or adjacent time intervals
+--   - Master recursive aggregation for time-based data consolidation
+-- EXPECTED RESULTS: Coalesce overlapping meetings into single intervals with combined categories
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Interval coalescing, data consolidation, recursive aggregation, time intervals
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS time_intervals CASCADE;

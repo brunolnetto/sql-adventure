@@ -1,6 +1,20 @@
 -- =====================================================
--- Employee Hierarchy Example
+-- Recursive CTE: Employee Hierarchy Traversal
 -- =====================================================
+
+-- PURPOSE: Demonstrate recursive CTE for traversing employee organizational
+--          hierarchy and building complete hierarchy paths from CEO to employees
+-- LEARNING OUTCOMES: Students will understand how to use recursive CTEs for
+--                    hierarchical data traversal, building path strings, and
+--                    managing hierarchical relationships in organizational structures
+-- EXPECTED RESULTS:
+-- 1. Complete employee hierarchy with levels from CEO (0) to employees
+-- 2. Hierarchy paths showing the complete chain of command
+-- 3. Department-based organizational structure
+-- 4. Salary information at each hierarchy level
+-- 5. Hierarchical data traversal from root to leaves
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: Recursive CTE, hierarchical data, organizational structure, path building, level tracking
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS employees CASCADE;

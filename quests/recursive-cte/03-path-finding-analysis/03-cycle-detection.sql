@@ -7,7 +7,7 @@
 --   - Learn to track paths and detect revisits
 --   - Master graph traversal with cycle prevention
 -- EXPECTED RESULTS: Detect cycles in the graph (B→C→D→E→B and A→F→A)
--- DIFFICULTY: Advanced
+-- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Graph algorithms, cycle detection, path tracking
 
 -- Clean up existing tables (idempotent)

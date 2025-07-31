@@ -27,10 +27,10 @@ This repository contains practical examples of Recursive Common Table Expression
 ## 🎯 **Difficulty Level Evaluation**
 
 ### **Difficulty Scale:**
-- 🟢 **Beginner** - Basic recursive patterns, simple logic (15-30 min)
-- 🟡 **Intermediate** - Moderate complexity, multiple concepts (30-60 min)
-- 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (1-2 hours)
-- ⚫ **Expert** - Theoretical concepts, optimization challenges (2-4 hours)
+- 🟢 **Beginner** - Basic recursive patterns, simple logic (5-10 min)
+- 🟡 **Intermediate** - Moderate complexity, multiple concepts (10-20 min)
+- 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (15-30 min)
+- ⚫ **Expert** - Theoretical concepts, optimization challenges (30-45 min)
 
 ### **Complete Example Difficulty Table:**
 
@@ -192,7 +192,7 @@ The examples are organized into 8 categories, each containing individual example
 ### Option 1: Docker (Recommended)
 ```bash
 # Start the environment
-docker-compose up -d
+docker compose up -d
 
 # Run examples using the script
 ./scripts/run-examples.sh quest recursive-cte

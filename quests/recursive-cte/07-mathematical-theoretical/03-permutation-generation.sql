@@ -4,7 +4,7 @@
 --   - Learn to generate all possible orderings of a set
 --   - Master recursive construction of permutations
 -- EXPECTED RESULTS: Generate all 6 permutations of the set {A, B, C}
--- DIFFICULTY: Advanced
+-- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Permutation generation, combinatorics, recursive algorithms
 -- =====================================================
 -- Permutation Generation Example

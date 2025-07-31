@@ -1,6 +1,15 @@
 -- =====================================================
 -- Date Series Generation Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for date series generation and business day filtering
+-- LEARNING OUTCOMES:
+--   - Understand date arithmetic in recursive CTEs
+--   - Learn to generate date sequences with conditional filtering
+--   - Master date-based iteration patterns
+-- EXPECTED RESULTS: Complete date series for January 2024 with business day filtering
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: Recursive CTE, Date Arithmetic, Series Generation, Conditional Filtering
 
 -- Generate all dates between 2024-01-01 and 2024-01-31
 WITH RECURSIVE date_series AS (

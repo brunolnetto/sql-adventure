@@ -7,7 +7,7 @@
 --   - Learn to model inventory depletion and reorder logic
 --   - Master multi-step business rule implementation
 -- EXPECTED RESULTS: Simulate 5 days of inventory management with reorder triggers
--- DIFFICULTY: Advanced
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
 -- CONCEPTS: Business simulation, state machines, inventory management
 
 -- Clean up existing tables (idempotent)

@@ -2,13 +2,24 @@
 -- Window Functions: Cumulative Sums & Complex Aggregations
 -- =====================================================
 
--- Clean up existing tables (idempotent)
+-- PURPOSE: Demonstrate advanced window function aggregation for complex
+--          cumulative calculations and multi-dimensional analysis
+-- LEARNING OUTCOMES: Students will understand how to use multiple window functions
+--                    for complex aggregations, project tracking, and financial analysis
+-- EXPECTED RESULTS:
+-- 1. Complex cumulative calculations with multiple dimensions
+-- 2. Project progress tracking with cumulative metrics
+-- 3. Customer spending pattern analysis
+-- 4. Advanced financial analysis with cumulative ratios
+-- 5. Multi-dimensional rolling calculations
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Multiple window functions, complex aggregations, project tracking, financial analysis
 DROP TABLE IF EXISTS sales_transactions CASCADE;
 DROP TABLE IF EXISTS project_tasks CASCADE;
 DROP TABLE IF EXISTS customer_orders CASCADE;
 
 -- =====================================================
--- 1. Sales Transaction Analysis
+-- Example 1: Sales Transaction Analysis
 -- =====================================================
 
 -- Create sales transactions table
@@ -74,7 +85,7 @@ FROM sales_transactions
 ORDER BY date, product_category;
 
 -- =====================================================
--- 2. Project Task Progress Tracking
+-- Example 2: Project Task Progress Tracking
 -- =====================================================
 
 -- Create project tasks table
@@ -154,7 +165,7 @@ FROM project_tasks
 ORDER BY project_name, start_date;
 
 -- =====================================================
--- 3. Customer Order Analysis
+-- Example 3: Customer Order Analysis
 -- =====================================================
 
 -- Create customer orders table
@@ -231,7 +242,7 @@ FROM customer_orders
 ORDER BY customer_id, order_date;
 
 -- =====================================================
--- 4. Advanced Cumulative Patterns
+-- Example 4: Advanced Cumulative Patterns
 -- =====================================================
 
 -- Demonstrate complex cumulative calculations
@@ -295,7 +306,7 @@ FROM sales_analysis
 ORDER BY date, product_category;
 
 -- =====================================================
--- 5. Financial Analysis with Cumulative Metrics
+-- Example 5: Financial Analysis with Cumulative Metrics
 -- =====================================================
 
 -- Calculate financial metrics using cumulative functions

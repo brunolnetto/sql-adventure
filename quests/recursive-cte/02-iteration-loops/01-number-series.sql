@@ -10,7 +10,7 @@
 -- EXPECTED RESULTS:
 --   - First query: Numbers 1 through 10
 --   - Second query: Even numbers 2, 4, 6, ..., 20
--- DIFFICULTY: Beginner
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: Recursive CTE, Base Case, Recursive Case, Termination Condition
 
 -- Generate numbers from 1 to 10

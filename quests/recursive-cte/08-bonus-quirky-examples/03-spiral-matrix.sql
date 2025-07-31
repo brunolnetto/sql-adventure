@@ -1,6 +1,15 @@
 -- =====================================================
 -- Spiral Matrix Generation Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for generating spiral matrix patterns
+-- LEARNING OUTCOMES:
+--   - Understand coordinate-based pattern generation using recursion
+--   - Learn to implement directional movement algorithms in SQL
+--   - Master recursive spatial pattern construction with coordinate systems
+-- EXPECTED RESULTS: Generate a 4x4 spiral matrix pattern with directional movement
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Spatial algorithms, coordinate systems, directional recursion, pattern generation
 
 -- Generate a spiral matrix pattern recursively
 WITH RECURSIVE spiral_matrix AS (

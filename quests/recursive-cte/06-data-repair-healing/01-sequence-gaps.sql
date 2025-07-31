@@ -1,14 +1,15 @@
+-- =====================================================
+-- Filling Gaps in Sequences Example
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate recursive CTE for detecting and filling gaps in sequences
 -- LEARNING OUTCOMES:
 --   - Understand sequence gap detection in ordered data
 --   - Learn to generate missing values using recursion
 --   - Master data repair and self-healing patterns
 -- EXPECTED RESULTS: Identify all missing sequence numbers between 1 and 15
--- DIFFICULTY: Intermediate
--- CONCEPTS: Sequence gap detection, data repair, recursive generation
--- =====================================================
--- Filling Gaps in Sequences Example
--- =====================================================
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Sequence gap detection, data repair, recursive generation, missing value identification
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS sequence_data CASCADE;
