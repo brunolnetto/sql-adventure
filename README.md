@@ -5,7 +5,6 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](./README.md) - Main project README
-- [Recursive CTE Cheatsheet](./docs/recursive-cte-cheatsheet.md) - Quick reference for interviews
 - [Learning Path](./docs/learning-path.md) - Structured learning progression with 31 examples
 - [Use Cases](./docs/use-cases.md) - Industry-specific applications
 - [Run Examples](./docs/run-examples.md) - How to run examples with full output
@@ -14,7 +13,6 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 ## 🎯 What You'll Learn
 
-- **Recursive CTEs** - Master hierarchical data and iterative operations (31 examples!)
 - **Advanced SQL Patterns** - Learn complex query techniques
 - **Performance Optimization** - Write efficient, scalable queries
 - **Real-world Applications** - Solve practical business problems
@@ -40,32 +38,6 @@ This directory contains comprehensive documentation for the SQL Adventure projec
  - **100% Idempotent** - Safe to run multiple times
  - **Docker Ready** - Easy setup and deployment
  - **Industry Focused** - Real-world business applications
-
-## 🏆 Example Categories
-
-### 🏗️ Hierarchical Data Traversal (7 examples)
-Employee hierarchies, bill of materials, category trees, graph reachability, dependency resolution, filesystem hierarchy, family trees
-
-### 🔄 Iteration & Loops (7 examples)
-Number series, date generation, Fibonacci sequences, Collatz sequences, base conversion, factorial calculation, running totals
-
-### 🛤️ Path Finding & Analysis (3 examples)
-Shortest path algorithms, topological sorting, cycle detection
-
-### 🔧 Data Transformation (3 examples)
-String splitting, transitive closure, JSON parsing
-
-### 🎮 Simulation & State Machines (2 examples)
-Inventory simulation, game simulation
-
-### 🔧 Data Repair & Healing (3 examples)
-Sequence gap detection, forward fill nulls, interval coalescing
-
-### 📊 Mathematical & Theoretical (3 examples)
-Fibonacci algorithms, prime number generation, permutation generation
-
-### 🎯 Bonus Quirky Examples (3 examples)
-Work streak analysis, password generation, spiral matrix generation
 
 ## 🛠️ Technology Stack
 

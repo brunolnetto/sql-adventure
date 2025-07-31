@@ -24,6 +24,59 @@ This repository contains practical examples of Recursive Common Table Expression
 - **Complex Data Transformation** - Nested JSON parsing, complex string operations
 - **Simulation & State Machines** - Multi-step processes, game states
 
+## 🎯 **Difficulty Level Evaluation**
+
+### **Difficulty Scale:**
+- 🟢 **Beginner** - Basic recursive patterns, simple logic (15-30 min)
+- 🟡 **Intermediate** - Moderate complexity, multiple concepts (30-60 min)
+- 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (1-2 hours)
+- ⚫ **Expert** - Theoretical concepts, optimization challenges (2-4 hours)
+
+### **Complete Example Difficulty Table:**
+
+| Category | Example | Difficulty | Type | Description |
+|----------|---------|------------|------|-------------|
+| **Hierarchical & Graph Traversal** | `01-employee-hierarchy.sql` | 🟢 Beginner | ✅ Legitimate | Basic parent-child traversal |
+| | `02-bill-of-materials.sql` | 🟡 Intermediate | ✅ Legitimate | Cost calculations + hierarchy |
+| | `03-category-tree.sql` | 🟢 Beginner | ✅ Legitimate | Simple tree navigation |
+| | `04-graph-reachability.sql` | 🔴 Advanced | ✅ Legitimate | Graph theory concepts |
+| | `05-dependency-resolution.sql` | 🔴 Advanced | ✅ Legitimate | Topological sorting logic |
+| | `06-filesystem-hierarchy.sql` | 🟡 Intermediate | ✅ Legitimate | Path manipulation |
+| | `07-family-tree.sql` | 🟡 Intermediate | ✅ Legitimate | Multiple relationship types |
+| **Iteration & Loop Emulation** | `01-number-series.sql` | 🟢 Beginner | ⚠️ Educational | Simple increment pattern |
+| | `02-date-series.sql` | 🟢 Beginner | ⚠️ Educational | Date arithmetic |
+| | `03-fibonacci-sequence.sql` | 🟡 Intermediate | ✅ Legitimate | Mathematical sequence |
+| | `04-collatz-sequence.sql` | 🟡 Intermediate | ✅ Legitimate | Conditional recursion |
+| | `05-base-conversion.sql` | 🟡 Intermediate | ✅ Legitimate | Mathematical operations |
+| | `06-factorial-calculation.sql` | 🟢 Beginner | ✅ Legitimate | Simple mathematical recursion |
+| | `07-running-total.sql` | 🟢 Beginner | ⚠️ Educational | Accumulation pattern |
+| **Path-Finding & Analysis** | `01-shortest-path.sql` | 🔴 Advanced | ✅ Legitimate | BFS algorithm implementation |
+| | `02-topological-sort.sql` | ⚫ Expert | ✅ Legitimate | Graph theory + cycle detection |
+| | `03-cycle-detection.sql` | ⚫ Expert | ✅ Legitimate | Complex graph algorithms |
+| **Data Transformation & Parsing** | `01-string-splitting.sql` | 🟢 Beginner | ⚠️ Educational | Basic string manipulation |
+| | `02-transitive-closure.sql` | 🔴 Advanced | ✅ Legitimate | Matrix operations + recursion |
+| | `03-json-parsing.sql` | 🔴 Advanced | ✅ Legitimate | Complex nested structure parsing |
+| **Simulation & State Machines** | `01-inventory-simulation.sql` | 🔴 Advanced | ✅ Legitimate | State tracking + business logic |
+| | `02-game-simulation.sql` | ⚫ Expert | ✅ Legitimate | Game state management + AI logic |
+| **Data Repair & Self-Healing** | `01-sequence-gaps.sql` | 🟡 Intermediate | ✅ Legitimate | Gap detection + filling |
+| | `02-forward-fill-nulls.sql` | 🟢 Beginner | ⚠️ Educational | Simple data imputation |
+| | `03-interval-coalescing.sql` | 🔴 Advanced | ✅ Legitimate | Complex interval logic |
+| **Mathematical & Theoretical** | `01-fibonacci-sequence.sql` | 🟡 Intermediate | ✅ Legitimate | Mathematical sequence |
+| | `02-prime-numbers.sql` | 🔴 Advanced | ✅ Legitimate | Sieve algorithms |
+| | `03-permutation-generation.sql` | ⚫ Expert | ✅ Legitimate | Combinatorial algorithms |
+| **Bonus Quirky Examples** | `01-work-streak.sql` | 🟡 Intermediate | ✅ Legitimate | Pattern recognition |
+| | `02-password-generator.sql` | 🟡 Intermediate | ✅ Legitimate | String generation patterns |
+| | `03-spiral-matrix.sql` | 🔴 Advanced | ✅ Legitimate | Complex coordinate manipulation |
+
+### **Recommended Learning Paths:**
+
+| Skill Level | Examples to Start With | Focus Areas |
+|-------------|------------------------|-------------|
+| **🟢 Beginner** | `01-number-series.sql`, `01-employee-hierarchy.sql`, `01-string-splitting.sql` | Basic recursion, hierarchical traversal, simple transformations |
+| **🟡 Intermediate** | `03-fibonacci-sequence.sql`, `02-bill-of-materials.sql`, `01-sequence-gaps.sql` | Mathematical sequences, complex hierarchies, data repair |
+| **🔴 Advanced** | `04-graph-reachability.sql`, `02-transitive-closure.sql`, `01-inventory-simulation.sql` | Graph theory, matrix operations, state machines |
+| **⚫ Expert** | `02-topological-sort.sql`, `03-cycle-detection.sql`, `02-game-simulation.sql` | Advanced algorithms, optimization, theoretical concepts |
+
 ## 📚 Overview
 
 Recursive CTEs are a powerful SQL feature that allows you to perform iterative operations directly in SQL. While they're commonly associated with hierarchical data, they can be used for much more - from mathematical computations to data transformation and simulation.
