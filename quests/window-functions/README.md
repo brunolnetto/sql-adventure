@@ -4,7 +4,7 @@ Master the power of window functions for advanced data analytics and reporting i
 
 ## ✅ **COMPLETION STATUS: 100% COMPLETE** 🎉
 
-**Total Examples: 86** | **Categories: 5** | **Files: 15**
+**Total Examples: 94** | **Categories: 5** | **Files: 15**
 
 ### **📊 Progress Summary:**
 - ✅ **Basic Ranking** - 3/3 files (10 examples)
@@ -35,10 +35,10 @@ Window functions are one of the most powerful features in SQL for data analysis.
 - ⚫ **Expert** - Advanced analytics patterns (30-45 min)
 
 ### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 13 examples (**14.8%**) - Perfect starting point for new learners
-- 🟡 **Intermediate**: 18 examples (**20.5%**) - Building complexity and real-world applications
-- 🔴 **Advanced**: 20 examples (**22.7%**) - Complex patterns and performance considerations
-- ⚫ **Expert**: 35 examples (**40.7%**) - Cutting-edge techniques and optimization
+- 🟢 **Beginner**: 13 examples (**13.8%**) - Perfect starting point for new learners
+- 🟡 **Intermediate**: 18 examples (**19.1%**) - Building complexity and real-world applications
+- 🔴 **Advanced**: 20 examples (**21.3%**) - Complex patterns and performance considerations
+- ⚫ **Expert**: 43 examples (**45.7%**) - Cutting-edge techniques and optimization
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
