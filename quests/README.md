@@ -6,7 +6,7 @@ This directory contains various SQL learning quests and examples.
 
 ### 🚀 [Recursive CTE Examples](./recursive-cte/)
 
-A comprehensive collection of **26 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
+A comprehensive collection of **31 practical examples** demonstrating Recursive Common Table Expressions (CTEs) in SQL.
 
 **Features:**
 - 🐳 **Docker-ready** with PostgreSQL and pgAdmin
@@ -15,10 +15,10 @@ A comprehensive collection of **26 practical examples** demonstrating Recursive 
 - 🎯 **Real-world scenarios** from hierarchical data to mathematical sequences
 
 **Difficulty Distribution:**
-- 🟢 **Beginner (5-10 min):** 7 examples (26.9%)
-- 🟡 **Intermediate (10-20 min):** 8 examples (30.8%)
-- 🔴 **Advanced (15-30 min):** 7 examples (26.9%)
-- ⚫ **Expert (30-45 min):** 4 examples (15.4%)
+- 🟢 **Beginner (5-10 min):** 8 examples (25.8%)
+- 🟡 **Intermediate (10-20 min):** 10 examples (32.3%)
+- 🔴 **Advanced (15-30 min):** 9 examples (29.0%)
+- ⚫ **Expert (30-45 min):** 4 examples (12.9%)
 
 **Quick Start:**
 ```bash
@@ -45,7 +45,7 @@ cd recursive-cte
 
 ### 🪟 [Window Functions Examples](./window-functions/)
 
-A comprehensive collection of **26+ practical examples** demonstrating Window Functions in SQL.
+A comprehensive collection of **94 practical examples** demonstrating Window Functions in SQL.
 
 **Features:**
 - 🐳 **Docker-ready** with PostgreSQL and pgAdmin
@@ -53,12 +53,52 @@ A comprehensive collection of **26+ practical examples** demonstrating Window Fu
 - 🔄 **Idempotent examples** that can be run multiple times safely
 - 🎯 **Real-world scenarios** from ranking to advanced analytics
 
-**Current Status:**
-- ✅ **2 files with standardized difficulty headers**
-- 🔄 **24+ files need difficulty header standardization**
-- 📊 **Difficulty percentages will be updated once all files are standardized**
+**Difficulty Distribution:**
+- 🟢 **Beginner (5-10 min):** 10 examples (10.6%)
+- 🟡 **Intermediate (10-20 min):** 46 examples (48.9%)
+- 🔴 **Advanced (15-30 min):** 18 examples (19.1%)
+- ⚫ **Expert (30-45 min):** 20 examples (21.3%)
 
-**Note:** The window functions quest has many examples but needs standardization of difficulty headers and time estimates to match the recursive CTE quest format.
+**Categories:**
+1. **Basic Ranking** - ROW_NUMBER, RANK, DENSE_RANK, PERCENT_RANK (20 examples)
+2. **Advanced Ranking** - NTILE, percentile analysis, salary analysis (14 examples)
+3. **Aggregation Windows** - Running totals, moving averages, cumulative sums (20 examples)
+4. **Partitioned Analytics** - Category-based analysis, customer segmentation (20 examples)
+5. **Advanced Patterns** - Lead/Lag analysis, gap detection, trend analysis (20 examples)
+
+## 📊 Quest Difficulty Comparison
+
+### **Overall Statistics:**
+| Quest | Total Examples | Categories | Files | Completion |
+|-------|---------------|------------|-------|------------|
+| **Recursive CTE** | 31 examples | 8 categories | 31 files | ✅ 100% Complete |
+| **Window Functions** | 94 examples | 5 categories | 15 files | ✅ 100% Complete |
+
+### **Difficulty by Category:**
+
+| Category | 🟢 | 🟡 | 🔴 | ⚫ | Total |
+|----------|----|----|----|----|-------|
+| **Recursive CTE** |
+| Hierarchical & Graph Traversal | 2 | 3 | 2 | 0 | 7 |
+| Iteration & Loop Emulation | 4 | 3 | 0 | 0 | 7 |
+| Path-Finding & Analysis | 0 | 0 | 1 | 2 | 3 |
+| Data Transformation & Parsing | 1 | 0 | 2 | 0 | 3 |
+| Simulation & State Machines | 0 | 0 | 1 | 1 | 2 |
+| Data Repair & Self-Healing | 1 | 1 | 1 | 0 | 3 |
+| Mathematical & Theoretical | 0 | 1 | 1 | 1 | 3 |
+| Bonus Quirky Examples | 0 | 2 | 1 | 0 | 3 |
+| **Window Functions** |
+| Basic Ranking | 10 | 10 | 0 | 0 | 20 |
+| Advanced Ranking | 0 | 8 | 6 | 0 | 14 |
+| Aggregation Windows | 0 | 20 | 0 | 0 | 20 |
+| Partitioned Analytics | 0 | 8 | 12 | 0 | 20 |
+| Advanced Patterns | 0 | 0 | 0 | 20 | 20 |
+
+### **Time Estimates:**
+- 🟢 **Beginner**: 5-10 min
+- 🟡 **Intermediate**: 10-20 min  
+- 🔴 **Advanced**: 15-30 min
+- ⚫ **Expert**: 30-45 min
 
 ---
 

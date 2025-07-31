@@ -7,10 +7,10 @@ Master the power of window functions for advanced data analytics and reporting i
 **Total Examples: 94** | **Categories: 5** | **Files: 15**
 
 ### **📊 Progress Summary:**
-- ✅ **Basic Ranking** - 3/3 files (10 examples)
+- ✅ **Basic Ranking** - 3/3 files (20 examples)
 - ✅ **Advanced Ranking** - 3/3 files (14 examples)
 - ✅ **Aggregation Windows** - 3/3 files (20 examples)  
-- ✅ **Partitioned Analytics** - 3/3 files (10 examples)
+- ✅ **Partitioned Analytics** - 3/3 files (20 examples)
 - ✅ **Advanced Patterns** - 3/3 files (20 examples)
 
 **🎯 Window Functions Quest is now complete!**
@@ -35,10 +35,10 @@ Window functions are one of the most powerful features in SQL for data analysis.
 - ⚫ **Expert** - Advanced analytics patterns (30-45 min)
 
 ### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 13 examples (**13.8%**) - Perfect starting point for new learners
-- 🟡 **Intermediate**: 18 examples (**19.1%**) - Building complexity and real-world applications
-- 🔴 **Advanced**: 20 examples (**21.3%**) - Complex patterns and performance considerations
-- ⚫ **Expert**: 43 examples (**45.7%**) - Cutting-edge techniques and optimization
+- 🟢 **Beginner**: 10 examples (**10.6%**) - Perfect starting point for new learners
+- 🟡 **Intermediate**: 46 examples (**48.9%**) - Building complexity and real-world applications
+- 🔴 **Advanced**: 18 examples (**19.1%**) - Complex patterns and performance considerations
+- ⚫ **Expert**: 20 examples (**21.3%**) - Cutting-edge techniques and optimization
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
@@ -55,17 +55,17 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | Category | File | Difficulty | Description | Examples |
 |----------|------|------------|-------------|----------|
 | **Basic Ranking** | `01-row-number.sql` | 🟢 Beginner | Simple row numbering | 3 |
-| | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 3 |
-| | `03-percent-rank.sql` | 🟡 Intermediate | PERCENT_RANK basics | 4 |
+| | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 7 |
+| | `03-percent-rank.sql` | 🟡 Intermediate | PERCENT_RANK basics | 10 |
 | **Advanced Ranking** | `01-ntile-analysis.sql` | 🟡 Intermediate | NTILE and advanced ranking | 4 |
 | | `02-percentile-analysis.sql` | 🟡 Intermediate | PERCENT_RANK basics | 4 |
 | | `03-salary-analysis.sql` | 🔴 Advanced | Complex salary analysis | 6 |
-| **Aggregation Windows** | `01-running-totals.sql` | 🟢 Beginner | Cumulative sums | 10 |
+| **Aggregation Windows** | `01-running-totals.sql` | 🟡 Intermediate | Cumulative sums | 10 |
 | | `02-moving-averages.sql` | 🟡 Intermediate | Rolling averages | 5 |
 | | `03-cumulative-sums.sql` | 🟡 Intermediate | Complex aggregations | 5 |
-| **Partitioned Analytics** | `01-sales-by-category.sql` | 🟡 Intermediate | Category-based ranking | 3 |
-| | `02-customer-segmentation.sql` | 🔴 Advanced | Customer segmentation | 3 |
-| | `03-performance-comparison.sql` | 🔴 Advanced | Performance comparison | 4 |
+| **Partitioned Analytics** | `01-sales-by-category.sql` | 🟡 Intermediate | Category-based ranking | 8 |
+| | `02-customer-segmentation.sql` | 🔴 Advanced | Customer segmentation | 6 |
+| | `03-performance-comparison.sql` | 🔴 Advanced | Performance comparison | 6 |
 | **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 6 |
 | | `02-gap-analysis.sql` | ⚫ Expert | Gap detection and sequence analysis | 8 |
 | | `03-trend-detection.sql` | ⚫ Expert | Trend detection and pattern analysis | 6 |
