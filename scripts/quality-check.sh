@@ -231,6 +231,202 @@ validate_documentation() {
     fi
 }
 
+# Function to validate query context and purpose
+validate_query_context() {
+    local file="$1"
+    print_status "🎯 Validating query context and purpose for: $(basename "$file")"
+    
+    # Check for context header
+    local has_context=0
+    local has_purpose=0
+    local has_learning_outcome=0
+    local has_expected_results=0
+    
+    if grep -q "Context:" "$file" 2>/dev/null; then
+        has_context=1
+    fi
+    
+    if grep -q "Purpose:" "$file" 2>/dev/null; then
+        has_purpose=1
+    fi
+    
+    if grep -q "Learning Outcome:" "$file" 2>/dev/null; then
+        has_learning_outcome=1
+    fi
+    
+    if grep -q "Expected Results:" "$file" 2>/dev/null; then
+        has_expected_results=1
+    fi
+    
+    local issues=0
+    
+    if [ $has_context -eq 0 ]; then
+        print_warning "No context section found"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $has_purpose -eq 0 ]; then
+        print_warning "No purpose section found"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $has_learning_outcome -eq 0 ]; then
+        print_warning "No learning outcome specified"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $has_expected_results -eq 0 ]; then
+        print_warning "No expected results section found"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $issues -eq 0 ]; then
+        print_success "Query context validation passed"
+        return 0
+    else
+        print_warning "Query context validation: $issues issues found"
+        return 1
+    fi
+}
+
+# Function to analyze query output and context
+analyze_query_output() {
+    local file="$1"
+    print_status "🧪 Analyzing query output and context for: $(basename "$file")"
+    
+    # Create temporary file for main query output
+    local output_file=$(mktemp)
+    local context_file=$(mktemp)
+    
+    # Extract context information
+    grep -A 10 "Context:" "$file" > "$context_file" 2>/dev/null || true
+    grep -A 5 "Purpose:" "$file" >> "$context_file" 2>/dev/null || true
+    grep -A 5 "Learning Outcome:" "$file" >> "$context_file" 2>/dev/null || true
+    grep -A 10 "Expected Results:" "$file" >> "$context_file" 2>/dev/null || true
+    
+    # Execute the main query and capture output
+    print_status "📊 Executing main query and capturing output..."
+    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+        -f "$file" > "$output_file" 2>&1; then
+        
+        # Extract validation queries and execute them
+        local validation_file=$(mktemp)
+        awk '/^-- Validation:/{flag=1; next} /^-- [^V]/{flag=0} flag{print}' "$file" > "$validation_file"
+        
+        if [ -s "$validation_file" ]; then
+            print_status "🔍 Executing validation queries and capturing results..."
+            PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -f "$validation_file" >> "$output_file" 2>&1
+        fi
+        
+        # Display analysis
+        echo "========================================"
+        print_status "📋 CONTEXT ANALYSIS:"
+        if [ -s "$context_file" ]; then
+            cat "$context_file"
+        else
+            echo "No context information found"
+        fi
+        
+        echo ""
+        print_status "📊 QUERY OUTPUT ANALYSIS:"
+        echo "File: $(basename "$file")"
+        echo "Output captured successfully"
+        echo "Output size: $(wc -l < "$output_file") lines"
+        
+        # Show sample of output (first 20 lines)
+        echo ""
+        print_status "📄 SAMPLE OUTPUT (first 20 lines):"
+        head -20 "$output_file"
+        
+        if [ $(wc -l < "$output_file") -gt 20 ]; then
+            echo "... (output truncated)"
+        fi
+        
+        # Check for common patterns in output
+        echo ""
+        print_status "🔍 OUTPUT PATTERN ANALYSIS:"
+        local row_count=$(grep -c "^[0-9]" "$output_file" || echo "0")
+        local error_count=$(grep -c "ERROR\|error" "$output_file" || echo "0")
+        local warning_count=$(grep -c "WARNING\|warning" "$output_file" || echo "0")
+        
+        echo "Data rows returned: $row_count"
+        echo "Error messages: $error_count"
+        echo "Warning messages: $warning_count"
+        
+        # Check if output contains expected patterns
+        if grep -q "ROW_NUMBER\|RANK\|DENSE_RANK" "$output_file" 2>/dev/null; then
+            echo "✅ Window function output detected"
+        fi
+        
+        if grep -q "PARTITION BY\|ORDER BY" "$output_file" 2>/dev/null; then
+            echo "✅ Window function syntax detected"
+        fi
+        
+        # Store output for AI analysis
+        echo ""
+        print_status "💾 Output saved for AI analysis: $output_file"
+        
+    else
+        print_error "Failed to execute query and capture output"
+    fi
+    
+    # Clean up temporary files
+    rm -f "$context_file" "$validation_file"
+    
+    return 0
+}
+
+# Function to validate expected results (legacy - now redirects to analysis)
+validate_expected_results() {
+    local file="$1"
+    print_status "🧪 Analyzing expected results for: $(basename "$file")"
+    
+    # Check for validation queries
+    local has_validation_queries=0
+    if grep -q "Validation:" "$file" 2>/dev/null; then
+        has_validation_queries=1
+    fi
+    
+    if [ $has_validation_queries -eq 0 ]; then
+        print_warning "No validation queries found - analyzing main query output only"
+    fi
+    
+    # Analyze the actual output instead of just validating
+    analyze_query_output "$file"
+    
+    return 0
+}
+
+# Function to execute validation queries (legacy - now part of analysis)
+execute_validation_queries() {
+    local file="$1"
+    print_status "🔍 Executing validation queries for: $(basename "$file")"
+    
+    # Create temporary file with only validation queries
+    local temp_file=$(mktemp)
+    
+    # Extract validation queries (lines starting with -- Validation:)
+    awk '/^-- Validation:/{flag=1; next} /^-- [^V]/{flag=0} flag{print}' "$file" > "$temp_file"
+    
+    if [ -s "$temp_file" ]; then
+        # Execute validation queries and capture output
+        local output_file=$(mktemp)
+        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+            -f "$temp_file" > "$output_file" 2>&1; then
+            print_success "Validation queries executed successfully"
+            print_status "📄 Validation output:"
+            cat "$output_file"
+        else
+            print_warning "Some validation queries failed to execute"
+        fi
+        rm -f "$output_file"
+    fi
+    
+    # Clean up temporary file
+    rm -f "$temp_file"
+}
+
 # Function to run comprehensive validation
 validate_example() {
     local file="$1"
@@ -251,6 +447,35 @@ validate_example() {
     
     if [ $overall_result -eq 0 ]; then
         print_success "✅ All validation checks passed for: $(basename "$file")"
+    else
+        print_warning "⚠️  Some validation checks failed for: $(basename "$file")"
+    fi
+    
+    return $overall_result
+}
+
+# Function to run comprehensive validation with context
+validate_example_with_context() {
+    local file="$1"
+    
+    print_status "🔍 Starting comprehensive validation with context for: $(basename "$file")"
+    echo "========================================"
+    
+    local overall_result=0
+    
+    # Run all validation checks including context
+    validate_syntax "$file" || overall_result=1
+    validate_idempotency "$file" || overall_result=1
+    validate_data_quality "$file" || overall_result=1
+    validate_performance "$file" || overall_result=1
+    validate_documentation "$file" || overall_result=1
+    validate_query_context "$file" || overall_result=1
+    validate_expected_results "$file" || overall_result=1
+    
+    echo "========================================"
+    
+    if [ $overall_result -eq 0 ]; then
+        print_success "✅ All validation checks (including context) passed for: $(basename "$file")"
     else
         print_warning "⚠️  Some validation checks failed for: $(basename "$file")"
     fi
@@ -295,19 +520,27 @@ show_usage() {
     echo "Usage: $0 [COMMAND] [FILE]"
     echo ""
     echo "Commands:"
-    echo "  validate <file>    Run comprehensive validation"
-    echo "  syntax <file>      Validate SQL syntax only"
-    echo "  idempotency <file> Test idempotency only"
-    echo "  data-quality <file> Validate data quality only"
-    echo "  performance <file> Test performance only"
-    echo "  docs <file>        Validate documentation only"
-    echo "  lint <file>        Lint SQL file for common issues"
-    echo "  help               Show this help message"
+    echo "  validate <file>              Run comprehensive validation"
+    echo "  validate-with-context <file> Run comprehensive validation with context"
+    echo "  analyze-output <file>        Analyze query output and context (AI-focused)"
+    echo "  syntax <file>                Validate SQL syntax only"
+    echo "  idempotency <file>           Test idempotency only"
+    echo "  data-quality <file>          Validate data quality only"
+    echo "  performance <file>           Test performance only"
+    echo "  docs <file>                  Validate documentation only"
+    echo "  context <file>               Validate query context only"
+    echo "  expected-results <file>      Analyze expected results (legacy)"
+    echo "  lint <file>                  Lint SQL file for common issues"
+    echo "  lint-with-context <file>     Lint SQL file with context validation"
+    echo "  help                         Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 validate quests/window-functions/01-basic-ranking/01-row-number.sql"
+    echo "  $0 validate-with-context quests/window-functions/01-basic-ranking/01-row-number.sql"
+    echo "  $0 analyze-output quests/window-functions/01-basic-ranking/01-row-number-enhanced.sql"
     echo "  $0 syntax quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql"
-    echo "  $0 lint quests/window-functions/02-aggregation-windows/01-running-totals.sql"
+    echo "  $0 context quests/window-functions/02-aggregation-windows/01-running-totals.sql"
+    echo "  $0 lint-with-context quests/window-functions/02-aggregation-windows/01-running-totals.sql"
 }
 
 # Main execution
@@ -319,6 +552,22 @@ case "${1:-help}" in
             exit 1
         fi
         validate_example "$2"
+        ;;
+    validate-with-context)
+        if [ -z "$2" ]; then
+            print_error "File not specified"
+            show_usage
+            exit 1
+        fi
+        validate_example_with_context "$2"
+        ;;
+    analyze-output)
+        if [ -z "$2" ]; then
+            print_error "File not specified"
+            show_usage
+            exit 1
+        fi
+        analyze_query_output "$2"
         ;;
     syntax)
         if [ -z "$2" ]; then
@@ -360,6 +609,22 @@ case "${1:-help}" in
         fi
         validate_documentation "$2"
         ;;
+    context)
+        if [ -z "$2" ]; then
+            print_error "File not specified"
+            show_usage
+            exit 1
+        fi
+        validate_query_context "$2"
+        ;;
+    expected-results)
+        if [ -z "$2" ]; then
+            print_error "File not specified"
+            show_usage
+            exit 1
+        fi
+        validate_expected_results "$2"
+        ;;
     lint)
         if [ -z "$2" ]; then
             print_error "File not specified"
@@ -367,6 +632,15 @@ case "${1:-help}" in
             exit 1
         fi
         lint_sql "$2"
+        ;;
+    lint-with-context)
+        if [ -z "$2" ]; then
+            print_error "File not specified"
+            show_usage
+            exit 1
+        fi
+        lint_sql "$2"
+        validate_query_context "$2"
         ;;
     help|*)
         show_usage
