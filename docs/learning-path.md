@@ -26,7 +26,7 @@ A structured progression from beginner to advanced SQL concepts with specific ex
 
 ## 🥈 Intermediate Level
 
-### 1. Recursive CTEs (31 Examples Available!)
+### 1. Recursive CTEs (32 Examples Available!)
 **Start Here**: [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)
 
 #### 🏗️ Hierarchical Data Traversal (7 examples)
@@ -170,7 +170,7 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
 - [ ] Complete 5 simple examples
 
 ### Intermediate Milestones
-- [ ] Complete all 31 recursive CTE examples
+- [ ] Complete all 32 recursive CTE examples
 - [ ] Understand hierarchical data patterns
 - [ ] Master iteration and loop techniques
 - [ ] Apply to real-world scenarios

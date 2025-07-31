@@ -6,7 +6,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 - [Project Overview](../README.md) - Main project README
 - **[Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)** - **NEW!** Quick reference for interviews
-- [Learning Path](./learning-path.md) - Structured learning progression with 31 examples
+- [Learning Path](./learning-path.md) - Structured learning progression
 - [Use Cases](./use-cases.md) - Industry-specific applications
 - [Technology Stack](./technology-stack.md) - Technical details
 - [Development Guide](./development.md) - Setup and contribution guidelines
@@ -14,7 +14,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 ## 🎯 What You'll Learn
 
-- **Recursive CTEs** - Master hierarchical data and iterative operations (31 examples!)
+- **Recursive CTEs** - Master hierarchical data and iterative operations
 - **Advanced SQL Patterns** - Learn complex query techniques
 - **Performance Optimization** - Write efficient, scalable queries
 - **Real-world Applications** - Solve practical business problems

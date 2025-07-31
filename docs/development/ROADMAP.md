@@ -9,7 +9,7 @@ SQL Adventure aims to become the premier resource for SQL learning, providing co
 ## 📊 Current Status
 
 ### ✅ Phase 1: Foundation (Complete)
-- [x] **Recursive CTE examples** - 29 comprehensive examples across 8 categories
+- [x] **Recursive CTE examples** - 32 comprehensive examples across 8 categories
 - [x] **Docker environment setup** - PostgreSQL + pgAdmin containerized environment
 - [x] **Comprehensive documentation** - Detailed guides and tutorials
 - [x] **Idempotent design** - Safe, repeatable examples
@@ -236,7 +236,3 @@ SQL Adventure aims to become the premier resource for SQL learning, providing co
 - [ ] 1000+ community contributions
 - [ ] 10+ quests completed
 - [ ] Industry recognition
-
----
-
-*This roadmap is a living document that will be updated based on community feedback and project evolution.* 
