@@ -4,19 +4,7 @@ Master the power of window functions for advanced data analytics and reporting i
 
 ## ✅ **COMPLETION STATUS: 100% COMPLETE** 🎉
 
-<<<<<<< HEAD
-**Total Examples: 94** | **Categories: 5** | **Files: 15**
-
-### **📊 Progress Summary:**
-- ✅ **Basic Ranking** - 3/3 files (20 examples)
-- ✅ **Advanced Ranking** - 3/3 files (14 examples)
-- ✅ **Aggregation Windows** - 3/3 files (20 examples)  
-- ✅ **Partitioned Analytics** - 3/3 files (20 examples)
-- ✅ **Advanced Patterns** - 3/3 files (20 examples)
-
-**🎯 Window Functions Quest is now complete!**
-=======
-**Total Examples: 88** | **Categories: 5** | **Files: 20**
+**Total Examples: 112** | **Categories: 5** | **Files: 23**
 
 ### **📊 Progress Summary:**
 - ✅ **Basic Ranking** - 2/2 files (6 examples)
@@ -26,7 +14,6 @@ Master the power of window functions for advanced data analytics and reporting i
 - ✅ **Advanced Patterns** - 3/3 files (22 examples)
 
 **🎯 All examples tested and validated! Ready for learning.**
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ## 🎯 What You'll Learn
 
@@ -42,29 +29,16 @@ Window functions are one of the most powerful features in SQL for data analysis.
 ## 📊 Difficulty Level Evaluation
 
 ### **Difficulty Scale:**
-<<<<<<< HEAD
-- 🟢 **Beginner** - Basic window function concepts (5-10 min)
-- 🟡 **Intermediate** - Complex partitioning and framing (10-20 min)
-- 🔴 **Advanced** - Performance optimization and edge cases (15-30 min)
-- ⚫ **Expert** - Advanced analytics patterns (30-45 min)
-
-### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 10 examples (**10.6%**) - Perfect starting point for new learners
-- 🟡 **Intermediate**: 46 examples (**48.9%**) - Building complexity and real-world applications
-- 🔴 **Advanced**: 18 examples (**19.1%**) - Complex patterns and performance considerations
-- ⚫ **Expert**: 20 examples (**21.3%**) - Cutting-edge techniques and optimization
-=======
 - 🟢 **Beginner** - Basic window function concepts (5-15 min)
 - 🟡 **Intermediate** - Complex partitioning and framing (10-25 min)
 - 🔴 **Advanced** - Performance optimization and edge cases (15-45 min)
 - ⚫ **Expert** - Advanced analytics patterns (30-60 min)
 
 ### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 16 examples (**18.2%**) - Perfect starting point for new learners
-- 🟡 **Intermediate**: 20 examples (**22.7%**) - Building complexity and real-world applications
-- 🔴 **Advanced**: 26 examples (**29.5%**) - Complex patterns and performance considerations
-- ⚫ **Expert**: 22 examples (**25.0%**) - Cutting-edge techniques and optimization
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
+- 🟢 **Beginner**: 2 examples (**1.8%**) - Perfect starting point for new learners
+- 🟡 **Intermediate**: 10 examples (**8.9%**) - Building complexity and real-world applications
+- 🔴 **Advanced**: 8 examples (**7.1%**) - Complex patterns and performance considerations
+- ⚫ **Expert**: 3 examples (**2.7%**) - Cutting-edge techniques and optimization
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
@@ -81,22 +55,6 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | Category | File | Difficulty | Description | Examples |
 |----------|------|------------|-------------|----------|
 | **Basic Ranking** | `01-row-number.sql` | 🟢 Beginner | Simple row numbering | 3 |
-<<<<<<< HEAD
-| | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 7 |
-| | `03-percent-rank.sql` | 🟡 Intermediate | PERCENT_RANK basics | 10 |
-| **Advanced Ranking** | `01-ntile-analysis.sql` | 🟡 Intermediate | NTILE and advanced ranking | 4 |
-| | `02-percentile-analysis.sql` | 🟡 Intermediate | PERCENT_RANK basics | 4 |
-| | `03-salary-analysis.sql` | 🔴 Advanced | Complex salary analysis | 6 |
-| **Aggregation Windows** | `01-running-totals.sql` | 🟡 Intermediate | Cumulative sums | 10 |
-| | `02-moving-averages.sql` | 🟡 Intermediate | Rolling averages | 5 |
-| | `03-cumulative-sums.sql` | 🟡 Intermediate | Complex aggregations | 5 |
-| **Partitioned Analytics** | `01-sales-by-category.sql` | 🟡 Intermediate | Category-based ranking | 8 |
-| | `02-customer-segmentation.sql` | 🔴 Advanced | Customer segmentation | 6 |
-| | `03-performance-comparison.sql` | 🔴 Advanced | Performance comparison | 6 |
-| **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 6 |
-| | `02-gap-analysis.sql` | ⚫ Expert | Gap detection and sequence analysis | 8 |
-| | `03-trend-detection.sql` | ⚫ Expert | Trend detection and pattern analysis | 6 |
-=======
 | | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 3 |
 | **Advanced Ranking** | `01-ntile-analysis.sql` | 🟡 Intermediate | NTILE and advanced ranking | 4 |
 | | `02-percentile-analysis.sql` | 🟡 Intermediate | PERCENT_RANK basics | 4 |
@@ -116,7 +74,6 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 8 |
 | | `02-gap-analysis.sql` | ⚫ Expert | Gap detection patterns | 8 |
 | | `03-trend-detection.sql` | ⚫ Expert | Trend identification | 6 |
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ## 🚀 Quick Start
 
