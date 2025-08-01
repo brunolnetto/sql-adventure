@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Password Generation with Pattern Rules
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for generating password patterns with character set rules
+-- LEARNING OUTCOMES:
+--   - Understand pattern-based string generation using recursion
+--   - Learn to apply rules for character selection and pattern building
+--   - Master recursive string building with conditional logic and character sets
+-- EXPECTED RESULTS: Generate 12-character passwords following alternating character set rules
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Pattern generation, string building, conditional recursion, character sets
 
 -- PURPOSE: Demonstrate recursive CTE for generating password patterns
 --          with specific character set rules and complexity requirements

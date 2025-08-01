@@ -1,6 +1,17 @@
-# Recursive CTE Examples: A Comprehensive Guide
+# Recursive CTE Quest 🔄
 
-This repository contains practical examples of Recursive Common Table Expressions (CTEs) in SQL, demonstrating their versatility beyond just hierarchical data traversal.
+Master the power of Recursive Common Table Expressions (CTEs) for hierarchical data, mathematical sequences, and complex data transformations in SQL.
+
+## 🎯 What You'll Learn
+
+Recursive CTEs are a powerful SQL feature that allows you to perform iterative operations directly in SQL. While they're commonly associated with hierarchical data, they can be used for much more - from mathematical computations to data transformation and simulation.
+
+### **Key Concepts:**
+- **Hierarchical traversal** - Employee org charts, family trees, BOM
+- **Graph algorithms** - Shortest path, cycle detection, reachability  
+- **Mathematical sequences** - Fibonacci, Collatz, prime generation
+- **Data transformation** - Nested JSON parsing, complex string operations
+- **Simulation & state machines** - Multi-step processes, game states
 
 ## ⚠️ **Honest Assessment: Educational vs. Practical Examples**
 
@@ -24,13 +35,30 @@ This repository contains practical examples of Recursive Common Table Expression
 - **Complex Data Transformation** - Nested JSON parsing, complex string operations
 - **Simulation & State Machines** - Multi-step processes, game states
 
-## 🎯 **Difficulty Level Evaluation**
+## 📊 Difficulty Level Evaluation
 
 ### **Difficulty Scale:**
+<<<<<<< HEAD
 - 🟢 **Beginner** - Basic recursive patterns, simple logic (5-10 min)
 - 🟡 **Intermediate** - Moderate complexity, multiple concepts (10-20 min)
 - 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (15-30 min)
 - ⚫ **Expert** - Theoretical concepts, optimization challenges (30-45 min)
+=======
+- 🟢 **Beginner** - Basic recursive patterns, simple logic (5-15 min)
+- 🟡 **Intermediate** - Moderate complexity, multiple concepts (10-25 min)
+- 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (15-45 min)
+- ⚫ **Expert** - Theoretical concepts, optimization challenges (30-60 min)
+
+### **📈 Difficulty Distribution by Examples:**
+- 🟢 **Beginner**: 7 examples (**24.1%**) - Foundation concepts and educational patterns
+- 🟡 **Intermediate**: 9 examples (**31.0%**) - Building complexity with legitimate use cases
+- 🔴 **Advanced**: 9 examples (**31.0%**) - Complex algorithms and real-world applications
+- ⚫ **Expert**: 4 examples (**13.8%**) - Advanced theoretical concepts and optimization
+
+**💡 Learning Tip**: This quest balances educational examples (to learn patterns) with legitimate use cases (for real-world application). Focus on understanding the recursive patterns first, then apply them to practical scenarios.
+
+**📚 Progression Strategy**: Start with educational examples to learn patterns, then progress to legitimate use cases for practical application.
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ### **Complete Example Difficulty Table:**
 
@@ -68,51 +96,27 @@ This repository contains practical examples of Recursive Common Table Expression
 | | `02-password-generator.sql` | 🟡 Intermediate | ✅ Legitimate | String generation patterns |
 | | `03-spiral-matrix.sql` | 🔴 Advanced | ✅ Legitimate | Complex coordinate manipulation |
 
-### **Recommended Learning Paths:**
+## 🚀 Quick Start
 
-| Skill Level | Examples to Start With | Focus Areas |
-|-------------|------------------------|-------------|
-| **🟢 Beginner** | `01-number-series.sql`, `01-employee-hierarchy.sql`, `01-string-splitting.sql` | Basic recursion, hierarchical traversal, simple transformations |
-| **🟡 Intermediate** | `03-fibonacci-sequence.sql`, `02-bill-of-materials.sql`, `01-sequence-gaps.sql` | Mathematical sequences, complex hierarchies, data repair |
-| **🔴 Advanced** | `04-graph-reachability.sql`, `02-transitive-closure.sql`, `01-inventory-simulation.sql` | Graph theory, matrix operations, state machines |
-| **⚫ Expert** | `02-topological-sort.sql`, `03-cycle-detection.sql`, `02-game-simulation.sql` | Advanced algorithms, optimization, theoretical concepts |
-
-## 📚 Overview
-
-Recursive CTEs are a powerful SQL feature that allows you to perform iterative operations directly in SQL. While they're commonly associated with hierarchical data, they can be used for much more - from mathematical computations to data transformation and simulation.
-
-## 🐳 Quick Start with Docker
-
-### Prerequisites
+### **Prerequisites**
 - Docker and Docker Compose installed
-- Git (to clone this repository)
+- Basic SQL knowledge (SELECT, FROM, WHERE, ORDER BY)
+- Understanding of GROUP BY and aggregate functions
 
-### 1. Clone and Setup
+### **1. Start the Environment**
 ```bash
+# Clone the repository
 git clone <repository-url>
-cd quests/recursive-cte
-```
+cd sql-adventure
 
-### 2. Configure Environment (Optional)
-```bash
-# From the root directory, copy the example environment file
-cp ../env.example ../.env
-
-# Edit .env if you want to customize settings
-nano ../.env
-```
-
-### 3. Start the Services
-```bash
-# From the root directory, start PostgreSQL and pgAdmin
-cd ..
+# Start PostgreSQL and pgAdmin
 docker-compose up -d
 
 # Check if services are running
 docker-compose ps
 ```
 
-### 4. Access the Services
+### **2. Access the Services**
 - **pgAdmin**: http://localhost:8080
   - Email: `admin@sql-adventure.com`
   - Password: `admin`
@@ -121,26 +125,47 @@ docker-compose ps
   - Username: `postgres`
   - Password: `postgres`
 
-### 5. View Examples
-Once connected to pgAdmin, you can:
-1. Navigate to the "Recursive CTE Database" server
-2. Browse the individual example files in the category folders
-3. Browse the logs in `/workspace/logs/` for execution results
-
-### 6. Run Examples (Optional)
-You can also run examples from the command line:
+### **3. Run Examples**
 ```bash
-# From the root directory
-./scripts/run-examples.sh list recursive-cte                    # List all examples
-./scripts/run-examples.sh quest recursive-cte                   # Run all examples
-./scripts/run-examples.sh quest recursive-cte hierarchical      # Run specific category
+# Run all recursive CTE examples
+./scripts/run-examples.sh quest recursive-cte
+
+# Run specific categories
+./scripts/run-examples.sh quest recursive-cte hierarchical-graph-traversal
+./scripts/run-examples.sh quest recursive-cte iteration-loops
 ```
 
-## 🗂️ File Structure
+## 📚 Learning Path
+
+### **🟢 Beginner Path (Start Here)**
+1. `01-number-series.sql` - Understand basic recursion patterns
+2. `01-employee-hierarchy.sql` - Learn hierarchical traversal
+3. `01-string-splitting.sql` - Basic string manipulation
+4. `03-category-tree.sql` - Simple tree navigation
+
+### **🟡 Intermediate Path**
+1. `03-fibonacci-sequence.sql` - Mathematical sequences
+2. `02-bill-of-materials.sql` - Complex hierarchies
+3. `01-sequence-gaps.sql` - Data repair patterns
+4. `06-factorial-calculation.sql` - Mathematical recursion
+
+### **🔴 Advanced Path**
+1. `04-graph-reachability.sql` - Graph theory concepts
+2. `02-transitive-closure.sql` - Matrix operations
+3. `01-inventory-simulation.sql` - State machines
+4. `01-shortest-path.sql` - Path-finding algorithms
+
+### **⚫ Expert Path**
+1. `02-topological-sort.sql` - Advanced graph algorithms
+2. `03-cycle-detection.sql` - Complex graph analysis
+3. `02-game-simulation.sql` - Game state management
+4. `03-permutation-generation.sql` - Combinatorial algorithms
+
+## 📁 File Organization
 
 The examples are organized into 8 categories, each containing individual example files that are **idempotent** (can be run multiple times safely):
 
-### 1. **Hierarchical & Graph Traversal** (`01-hierarchical-graph-traversal/`) ✅ **Legitimate**
+### **01-hierarchical-graph-traversal/** ✅ **Legitimate**
 - `01-employee-hierarchy.sql` - Organization charts and employee hierarchies
 - `02-bill-of-materials.sql` - Bill of Materials (BOM) with cost calculations
 - `03-category-tree.sql` - Category trees and nested structures
@@ -149,7 +174,7 @@ The examples are organized into 8 categories, each containing individual example
 - `06-filesystem-hierarchy.sql` - Filesystem hierarchy traversal
 - `07-family-tree.sql` - Family tree and ancestor relationships
 
-### 2. **Iteration & Loop Emulation** (`02-iteration-loops/`) 🎓 **Mixed**
+### **02-iteration-loops/** 🎓 **Mixed**
 - `01-number-series.sql` - Number series generation (1 to N, even numbers) ⚠️ **Use `generate_series()`**
 - `02-date-series.sql` - Date series and business day calculations ⚠️ **Use `generate_series()`**
 - `03-fibonacci-sequence.sql` - Fibonacci sequence generation ✅ **Legitimate**
@@ -158,35 +183,36 @@ The examples are organized into 8 categories, each containing individual example
 - `06-factorial-calculation.sql` - Factorial calculations ✅ **Legitimate**
 - `07-running-total.sql` - Running totals and cumulative sums ⚠️ **Use window functions**
 
-### 3. **Path-Finding & Analysis** (`03-path-finding-analysis/`) ✅ **Legitimate**
+### **03-path-finding-analysis/** ✅ **Legitimate**
 - `01-shortest-path.sql` - Shortest path algorithms (BFS-style)
 - `02-topological-sort.sql` - Topological sorting for task dependencies
 - `03-cycle-detection.sql` - Cycle detection in graphs
 
-### 4. **Data Transformation & Parsing** (`04-data-transformation-parsing/`) 🎓 **Mixed**
+### **04-data-transformation-parsing/** 🎓 **Mixed**
 - `01-string-splitting.sql` - String splitting and parsing ⚠️ **Use `string_to_array()` + `unnest()`**
 - `02-transitive-closure.sql` - Transitive closure calculations ✅ **Legitimate**
 - `03-json-parsing.sql` - JSON-like structure parsing ✅ **Legitimate**
 
-### 5. **Simulation & State Machines** (`05-simulation-state-machines/`) ✅ **Legitimate**
+### **05-simulation-state-machines/** ✅ **Legitimate**
 - `01-inventory-simulation.sql` - Inventory management simulation
 - `02-game-simulation.sql` - Game simulation (Tic-tac-toe)
 
-### 6. **Data Repair & Self-Healing** (`06-data-repair-healing/`) 🎓 **Mixed**
+### **06-data-repair-healing/** 🎓 **Mixed**
 - `01-sequence-gaps.sql` - Filling gaps in sequences ✅ **Legitimate**
 - `02-forward-fill-nulls.sql` - Forward/backward filling of NULLs ⚠️ **Use `IGNORE NULLS` (PostgreSQL 12+)**
 - `03-interval-coalescing.sql` - Merging overlapping intervals ✅ **Legitimate**
 
-### 7. **Mathematical & Theoretical** (`07-mathematical-theoretical/`) ✅ **Legitimate**
+### **07-mathematical-theoretical/** ✅ **Legitimate**
 - `01-fibonacci-sequence.sql` - Fibonacci sequence generation
 - `02-prime-numbers.sql` - Prime number generation
 - `03-permutation-generation.sql` - Permutation generation
 
-### 8. **Bonus Quirky Examples** (`08-bonus-quirky-examples/`) 🎓 **Educational**
+### **08-bonus-quirky-examples/** 🎓 **Educational**
 - `01-work-streak.sql` - Longest work streak analysis ✅ **Legitimate**
 - `02-password-generator.sql` - Password pattern generation ✅ **Legitimate**
 - `03-spiral-matrix.sql` - Spiral matrix generation ✅ **Legitimate**
 
+<<<<<<< HEAD
 ## 🔧 Running Examples
 
 ### Option 1: Docker (Recommended)
@@ -214,6 +240,9 @@ psql -h localhost -p 5433 -U postgres -d sql_adventure_db -f quests/recursive-ct
 ```
 
 ## 🎯 Key Concepts
+=======
+## 🔧 Key Concepts
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ### Recursive CTE Structure
 ```sql
@@ -238,6 +267,26 @@ SELECT * FROM cte_name;
 4. **Data Transformation**: Parse strings, flatten structures
 5. **Simulation**: Model state changes over time
 
+## 🏢 Real-World Applications
+
+### **Business Analytics**
+- **Organization charts** - Employee hierarchies and reporting structures
+- **Bill of Materials** - Product cost calculations and dependencies
+- **Category management** - Nested category trees and navigation
+- **Dependency tracking** - Project and task dependencies
+
+### **Data Science**
+- **Graph analysis** - Network analysis and path finding
+- **Mathematical modeling** - Sequence generation and calculations
+- **Data transformation** - Complex parsing and structure manipulation
+- **Simulation modeling** - State-based simulations and predictions
+
+### **Software Development**
+- **File system navigation** - Directory tree traversal
+- **Package management** - Dependency resolution
+- **Configuration parsing** - Nested configuration structures
+- **Game development** - Game state management and AI
+
 ## 📊 Performance Considerations
 
 - **Limit recursion depth** to prevent infinite loops
@@ -260,23 +309,27 @@ SELECT * FROM cte_name;
 - Use `\timing` in psql to measure execution time
 - Consider if a simpler approach exists
 
+## 🤝 Contributing
+
+We welcome contributions to expand the Recursive CTE quest! Please ensure:
+
+- **Examples are idempotent** (safe to run multiple times)
+- **Include clear comments** explaining the concepts
+- **Use realistic data** that demonstrates real-world scenarios
+- **Follow the difficulty rating system**
+- **Test thoroughly** before submitting
+- **Honestly label** examples as educational vs. practical
+- **Keep files focused** with 3-4 examples per file
+- **Maintain clear learning progression** between files
+
 ## 📚 Further Reading
 
 - [PostgreSQL Documentation - WITH Queries](https://www.postgresql.org/docs/current/queries-with.html)
 - [SQL Server Documentation - Recursive CTEs](https://docs.microsoft.com/en-us/sql/t-sql/queries/with-common-table-expression-transact-sql)
 - [Oracle Documentation - Hierarchical Queries](https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Hierarchical-Queries.html)
 
-## 🤝 Contributing
-
-Feel free to contribute additional examples or improvements to existing ones. Please ensure all examples are:
-- **Idempotent** (can be run multiple times safely)
-- **Well-documented** with clear comments
-- **Realistic** with practical use cases
-- **Tested** and verified to work correctly
-- **Honestly labeled** as educational vs. practical
-
 ---
 
-*Happy SQL Adventuring! 🚀*
+*Ready to master recursive CTEs? Start with the [Hierarchical & Graph Traversal examples](./01-hierarchical-graph-traversal/)! 🚀*
 
 **Remember:** Learn the patterns from the "silly" examples, but use the simpler alternatives in production! 😉 

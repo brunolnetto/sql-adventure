@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Employee Hierarchy Traversal
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate basic recursive CTE for hierarchical data traversal
+-- LEARNING OUTCOMES:
+--   - Understand parent-child relationship traversal
+--   - Learn to build hierarchical paths using recursion
+--   - Master basic recursive CTE patterns with level tracking
+-- EXPECTED RESULTS: Complete employee hierarchy with levels and full paths
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: Recursive CTE, Hierarchical Data, Parent-Child Relationships, Level Tracking
 
 -- PURPOSE: Demonstrate recursive CTE for traversing employee organizational
 --          hierarchy and building complete hierarchy paths from CEO to employees

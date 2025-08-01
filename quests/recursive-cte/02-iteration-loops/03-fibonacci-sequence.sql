@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Fibonacci Sequence Generation
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for mathematical sequence generation
+-- LEARNING OUTCOMES:
+--   - Understand mathematical sequence generation using recursion
+--   - Learn to maintain multiple values in recursive CTEs
+--   - Master iterative mathematical calculations
+-- EXPECTED RESULTS: First 15 Fibonacci numbers (0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377)
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, Mathematical Sequences, Fibonacci Numbers, Iterative Calculation
 
 -- PURPOSE: Demonstrate recursive CTE for generating mathematical sequences
 --          specifically the Fibonacci sequence using iterative recursion

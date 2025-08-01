@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Longest Work Streak Analysis
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for analyzing continuous work streaks
+-- LEARNING OUTCOMES:
+--   - Understand streak analysis and consecutive day counting techniques
+--   - Learn to track continuous periods and reset counters using recursion
+--   - Master date-based recursion and interval calculations for pattern recognition
+-- EXPECTED RESULTS: Find longest continuous work streaks for each employee
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Streak analysis, date recursion, consecutive counting, pattern recognition
 
 -- PURPOSE: Demonstrate recursive CTE for analyzing continuous work streaks
 --          and identifying patterns in employee attendance data

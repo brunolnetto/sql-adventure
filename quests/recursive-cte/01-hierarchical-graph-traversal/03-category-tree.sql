@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Category Tree Navigation
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for category tree navigation and path building
+-- LEARNING OUTCOMES:
+--   - Understand tree structure traversal and path construction
+--   - Learn to build full hierarchical paths using recursion
+--   - Master simple tree navigation patterns
+-- EXPECTED RESULTS: Complete category tree with full hierarchical paths
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: Recursive CTE, Tree Structures, Path Building, Hierarchical Navigation
 
 -- PURPOSE: Demonstrate recursive CTE for navigating hierarchical category
 --          structures and building complete category paths

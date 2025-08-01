@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Dependency Resolution and Chain Analysis
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for dependency resolution and cycle detection
+-- LEARNING OUTCOMES:
+--   - Understand dependency graph traversal and resolution
+--   - Learn to detect and handle circular dependencies
+--   - Master complex dependency chain analysis
+-- EXPECTED RESULTS: Complete dependency chain for package 1 with cycle detection
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Recursive CTE, Dependency Resolution, Cycle Detection, Graph Analysis
 
 -- PURPOSE: Demonstrate recursive CTE for resolving package dependencies
 --          and analyzing dependency chains in software systems

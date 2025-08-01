@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Graph Reachability Analysis
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for graph traversal and reachability analysis
+-- LEARNING OUTCOMES:
+--   - Understand graph traversal algorithms using recursion
+--   - Learn to find all reachable nodes from a starting point
+--   - Master path tracking and distance calculation in graphs
+-- EXPECTED RESULTS: All nodes reachable from node 1 with shortest paths
+-- DIFFICULTY: 🔴 Advanced (15-30 min)
+-- CONCEPTS: Recursive CTE, Graph Algorithms, Reachability Analysis, Path Finding
 
 -- PURPOSE: Demonstrate recursive CTE for analyzing graph reachability
 --          and finding all nodes reachable from a starting point

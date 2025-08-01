@@ -1,14 +1,19 @@
 -- =====================================================
 -- Transitive Closure Example
 -- =====================================================
+-- 
 -- PURPOSE: Demonstrate recursive CTE for computing transitive closure of relationships
--- LEARNING OUTCOMES: 
+-- LEARNING OUTCOMES:
 --   - Understand transitive closure concept (if A→B and B→C, then A→C)
 --   - Learn to compute indirect relationships through direct ones
 --   - Master relationship path analysis and hop counting
 -- EXPECTED RESULTS: Find all indirect relationships and shortest path lengths
 -- DIFFICULTY: 🔴 Advanced (15-30 min)
+<<<<<<< HEAD
 -- CONCEPTS: Transitive closure, relationship graphs, path analysis
+=======
+-- CONCEPTS: Transitive closure, relationship graphs, path analysis, hop counting
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS knows_relationship CASCADE;

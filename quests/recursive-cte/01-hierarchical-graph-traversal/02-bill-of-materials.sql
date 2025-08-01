@@ -1,6 +1,15 @@
 -- =====================================================
 -- Recursive CTE: Bill of Materials (BOM) Cost Calculation
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for complex hierarchical cost calculations
+-- LEARNING OUTCOMES:
+--   - Understand multi-level cost aggregation in hierarchical structures
+--   - Learn to calculate total costs including subcomponents
+--   - Master recursive CTE with complex business logic
+-- EXPECTED RESULTS: Complete cost breakdown for each product including subcomponents
+-- DIFFICULTY: 🟡 Intermediate (10-20 min)
+-- CONCEPTS: Recursive CTE, Cost Aggregation, Hierarchical Calculations, Business Logic
 
 -- PURPOSE: Demonstrate recursive CTE for calculating total product costs
 --          including subcomponent costs in a bill of materials structure

@@ -1,7 +1,8 @@
 -- =====================================================
--- Window Functions: RANK and DENSE_RANK
+-- Window Functions: Basic RANK and DENSE_RANK
 -- =====================================================
 
+<<<<<<< HEAD
 -- PURPOSE: Demonstrate RANK() and DENSE_RANK() functions for handling ties
 --          and understanding the differences between ranking methods
 -- LEARNING OUTCOMES: Students will understand how to use RANK() and DENSE_RANK()
@@ -16,6 +17,18 @@
 -- 7. Percentile ranking calculations using RANK and DENSE_RANK
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: RANK(), DENSE_RANK(), ROW_NUMBER(), PARTITION BY, ranking with ties, percentile calculations
+=======
+-- PURPOSE: Demonstrate basic RANK and DENSE_RANK functions for handling ties
+--          and understanding the differences between ranking methods
+-- LEARNING OUTCOMES: Students will understand how to use RANK and DENSE_RANK
+--                    for handling tied values and creating ranking sequences
+-- EXPECTED RESULTS:
+-- 1. Understanding the difference between RANK and DENSE_RANK
+-- 2. Handling ties in ranking data
+-- 3. Basic partitioning with ranking functions
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- CONCEPTS: RANK(), DENSE_RANK(), PARTITION BY, handling ties
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS student_scores CASCADE;
@@ -92,77 +105,6 @@ SELECT
     RANK() OVER (PARTITION BY subject ORDER BY score DESC) as rank_with_gaps,
     DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) as dense_rank,
     NTILE(3) OVER (PARTITION BY subject ORDER BY score DESC) as performance_tier
-FROM student_scores
-ORDER BY subject, score DESC;
-
--- =====================================================
--- Example 4: Ranking with Multiple Criteria
--- =====================================================
-
--- Rank by score, then by exam date (for same scores)
-SELECT 
-    student_name,
-    subject,
-    score,
-    exam_date,
-    RANK() OVER (ORDER BY score DESC, exam_date ASC) as overall_rank,
-    DENSE_RANK() OVER (ORDER BY score DESC, exam_date ASC) as overall_dense_rank
-FROM student_scores
-ORDER BY score DESC, exam_date ASC;
-
--- =====================================================
--- Example 5: Top N Students by Subject
--- =====================================================
-
--- Get top 3 students from each subject
-WITH ranked_students AS (
-    SELECT 
-        student_name,
-        subject,
-        score,
-        DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) as subject_rank
-    FROM student_scores
-)
-SELECT 
-    student_name,
-    subject,
-    score,
-    subject_rank
-FROM ranked_students
-WHERE subject_rank <= 3
-ORDER BY subject, subject_rank;
-
--- =====================================================
--- Example 6: Ranking with Filtering
--- =====================================================
-
--- Rank only Mathematics students
-SELECT 
-    student_name,
-    score,
-    RANK() OVER (ORDER BY score DESC) as math_rank,
-    DENSE_RANK() OVER (ORDER BY score DESC) as math_dense_rank
-FROM student_scores
-WHERE subject = 'Mathematics'
-ORDER BY score DESC;
-
--- =====================================================
--- Example 7: Percentile Ranking
--- =====================================================
-
--- Show percentile ranks
-SELECT 
-    student_name,
-    subject,
-    score,
-    ROUND(
-        (RANK() OVER (PARTITION BY subject ORDER BY score DESC) - 1) * 100.0 / 
-        (COUNT(*) OVER (PARTITION BY subject) - 1), 2
-    ) as percentile_rank,
-    ROUND(
-        (DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) - 1) * 100.0 / 
-        (COUNT(DISTINCT score) OVER (PARTITION BY subject) - 1), 2
-    ) as dense_percentile_rank
 FROM student_scores
 ORDER BY subject, score DESC;
 

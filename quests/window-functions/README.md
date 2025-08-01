@@ -4,6 +4,7 @@ Master the power of window functions for advanced data analytics and reporting i
 
 ## ✅ **COMPLETION STATUS: 100% COMPLETE** 🎉
 
+<<<<<<< HEAD
 **Total Examples: 94** | **Categories: 5** | **Files: 15**
 
 ### **📊 Progress Summary:**
@@ -14,6 +15,18 @@ Master the power of window functions for advanced data analytics and reporting i
 - ✅ **Advanced Patterns** - 3/3 files (20 examples)
 
 **🎯 Window Functions Quest is now complete!**
+=======
+**Total Examples: 88** | **Categories: 5** | **Files: 20**
+
+### **📊 Progress Summary:**
+- ✅ **Basic Ranking** - 2/2 files (6 examples)
+- ✅ **Advanced Ranking** - 3/3 files (14 examples)
+- ✅ **Aggregation Windows** - 3/3 files (20 examples)  
+- ✅ **Partitioned Analytics** - 9/9 files (26 examples)
+- ✅ **Advanced Patterns** - 3/3 files (22 examples)
+
+**🎯 All examples tested and validated! Ready for learning.**
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ## 🎯 What You'll Learn
 
@@ -29,6 +42,7 @@ Window functions are one of the most powerful features in SQL for data analysis.
 ## 📊 Difficulty Level Evaluation
 
 ### **Difficulty Scale:**
+<<<<<<< HEAD
 - 🟢 **Beginner** - Basic window function concepts (5-10 min)
 - 🟡 **Intermediate** - Complex partitioning and framing (10-20 min)
 - 🔴 **Advanced** - Performance optimization and edge cases (15-30 min)
@@ -39,6 +53,18 @@ Window functions are one of the most powerful features in SQL for data analysis.
 - 🟡 **Intermediate**: 46 examples (**48.9%**) - Building complexity and real-world applications
 - 🔴 **Advanced**: 18 examples (**19.1%**) - Complex patterns and performance considerations
 - ⚫ **Expert**: 20 examples (**21.3%**) - Cutting-edge techniques and optimization
+=======
+- 🟢 **Beginner** - Basic window function concepts (5-15 min)
+- 🟡 **Intermediate** - Complex partitioning and framing (10-25 min)
+- 🔴 **Advanced** - Performance optimization and edge cases (15-45 min)
+- ⚫ **Expert** - Advanced analytics patterns (30-60 min)
+
+### **📈 Difficulty Distribution by Examples:**
+- 🟢 **Beginner**: 16 examples (**18.2%**) - Perfect starting point for new learners
+- 🟡 **Intermediate**: 20 examples (**22.7%**) - Building complexity and real-world applications
+- 🔴 **Advanced**: 26 examples (**29.5%**) - Complex patterns and performance considerations
+- ⚫ **Expert**: 22 examples (**25.0%**) - Cutting-edge techniques and optimization
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
@@ -55,6 +81,7 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | Category | File | Difficulty | Description | Examples |
 |----------|------|------------|-------------|----------|
 | **Basic Ranking** | `01-row-number.sql` | 🟢 Beginner | Simple row numbering | 3 |
+<<<<<<< HEAD
 | | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 7 |
 | | `03-percent-rank.sql` | 🟡 Intermediate | PERCENT_RANK basics | 10 |
 | **Advanced Ranking** | `01-ntile-analysis.sql` | 🟡 Intermediate | NTILE and advanced ranking | 4 |
@@ -69,6 +96,27 @@ Window functions are one of the most powerful features in SQL for data analysis.
 | **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 6 |
 | | `02-gap-analysis.sql` | ⚫ Expert | Gap detection and sequence analysis | 8 |
 | | `03-trend-detection.sql` | ⚫ Expert | Trend detection and pattern analysis | 6 |
+=======
+| | `02-rank-dense-rank.sql` | 🟢 Beginner | RANK and DENSE_RANK basics | 3 |
+| **Advanced Ranking** | `01-ntile-analysis.sql` | 🟡 Intermediate | NTILE and advanced ranking | 4 |
+| | `02-percentile-analysis.sql` | 🟡 Intermediate | PERCENT_RANK basics | 4 |
+| | `03-salary-analysis.sql` | 🔴 Advanced | Complex salary analysis | 6 |
+| **Aggregation Windows** | `01-running-totals.sql` | 🟢 Beginner | Cumulative sums | 10 |
+| | `02-moving-averages.sql` | 🟡 Intermediate | Rolling averages | 5 |
+| | `03-cumulative-sums.sql` | 🟡 Intermediate | Complex aggregations | 5 |
+| **Partitioned Analytics** | `01-basic-category-ranking.sql` | 🟡 Intermediate | Category-based ranking | 3 |
+| | `02-category-performance-analysis.sql` | 🟡 Intermediate | Performance metrics | 3 |
+| | `03-category-comparisons.sql` | 🟡 Intermediate | Cross-category analysis | 4 |
+| | `04-customer-rfm-analysis.sql` | 🔴 Advanced | RFM analysis | 3 |
+| | `05-customer-segmentation.sql` | 🔴 Advanced | Customer segmentation | 3 |
+| | `06-customer-retention-analysis.sql` | 🔴 Advanced | Retention analysis | 2 |
+| | `07-quarterly-performance.sql` | 🔴 Advanced | Quarterly analysis | 3 |
+| | `08-employee-performance-trends.sql` | 🔴 Advanced | Employee trends | 3 |
+| | `09-performance-forecasting.sql` | 🔴 Advanced | Performance forecasting | 2 |
+| **Advanced Patterns** | `01-lead-lag-analysis.sql` | ⚫ Expert | Time series analysis | 8 |
+| | `02-gap-analysis.sql` | ⚫ Expert | Gap detection patterns | 8 |
+| | `03-trend-detection.sql` | ⚫ Expert | Trend identification | 6 |
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ## 🚀 Quick Start
 
@@ -112,21 +160,27 @@ FROM daily_sales;
 
 ### **🟢 Beginner Path (Start Here)**
 1. `01-row-number.sql` - Understand basic window functions
-2. `01-running-totals.sql` - Learn aggregation windows
-3. `02-rank-dense-rank.sql` - Handle ranking with ties
-4. `01-sales-by-category.sql` - Apply partitioning
+2. `02-rank-dense-rank.sql` - Handle ranking with ties
+3. `01-running-totals.sql` - Learn aggregation windows
+4. `01-basic-category-ranking.sql` - Apply partitioning
 
 ### **🟡 Intermediate Path**
-1. `02-moving-averages.sql` - Complex aggregations
-2. `03-percent-rank.sql` - Percentile calculations
-3. `02-customer-segmentation.sql` - Business analytics
-4. `03-cumulative-sums.sql` - Advanced aggregations
+1. `01-ntile-analysis.sql` - NTILE and advanced ranking
+2. `02-percentile-analysis.sql` - Percentile calculations
+3. `02-moving-averages.sql` - Complex aggregations
+4. `02-category-performance-analysis.sql` - Performance metrics
 
 ### **🔴 Advanced Path**
-1. `03-performance-comparison.sql` - Comparative analysis
-2. `01-lead-lag-analysis.sql` - Time series patterns
-3. `02-gap-analysis.sql` - Gap detection
-4. `03-trend-detection.sql` - Trend analysis
+1. `03-salary-analysis.sql` - Complex salary analysis
+2. `04-customer-rfm-analysis.sql` - RFM analysis
+3. `05-customer-segmentation.sql` - Customer segmentation
+4. `07-quarterly-performance.sql` - Quarterly analysis
+
+### **⚫ Expert Path**
+1. `01-lead-lag-analysis.sql` - Time series analysis
+2. `02-gap-analysis.sql` - Gap detection patterns
+3. `03-trend-detection.sql` - Trend identification
+4. `09-performance-forecasting.sql` - Performance forecasting
 
 ## 🎮 Running Examples
 
@@ -272,6 +326,38 @@ SELECT
 FROM products;
 ```
 
+## 📁 File Organization
+
+### **01-basic-ranking/**
+- `01-row-number.sql` - Basic row numbering (3 examples)
+- `02-rank-dense-rank.sql` - Ranking with ties (3 examples)
+
+### **02-advanced-ranking/**
+- `01-ntile-analysis.sql` - NTILE and advanced ranking (4 examples)
+- `02-percentile-analysis.sql` - PERCENT_RANK basics (4 examples)
+- `03-salary-analysis.sql` - Complex salary analysis (6 examples)
+
+### **03-aggregation-windows/**
+- `01-running-totals.sql` - Cumulative sums (4 examples)
+- `02-moving-averages.sql` - Rolling averages (4 examples)
+- `03-cumulative-sums.sql` - Complex aggregations (4 examples)
+
+### **04-partitioned-analytics/**
+- `01-basic-category-ranking.sql` - Category-based ranking (3 examples)
+- `02-category-performance-analysis.sql` - Performance metrics (3 examples)
+- `03-category-comparisons.sql` - Cross-category analysis (4 examples)
+- `04-customer-rfm-analysis.sql` - RFM analysis (3 examples)
+- `05-customer-segmentation.sql` - Customer segmentation (3 examples)
+- `06-customer-retention-analysis.sql` - Retention analysis (2 examples)
+- `07-quarterly-performance.sql` - Quarterly analysis (3 examples)
+- `08-employee-performance-trends.sql` - Employee trends (3 examples)
+- `09-performance-forecasting.sql` - Performance forecasting (2 examples)
+
+### **05-advanced-patterns/**
+- `01-lead-lag-analysis.sql` - Time series analysis (8 examples)
+- `02-gap-analysis.sql` - Gap detection patterns (8 examples)
+- `03-trend-detection.sql` - Trend identification (6 examples)
+
 ## 🤝 Contributing
 
 We welcome contributions to expand the Window Functions quest! Please ensure:
@@ -281,6 +367,8 @@ We welcome contributions to expand the Window Functions quest! Please ensure:
 - **Use realistic data** that demonstrates real-world scenarios
 - **Follow the difficulty rating system**
 - **Test thoroughly** before submitting
+- **Keep files focused** with 3-4 examples per file
+- **Maintain clear learning progression** between files
 
 ## 📚 Further Reading
 

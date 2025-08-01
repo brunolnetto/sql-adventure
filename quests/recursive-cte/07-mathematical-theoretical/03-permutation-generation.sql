@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 -- PURPOSE: Demonstrate recursive CTE for generating all permutations of a set
 -- LEARNING OUTCOMES:
 --   - Understand combinatorial algorithms in SQL
@@ -6,9 +7,20 @@
 -- EXPECTED RESULTS: Generate all 6 permutations of the set {A, B, C}
 -- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Permutation generation, combinatorics, recursive algorithms
+=======
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 -- =====================================================
 -- Permutation Generation Example
 -- =====================================================
+-- 
+-- PURPOSE: Demonstrate recursive CTE for generating all permutations of a set
+-- LEARNING OUTCOMES:
+--   - Understand combinatorial algorithms in SQL for permutation generation
+--   - Learn to generate all possible orderings of a set using recursion
+--   - Master recursive construction of permutations with systematic ordering
+-- EXPECTED RESULTS: Generate all 6 permutations of the set {A, B, C}
+-- DIFFICULTY: ⚫ Expert (30-45 min)
+-- CONCEPTS: Permutation generation, combinatorics, recursive algorithms, systematic ordering
 
 -- Generate permutations of a set of elements
 WITH RECURSIVE permutation_generator AS (

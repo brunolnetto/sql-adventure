@@ -1,14 +1,19 @@
 -- =====================================================
 -- Cycle Detection Example
 -- =====================================================
+-- 
 -- PURPOSE: Demonstrate recursive CTE for detecting cycles in directed graphs
--- LEARNING OUTCOMES: 
---   - Understand cycle detection in directed graphs
---   - Learn to track paths and detect revisits
---   - Master graph traversal with cycle prevention
+-- LEARNING OUTCOMES:
+--   - Understand cycle detection algorithms in directed graphs
+--   - Learn to track paths and detect revisits during traversal
+--   - Master graph traversal with cycle prevention and detection
 -- EXPECTED RESULTS: Detect cycles in the graph (B→C→D→E→B and A→F→A)
 -- DIFFICULTY: ⚫ Expert (30-45 min)
+<<<<<<< HEAD
 -- CONCEPTS: Graph algorithms, cycle detection, path tracking
+=======
+-- CONCEPTS: Graph algorithms, cycle detection, path tracking, directed graphs
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS graph_edges CASCADE;

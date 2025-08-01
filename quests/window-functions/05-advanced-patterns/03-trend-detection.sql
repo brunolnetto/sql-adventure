@@ -1,4 +1,5 @@
 -- =====================================================
+<<<<<<< HEAD
 -- Window Functions: Trend Detection and Pattern Analysis
 -- =====================================================
 
@@ -388,4 +389,531 @@ DROP TABLE IF EXISTS stock_prices CASCADE;
 DROP TABLE IF EXISTS website_metrics CASCADE;
 DROP TABLE IF EXISTS temperature_data CASCADE;
 DROP TABLE IF EXISTS customer_behavior CASCADE;
+=======
+-- Window Functions: Advanced Trend Detection
+-- =====================================================
+
+-- PURPOSE: Demonstrate advanced window functions for trend detection,
+--          pattern recognition, and signal processing
+-- LEARNING OUTCOMES: Students will understand how to use window functions for
+--                    trend identification, pattern recognition, and signal analysis
+-- EXPECTED RESULTS:
+-- 1. Trend identification and classification
+-- 2. Pattern recognition in time series data
+-- 3. Signal processing and noise filtering
+-- 4. Predictive trend analysis
+-- DIFFICULTY: ⚫ Expert (30-45 min)
+-- CONCEPTS: Trend Detection, Pattern Recognition, Signal Processing,
+--           Moving Averages, Trend Classification, Predictive Analysis
+
+-- Clean up existing tables (idempotent)
+DROP TABLE IF EXISTS market_data CASCADE;
+DROP TABLE IF EXISTS website_traffic CASCADE;
+DROP TABLE IF EXISTS production_metrics CASCADE;
+
+-- Create market data table
+CREATE TABLE market_data (
+    record_id INT PRIMARY KEY,
+    symbol VARCHAR(10),
+    date DATE,
+    price DECIMAL(10,2),
+    volume BIGINT,
+    volatility DECIMAL(5,2)
+);
+
+-- Create website traffic table
+CREATE TABLE website_traffic (
+    record_id INT PRIMARY KEY,
+    page_url VARCHAR(200),
+    date DATE,
+    visitors INT,
+    conversion_rate DECIMAL(5,2),
+    avg_session_duration INT
+);
+
+-- Create production metrics table
+CREATE TABLE production_metrics (
+    record_id INT PRIMARY KEY,
+    machine_id VARCHAR(20),
+    timestamp TIMESTAMP,
+    efficiency DECIMAL(5,2),
+    output_rate DECIMAL(8,2),
+    error_rate DECIMAL(5,2)
+);
+
+-- Insert sample market data
+INSERT INTO market_data VALUES
+-- AAPL stock with uptrend
+(1, 'AAPL', '2024-01-01', 150.00, 50000000, 2.5),
+(2, 'AAPL', '2024-01-02', 152.50, 52000000, 2.8),
+(3, 'AAPL', '2024-01-03', 155.25, 54000000, 3.1),
+(4, 'AAPL', '2024-01-04', 158.75, 56000000, 3.3),
+(5, 'AAPL', '2024-01-05', 162.00, 58000000, 3.5),
+(6, 'AAPL', '2024-01-08', 165.50, 60000000, 3.8),
+(7, 'AAPL', '2024-01-09', 168.75, 62000000, 4.0),
+(8, 'AAPL', '2024-01-10', 172.25, 64000000, 4.2),
+(9, 'AAPL', '2024-01-11', 175.50, 66000000, 4.5),
+(10, 'AAPL', '2024-01-12', 178.75, 68000000, 4.8),
+
+-- GOOGL stock with downtrend
+(11, 'GOOGL', '2024-01-01', 2800.00, 2000000, 1.8),
+(12, 'GOOGL', '2024-01-02', 2780.00, 1900000, 2.0),
+(13, 'GOOGL', '2024-01-03', 2750.00, 1800000, 2.2),
+(14, 'GOOGL', '2024-01-04', 2720.00, 1700000, 2.5),
+(15, 'GOOGL', '2024-01-05', 2690.00, 1600000, 2.8),
+(16, 'GOOGL', '2024-01-08', 2660.00, 1500000, 3.0),
+(17, 'GOOGL', '2024-01-09', 2630.00, 1400000, 3.2),
+(18, 'GOOGL', '2024-01-10', 2600.00, 1300000, 3.5),
+(19, 'GOOGL', '2024-01-11', 2570.00, 1200000, 3.8),
+(20, 'GOOGL', '2024-01-12', 2540.00, 1100000, 4.0);
+
+-- Insert sample website traffic data
+INSERT INTO website_traffic VALUES
+-- Homepage with growth trend
+(1, '/home', '2024-01-01', 1000, 2.5, 180),
+(2, '/home', '2024-01-02', 1100, 2.8, 185),
+(3, '/home', '2024-01-03', 1200, 3.1, 190),
+(4, '/home', '2024-01-04', 1300, 3.3, 195),
+(5, '/home', '2024-01-05', 1400, 3.5, 200),
+(6, '/home', '2024-01-08', 1500, 3.8, 205),
+(7, '/home', '2024-01-09', 1600, 4.0, 210),
+(8, '/home', '2024-01-10', 1700, 4.2, 215),
+(9, '/home', '2024-01-11', 1800, 4.5, 220),
+(10, '/home', '2024-01-12', 1900, 4.8, 225),
+
+-- Products page with decline trend
+(11, '/products', '2024-01-01', 800, 3.2, 150),
+(12, '/products', '2024-01-02', 780, 3.0, 145),
+(13, '/products', '2024-01-03', 760, 2.8, 140),
+(14, '/products', '2024-01-04', 740, 2.6, 135),
+(15, '/products', '2024-01-05', 720, 2.4, 130),
+(16, '/products', '2024-01-08', 700, 2.2, 125),
+(17, '/products', '2024-01-09', 680, 2.0, 120),
+(18, '/products', '2024-01-10', 660, 1.8, 115),
+(19, '/products', '2024-01-11', 640, 1.6, 110),
+(20, '/products', '2024-01-12', 620, 1.4, 105);
+
+-- Insert sample production metrics
+INSERT INTO production_metrics VALUES
+-- Machine 1 with improving efficiency
+(1, 'MACHINE_001', '2024-01-01 08:00:00', 85.5, 100.0, 2.5),
+(2, 'MACHINE_001', '2024-01-01 09:00:00', 86.2, 102.5, 2.3),
+(3, 'MACHINE_001', '2024-01-01 10:00:00', 87.1, 105.0, 2.1),
+(4, 'MACHINE_001', '2024-01-01 11:00:00', 88.0, 107.5, 1.9),
+(5, 'MACHINE_001', '2024-01-01 12:00:00', 88.8, 110.0, 1.7),
+(6, 'MACHINE_001', '2024-01-01 13:00:00', 89.5, 112.5, 1.5),
+(7, 'MACHINE_001', '2024-01-01 14:00:00', 90.2, 115.0, 1.3),
+(8, 'MACHINE_001', '2024-01-01 15:00:00', 90.8, 117.5, 1.1),
+(9, 'MACHINE_001', '2024-01-01 16:00:00', 91.5, 120.0, 0.9),
+(10, 'MACHINE_001', '2024-01-01 17:00:00', 92.0, 122.5, 0.7),
+
+-- Machine 2 with declining efficiency
+(11, 'MACHINE_002', '2024-01-01 08:00:00', 92.0, 120.0, 0.8),
+(12, 'MACHINE_002', '2024-01-01 09:00:00', 91.5, 118.0, 1.0),
+(13, 'MACHINE_002', '2024-01-01 10:00:00', 91.0, 116.0, 1.2),
+(14, 'MACHINE_002', '2024-01-01 11:00:00', 90.5, 114.0, 1.4),
+(15, 'MACHINE_002', '2024-01-01 12:00:00', 90.0, 112.0, 1.6),
+(16, 'MACHINE_002', '2024-01-01 13:00:00', 89.5, 110.0, 1.8),
+(17, 'MACHINE_002', '2024-01-01 14:00:00', 89.0, 108.0, 2.0),
+(18, 'MACHINE_002', '2024-01-01 15:00:00', 88.5, 106.0, 2.2),
+(19, 'MACHINE_002', '2024-01-01 16:00:00', 88.0, 104.0, 2.4),
+(20, 'MACHINE_002', '2024-01-01 17:00:00', 87.5, 102.0, 2.6);
+
+-- =====================================================
+-- Example 1: Multi-Timeframe Trend Analysis
+-- =====================================================
+
+-- Analyze trends across multiple timeframes
+WITH trend_analysis AS (
+    SELECT 
+        symbol,
+        date,
+        price,
+        volume,
+        -- Multiple timeframe moving averages
+        AVG(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as ma_3day,
+        AVG(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+        ) as ma_5day,
+        AVG(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 9 PRECEDING AND CURRENT ROW
+        ) as ma_10day,
+        -- Trend strength indicators
+        ROUND(
+            (price - LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) * 100.0 / 
+            NULLIF(LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date), 0), 2
+        ) as daily_change_pct,
+        ROUND(
+            (price - LAG(price, 5) OVER (PARTITION BY symbol ORDER BY date)) * 100.0 / 
+            NULLIF(LAG(price, 5) OVER (PARTITION BY symbol ORDER BY date), 0), 2
+        ) as weekly_change_pct
+    FROM market_data
+)
+SELECT 
+    symbol,
+    date,
+    price,
+    ROUND(ma_3day, 2) as ma_3day,
+    ROUND(ma_5day, 2) as ma_5day,
+    ROUND(ma_10day, 2) as ma_10day,
+    daily_change_pct,
+    weekly_change_pct,
+    -- Trend classification
+    CASE 
+        WHEN ma_3day > ma_5day AND ma_5day > ma_10day AND daily_change_pct > 0 THEN 'Strong Uptrend'
+        WHEN ma_3day > ma_5day AND ma_5day > ma_10day THEN 'Uptrend'
+        WHEN ma_3day < ma_5day AND ma_5day < ma_10day AND daily_change_pct < 0 THEN 'Strong Downtrend'
+        WHEN ma_3day < ma_5day AND ma_5day < ma_10day THEN 'Downtrend'
+        WHEN ABS(daily_change_pct) < 1 THEN 'Sideways'
+        ELSE 'Mixed Signals'
+    END as trend_classification,
+    -- Trend strength
+    CASE 
+        WHEN ABS(weekly_change_pct) > 10 THEN 'Very Strong'
+        WHEN ABS(weekly_change_pct) > 5 THEN 'Strong'
+        WHEN ABS(weekly_change_pct) > 2 THEN 'Moderate'
+        ELSE 'Weak'
+    END as trend_strength
+FROM trend_analysis
+ORDER BY symbol, date;
+
+-- =====================================================
+-- Example 2: Pattern Recognition
+-- =====================================================
+
+-- Recognize patterns in price movements
+WITH pattern_recognition AS (
+    SELECT 
+        symbol,
+        date,
+        price,
+        -- Price momentum indicators
+        LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date) as prev_price,
+        LAG(price, 2) OVER (PARTITION BY symbol ORDER BY date) as prev_2_price,
+        LAG(price, 3) OVER (PARTITION BY symbol ORDER BY date) as prev_3_price,
+        -- Volume momentum
+        LAG(volume, 1) OVER (PARTITION BY symbol ORDER BY date) as prev_volume,
+        -- Price acceleration
+        ROUND(
+            ((price - LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) -
+             (LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date) - 
+              LAG(price, 2) OVER (PARTITION BY symbol ORDER BY date))), 2
+        ) as price_acceleration,
+        -- Volume-price divergence
+        CASE 
+            WHEN (price > LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) AND
+                 (volume > LAG(volume, 1) OVER (PARTITION BY symbol ORDER BY date)) THEN 'Price Up, Volume Up'
+            WHEN (price > LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) AND
+                 (volume < LAG(volume, 1) OVER (PARTITION BY symbol ORDER BY date)) THEN 'Price Up, Volume Down'
+            WHEN (price < LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) AND
+                 (volume > LAG(volume, 1) OVER (PARTITION BY symbol ORDER BY date)) THEN 'Price Down, Volume Up'
+            WHEN (price < LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) AND
+                 (volume < LAG(volume, 1) OVER (PARTITION BY symbol ORDER BY date)) THEN 'Price Down, Volume Down'
+            ELSE 'No Change'
+        END as volume_price_pattern
+    FROM market_data
+)
+SELECT 
+    symbol,
+    date,
+    price,
+    prev_price,
+    prev_2_price,
+    prev_3_price,
+    price_acceleration,
+    volume_price_pattern,
+    -- Pattern identification
+    CASE 
+        WHEN price > prev_price AND prev_price > prev_2_price AND prev_2_price > prev_3_price THEN 'Consistent Uptrend'
+        WHEN price < prev_price AND prev_price < prev_2_price AND prev_2_price < prev_3_price THEN 'Consistent Downtrend'
+        WHEN price > prev_price AND prev_price < prev_2_price THEN 'Reversal Up'
+        WHEN price < prev_price AND prev_price > prev_2_price THEN 'Reversal Down'
+        WHEN ABS(price - prev_price) < 1 THEN 'Consolidation'
+        ELSE 'Mixed Pattern'
+    END as price_pattern,
+    -- Signal strength
+    CASE 
+        WHEN price_acceleration > 0 AND volume_price_pattern = 'Price Up, Volume Up' THEN 'Strong Buy Signal'
+        WHEN price_acceleration < 0 AND volume_price_pattern = 'Price Down, Volume Up' THEN 'Strong Sell Signal'
+        WHEN price_acceleration > 0 THEN 'Weak Buy Signal'
+        WHEN price_acceleration < 0 THEN 'Weak Sell Signal'
+        ELSE 'Neutral'
+    END as trading_signal
+FROM pattern_recognition
+ORDER BY symbol, date;
+
+-- =====================================================
+-- Example 3: Signal Processing and Noise Filtering
+-- =====================================================
+
+-- Filter noise and identify true signals
+WITH signal_processing AS (
+    SELECT 
+        symbol,
+        date,
+        price,
+        volume,
+        -- Exponential moving averages (simplified)
+        AVG(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as short_ema,
+        AVG(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 9 PRECEDING AND CURRENT ROW
+        ) as long_ema,
+        -- Price volatility
+        STDDEV(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+        ) as price_volatility,
+        -- Volume trend
+        AVG(volume) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+        ) as avg_volume
+    FROM market_data
+)
+SELECT 
+    symbol,
+    date,
+    price,
+    volume,
+    ROUND(short_ema, 2) as short_ema,
+    ROUND(long_ema, 2) as long_ema,
+    ROUND(price_volatility, 2) as price_volatility,
+    ROUND(avg_volume, 0) as avg_volume,
+    -- Signal vs noise classification
+    CASE 
+        WHEN ABS(price - short_ema) > price_volatility * 2 THEN 'Strong Signal'
+        WHEN ABS(price - short_ema) > price_volatility THEN 'Moderate Signal'
+        ELSE 'Noise'
+    END as signal_classification,
+    -- Trend confirmation
+    CASE 
+        WHEN short_ema > long_ema AND volume > avg_volume THEN 'Confirmed Uptrend'
+        WHEN short_ema < long_ema AND volume > avg_volume THEN 'Confirmed Downtrend'
+        WHEN short_ema > long_ema THEN 'Weak Uptrend'
+        WHEN short_ema < long_ema THEN 'Weak Downtrend'
+        ELSE 'No Clear Trend'
+    END as trend_confirmation
+FROM signal_processing
+ORDER BY symbol, date;
+
+-- =====================================================
+-- Example 4: Predictive Trend Analysis
+-- =====================================================
+
+-- Predict future trends based on current patterns
+WITH predictive_analysis AS (
+    SELECT 
+        symbol,
+        date,
+        price,
+        volume,
+        -- Trend indicators
+        ROUND(
+            (price - LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) * 100.0 / 
+            NULLIF(LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date), 0), 2
+        ) as momentum,
+        -- Trend acceleration
+        ROUND(
+            ((price - LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date)) -
+             (LAG(price, 1) OVER (PARTITION BY symbol ORDER BY date) - 
+              LAG(price, 2) OVER (PARTITION BY symbol ORDER BY date))), 2
+        ) as acceleration,
+        -- Support and resistance levels
+        MIN(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+        ) as support_level,
+        MAX(price) OVER (
+            PARTITION BY symbol 
+            ORDER BY date 
+            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+        ) as resistance_level
+    FROM market_data
+)
+SELECT 
+    symbol,
+    date,
+    price,
+    volume,
+    momentum,
+    acceleration,
+    ROUND(support_level, 2) as support_level,
+    ROUND(resistance_level, 2) as resistance_level,
+    -- Trend prediction
+    CASE 
+        WHEN momentum > 2 AND acceleration > 0 THEN 'Strong Upward Momentum'
+        WHEN momentum > 0 AND acceleration > 0 THEN 'Moderate Upward Momentum'
+        WHEN momentum < -2 AND acceleration < 0 THEN 'Strong Downward Momentum'
+        WHEN momentum < 0 AND acceleration < 0 THEN 'Moderate Downward Momentum'
+        WHEN ABS(momentum) < 1 THEN 'Sideways Movement'
+        ELSE 'Mixed Signals'
+    END as trend_prediction,
+    -- Risk assessment
+    CASE 
+        WHEN price > resistance_level * 0.98 THEN 'Near Resistance - High Risk'
+        WHEN price < support_level * 1.02 THEN 'Near Support - Low Risk'
+        WHEN ABS(momentum) > 3 THEN 'High Volatility - High Risk'
+        ELSE 'Normal Risk'
+    END as risk_assessment
+FROM predictive_analysis
+ORDER BY symbol, date;
+
+-- =====================================================
+-- Example 5: Website Traffic Trend Analysis
+-- =====================================================
+
+-- Analyze website traffic trends
+WITH traffic_trends AS (
+    SELECT 
+        page_url,
+        date,
+        visitors,
+        conversion_rate,
+        avg_session_duration,
+        -- Traffic momentum
+        ROUND(
+            (visitors - LAG(visitors, 1) OVER (PARTITION BY page_url ORDER BY date)) * 100.0 / 
+            NULLIF(LAG(visitors, 1) OVER (PARTITION BY page_url ORDER BY date), 0), 2
+        ) as visitor_growth_pct,
+        -- Conversion trend
+        ROUND(
+            (conversion_rate - LAG(conversion_rate, 1) OVER (PARTITION BY page_url ORDER BY date)), 2
+        ) as conversion_change,
+        -- Engagement trend
+        ROUND(
+            (avg_session_duration - LAG(avg_session_duration, 1) OVER (PARTITION BY page_url ORDER BY date)), 0
+        ) as duration_change,
+        -- Moving averages
+        AVG(visitors) OVER (
+            PARTITION BY page_url 
+            ORDER BY date 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as visitors_ma_3day,
+        AVG(conversion_rate) OVER (
+            PARTITION BY page_url 
+            ORDER BY date 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as conversion_ma_3day
+    FROM website_traffic
+)
+SELECT 
+    page_url,
+    date,
+    visitors,
+    conversion_rate,
+    avg_session_duration,
+    visitor_growth_pct,
+    conversion_change,
+    duration_change,
+    ROUND(visitors_ma_3day, 0) as visitors_ma_3day,
+    ROUND(conversion_ma_3day, 2) as conversion_ma_3day,
+    -- Traffic trend classification
+    CASE 
+        WHEN visitor_growth_pct > 10 AND conversion_change > 0 THEN 'Strong Growth'
+        WHEN visitor_growth_pct > 5 AND conversion_change > 0 THEN 'Moderate Growth'
+        WHEN visitor_growth_pct > 0 THEN 'Slight Growth'
+        WHEN visitor_growth_pct > -5 THEN 'Slight Decline'
+        WHEN visitor_growth_pct > -10 THEN 'Moderate Decline'
+        ELSE 'Strong Decline'
+    END as traffic_trend,
+    -- Performance assessment
+    CASE 
+        WHEN visitors > visitors_ma_3day * 1.1 AND conversion_rate > conversion_ma_3day THEN 'Outperforming'
+        WHEN visitors < visitors_ma_3day * 0.9 AND conversion_rate < conversion_ma_3day THEN 'Underperforming'
+        WHEN visitors > visitors_ma_3day THEN 'Above Average'
+        WHEN visitors < visitors_ma_3day THEN 'Below Average'
+        ELSE 'On Target'
+    END as performance_status
+FROM traffic_trends
+ORDER BY page_url, date;
+
+-- =====================================================
+-- Example 6: Production Efficiency Trend Analysis
+-- =====================================================
+
+-- Analyze production efficiency trends
+WITH efficiency_trends AS (
+    SELECT 
+        machine_id,
+        timestamp,
+        efficiency,
+        output_rate,
+        error_rate,
+        -- Efficiency momentum
+        ROUND(
+            (efficiency - LAG(efficiency, 1) OVER (PARTITION BY machine_id ORDER BY timestamp)), 2
+        ) as efficiency_change,
+        -- Output trend
+        ROUND(
+            (output_rate - LAG(output_rate, 1) OVER (PARTITION BY machine_id ORDER BY timestamp)), 2
+        ) as output_change,
+        -- Error trend
+        ROUND(
+            (error_rate - LAG(error_rate, 1) OVER (PARTITION BY machine_id ORDER BY timestamp)), 2
+        ) as error_change,
+        -- Moving averages
+        AVG(efficiency) OVER (
+            PARTITION BY machine_id 
+            ORDER BY timestamp 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as efficiency_ma_3hour,
+        AVG(output_rate) OVER (
+            PARTITION BY machine_id 
+            ORDER BY timestamp 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) as output_ma_3hour
+    FROM production_metrics
+)
+SELECT 
+    machine_id,
+    timestamp,
+    efficiency,
+    output_rate,
+    error_rate,
+    efficiency_change,
+    output_change,
+    error_change,
+    ROUND(efficiency_ma_3hour, 2) as efficiency_ma_3hour,
+    ROUND(output_ma_3hour, 2) as output_ma_3hour,
+    -- Efficiency trend classification
+    CASE 
+        WHEN efficiency_change > 1 AND error_change < 0 THEN 'Strong Improvement'
+        WHEN efficiency_change > 0.5 AND error_change < 0 THEN 'Moderate Improvement'
+        WHEN efficiency_change > 0 THEN 'Slight Improvement'
+        WHEN efficiency_change > -0.5 THEN 'Slight Decline'
+        WHEN efficiency_change > -1 THEN 'Moderate Decline'
+        ELSE 'Strong Decline'
+    END as efficiency_trend,
+    -- Machine health assessment
+    CASE 
+        WHEN efficiency > 90 AND error_rate < 1 THEN 'Excellent'
+        WHEN efficiency > 85 AND error_rate < 2 THEN 'Good'
+        WHEN efficiency > 80 AND error_rate < 3 THEN 'Fair'
+        WHEN efficiency > 75 AND error_rate < 4 THEN 'Poor'
+        ELSE 'Critical'
+    END as machine_health
+FROM efficiency_trends
+ORDER BY machine_id, timestamp;
+
+-- Clean up
+DROP TABLE IF EXISTS market_data CASCADE;
+DROP TABLE IF EXISTS website_traffic CASCADE;
+>>>>>>> 4e036c9 (feat(quests) improve quest queries)
 DROP TABLE IF EXISTS production_metrics CASCADE; 
