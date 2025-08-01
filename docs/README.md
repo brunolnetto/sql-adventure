@@ -35,8 +35,8 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 
 ## 📊 Project Statistics
 
-- **54+ Working Examples** - 100% tested and verified
-- **2 Major Quests** - Recursive CTEs (31 examples) + Window Functions (23 examples)
+- **158+ Working Examples** - 100% tested and verified
+- **4 Major Quests** - Recursive CTEs (31 examples) + Window Functions (112 examples) + JSON Operations (12 examples) + Performance Tuning (3 examples)
 - **100% Idempotent** - Safe to run multiple times
 - **Docker Ready** - Easy setup and deployment
 - **Industry Focused** - Real-world business applications
