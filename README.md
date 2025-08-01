@@ -23,20 +23,20 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 🚀 Quick Start
 
 ### For Interviews & Quick Reference
-1. **Start with the [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)** - Complete reference with code examples
-2. **Practice with examples** - Run any of the 31 working examples
+1. **Start with the [Recursive CTE Cheatsheet](./docs/cheatsheets/recursive-cte.md)** - Complete reference with code examples
+2. **Practice with examples** - Run any of the 54+ working examples
 3. **Master patterns** - Understand base case + recursive case structure
 
 ### For Deep Learning
-1. **Follow the [Learning Path](./learning-path.md)** - Structured progression from beginner to advanced
+1. **Follow the [Learning Path](./docs/learning-path.md)** - Structured progression from beginner to advanced
 2. **Explore by category** - Choose your focus area (recursive CTEs, window functions, JSON, etc.)
-3. **Apply to your industry** - See [Use Cases](./use-cases.md) for real-world applications
-4. **Run examples** - Use [Run Examples](./run-examples.md) to execute with full output
+3. **Apply to your industry** - See [Use Cases](./docs/use-cases.md) for real-world applications
+4. **Run examples** - Use [Run Examples](./docs/run-examples.md) to execute with full output
 
 ## 📊 Project Statistics
 
- - **32+ Working Examples** - 100% tested and verified
- - **9+ Categories** - Comprehensive coverage of SQL patterns
+ - **54+ Working Examples** - 100% tested and verified
+ - **2 Major Quests** - Recursive CTEs (31 examples) + Window Functions (23 examples)
  - **100% Idempotent** - Safe to run multiple times
  - **Docker Ready** - Easy setup and deployment
  - **Industry Focused** - Real-world business applications

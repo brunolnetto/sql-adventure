@@ -9,11 +9,7 @@
 --   - Master iterative string processing and token extraction
 -- EXPECTED RESULTS: Split "apple,banana,cherry,date,elderberry" into 5 individual values
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
-<<<<<<< HEAD
--- CONCEPTS: String parsing, tokenization, iterative processing
-=======
 -- CONCEPTS: String parsing, tokenization, iterative processing, string manipulation
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Split a comma-separated string into individual values
 WITH RECURSIVE string_split AS (

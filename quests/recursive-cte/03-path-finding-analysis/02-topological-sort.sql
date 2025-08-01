@@ -9,11 +9,7 @@
 --   - Master level-based dependency resolution for project planning
 -- EXPECTED RESULTS: Sort tasks by dependency levels (0, 1, 2) for project planning
 -- DIFFICULTY: ⚫ Expert (30-45 min)
-<<<<<<< HEAD
--- CONCEPTS: Dependency resolution, topological sorting, project planning
-=======
 -- CONCEPTS: Dependency resolution, topological sorting, project planning, graph theory
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS task_dependencies CASCADE;

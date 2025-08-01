@@ -26,8 +26,8 @@ A structured progression from beginner to advanced SQL concepts with specific ex
 
 ## 🥈 Intermediate Level
 
-### 1. Recursive CTEs (32 Examples Available!)
-**Start Here**: [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)
+### 1. Recursive CTEs (31 Examples Available!)
+**Start Here**: [Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)
 
 #### 🏗️ Hierarchical Data Traversal (7 examples)
 - **Employee Hierarchy** - [01-employee-hierarchy.sql](../quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql)
@@ -76,13 +76,49 @@ A structured progression from beginner to advanced SQL concepts with specific ex
 - **Password Generator** - [02-password-generator.sql](../quests/recursive-cte/08-bonus-quirky-examples/02-password-generator.sql)
 - **Spiral Matrix** - [03-spiral-matrix.sql](../quests/recursive-cte/08-bonus-quirky-examples/03-spiral-matrix.sql)
 
-### 2. Advanced Joins
+### 2. Window Functions (23 Examples Available!)
+**Advanced Analytics**: [Window Functions Quest](../quests/window-functions/)
+
+#### 🏆 Basic Ranking (2 examples)
+- **Row Number** - [01-row-number.sql](../quests/window-functions/01-basic-ranking/01-row-number.sql)
+- **Rank & Dense Rank** - [02-rank-dense-rank.sql](../quests/window-functions/01-basic-ranking/02-rank-dense-rank.sql)
+
+#### 🎯 Advanced Ranking (3 examples)
+- **NTILE Analysis** - [01-ntile-analysis.sql](../quests/window-functions/02-advanced-ranking/01-ntile-analysis.sql)
+- **Percentile Analysis** - [02-percentile-analysis.sql](../quests/window-functions/02-advanced-ranking/02-percentile-analysis.sql)
+- **Salary Analysis** - [03-salary-analysis.sql](../quests/window-functions/02-advanced-ranking/03-salary-analysis.sql)
+
+#### 📊 Aggregation Windows (3 examples)
+- **Running Totals** - [01-running-totals.sql](../quests/window-functions/03-aggregation-windows/01-running-totals.sql)
+- **Moving Averages** - [02-moving-averages.sql](../quests/window-functions/03-aggregation-windows/02-moving-averages.sql)
+- **Cumulative Sums** - [03-cumulative-sums.sql](../quests/window-functions/03-aggregation-windows/03-cumulative-sums.sql)
+
+#### 🎨 Partitioned Analytics (12 examples)
+- **Basic Category Ranking** - [01-basic-category-ranking.sql](../quests/window-functions/04-partitioned-analytics/01-basic-category-ranking.sql)
+- **Category Performance Analysis** - [02-category-performance-analysis.sql](../quests/window-functions/04-partitioned-analytics/02-category-performance-analysis.sql)
+- **Category Comparisons** - [03-category-comparisons.sql](../quests/window-functions/04-partitioned-analytics/03-category-comparisons.sql)
+- **Customer RFM Analysis** - [04-customer-rfm-analysis.sql](../quests/window-functions/04-partitioned-analytics/04-customer-rfm-analysis.sql)
+- **Customer Segmentation** - [05-customer-segmentation.sql](../quests/window-functions/04-partitioned-analytics/05-customer-segmentation.sql)
+- **Customer Retention Analysis** - [06-customer-retention-analysis.sql](../quests/window-functions/04-partitioned-analytics/06-customer-retention-analysis.sql)
+- **Quarterly Performance** - [07-quarterly-performance.sql](../quests/window-functions/04-partitioned-analytics/07-quarterly-performance.sql)
+- **Employee Performance Trends** - [08-employee-performance-trends.sql](../quests/window-functions/04-partitioned-analytics/08-employee-performance-trends.sql)
+- **Performance Forecasting** - [09-performance-forecasting.sql](../quests/window-functions/04-partitioned-analytics/09-performance-forecasting.sql)
+- **Sales by Category** - [01-sales-by-category.sql](../quests/window-functions/04-partitioned-analytics/01-sales-by-category.sql)
+- **Customer Segmentation** - [02-customer-segmentation.sql](../quests/window-functions/04-partitioned-analytics/02-customer-segmentation.sql)
+- **Performance Comparison** - [03-performance-comparison.sql](../quests/window-functions/04-partitioned-analytics/03-performance-comparison.sql)
+
+#### 🔬 Advanced Patterns (3 examples)
+- **Lead Lag Analysis** - [01-lead-lag-analysis.sql](../quests/window-functions/05-advanced-patterns/01-lead-lag-analysis.sql)
+- **Gap Analysis** - [02-gap-analysis.sql](../quests/window-functions/05-advanced-patterns/02-gap-analysis.sql)
+- **Trend Detection** - [03-trend-detection.sql](../quests/window-functions/05-advanced-patterns/03-trend-detection.sql)
+
+### 3. Advanced Joins
 - **Self-joins** - Joining table to itself
 - **Cross joins** - Cartesian products
 - **Lateral joins** - Correlated subqueries
 - **Natural joins** - Automatic column matching
 
-### 3. Subqueries
+### 4. Subqueries
 - **Correlated subqueries** - Dependent on outer query
 - **Non-correlated subqueries** - Independent execution
 - **EXISTS/NOT EXISTS** - Existence checks
@@ -112,7 +148,7 @@ A structured progression from beginner to advanced SQL concepts with specific ex
 
 ### Interactive Learning
 - **SQL Adventure Quests** - Hands-on examples with Docker
-- **Recursive CTE Cheatsheet** - [Quick Reference](./recursive-cte-cheatsheet.md)
+- **Recursive CTE Cheatsheet** - [Quick Reference](./cheatsheets/recursive-cte.md)
 - **Real-world Scenarios** - [Industry Applications](./use-cases.md)
 
 ### Practice Exercises
@@ -141,7 +177,7 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
 ```
 
 ### Step 2: Start with Basics
-1. **Review the cheatsheet** - [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)
+1. **Review the cheatsheet** - [Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)
 2. **Run simple examples** - Start with number series and date generation
 3. **Understand patterns** - Learn the base case + recursive case structure
 
@@ -155,7 +191,14 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
 7. **Mathematical** - Advanced algorithms and patterns
 8. **Bonus Examples** - Creative and quirky applications
 
-### Step 4: Apply to Real Problems
+### Step 4: Master Window Functions
+1. **Basic Ranking** - Row numbers and ranking
+2. **Advanced Ranking** - NTILE and percentile analysis
+3. **Aggregation Windows** - Running totals and moving averages
+4. **Partitioned Analytics** - Category-based analysis
+5. **Advanced Patterns** - Lead/lag and trend detection
+
+### Step 5: Apply to Real Problems
 1. **Choose your industry** - [Use Cases by Industry](./use-cases.md)
 2. **Adapt examples** - Customize for your specific needs
 3. **Optimize performance** - Learn advanced techniques
@@ -170,7 +213,8 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
 - [ ] Complete 5 simple examples
 
 ### Intermediate Milestones
-- [ ] Complete all 32 recursive CTE examples
+- [ ] Complete all 31 recursive CTE examples
+- [ ] Complete all 23 window function examples
 - [ ] Understand hierarchical data patterns
 - [ ] Master iteration and loop techniques
 - [ ] Apply to real-world scenarios
@@ -179,8 +223,9 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d sql_adventure_db
 - [ ] Optimize query performance
 - [ ] Design complex data models
 - [ ] Create custom recursive patterns
+- [ ] Master advanced window function patterns
 - [ ] Mentor others in the community
 
 ---
 
-*Ready to start your SQL Adventure? Begin with the [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)! 🚀*
+*Ready to start your SQL Adventure? Begin with the [Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)! 🚀*

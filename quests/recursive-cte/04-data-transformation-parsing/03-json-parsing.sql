@@ -9,11 +9,7 @@
 --   - Master recursive data transformation patterns for complex structures
 -- EXPECTED RESULTS: Flatten nested JSON structure into path-based representation
 -- DIFFICULTY: 🔴 Advanced (15-30 min)
-<<<<<<< HEAD
--- CONCEPTS: JSON parsing, hierarchical data, recursive flattening
-=======
 -- CONCEPTS: JSON parsing, hierarchical data, recursive flattening, nested structures
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS json_data CASCADE;

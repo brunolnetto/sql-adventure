@@ -9,11 +9,7 @@
 --   - Master multi-step business rule implementation with recursion
 -- EXPECTED RESULTS: Simulate 5 days of inventory management with reorder triggers
 -- DIFFICULTY: 🔴 Advanced (15-30 min)
-<<<<<<< HEAD
--- CONCEPTS: Business simulation, state machines, inventory management
-=======
 -- CONCEPTS: Business simulation, state machines, inventory management, business logic
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS daily_demand CASCADE;

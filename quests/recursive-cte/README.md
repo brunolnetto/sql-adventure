@@ -38,27 +38,10 @@ Recursive CTEs are a powerful SQL feature that allows you to perform iterative o
 ## 📊 Difficulty Level Evaluation
 
 ### **Difficulty Scale:**
-<<<<<<< HEAD
 - 🟢 **Beginner** - Basic recursive patterns, simple logic (5-10 min)
 - 🟡 **Intermediate** - Moderate complexity, multiple concepts (10-20 min)
 - 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (15-30 min)
 - ⚫ **Expert** - Theoretical concepts, optimization challenges (30-45 min)
-=======
-- 🟢 **Beginner** - Basic recursive patterns, simple logic (5-15 min)
-- 🟡 **Intermediate** - Moderate complexity, multiple concepts (10-25 min)
-- 🔴 **Advanced** - Complex algorithms, edge cases, performance considerations (15-45 min)
-- ⚫ **Expert** - Theoretical concepts, optimization challenges (30-60 min)
-
-### **📈 Difficulty Distribution by Examples:**
-- 🟢 **Beginner**: 7 examples (**24.1%**) - Foundation concepts and educational patterns
-- 🟡 **Intermediate**: 9 examples (**31.0%**) - Building complexity with legitimate use cases
-- 🔴 **Advanced**: 9 examples (**31.0%**) - Complex algorithms and real-world applications
-- ⚫ **Expert**: 4 examples (**13.8%**) - Advanced theoretical concepts and optimization
-
-**💡 Learning Tip**: This quest balances educational examples (to learn patterns) with legitimate use cases (for real-world application). Focus on understanding the recursive patterns first, then apply them to practical scenarios.
-
-**📚 Progression Strategy**: Start with educational examples to learn patterns, then progress to legitimate use cases for practical application.
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ### **Complete Example Difficulty Table:**
 
@@ -212,37 +195,7 @@ The examples are organized into 8 categories, each containing individual example
 - `02-password-generator.sql` - Password pattern generation ✅ **Legitimate**
 - `03-spiral-matrix.sql` - Spiral matrix generation ✅ **Legitimate**
 
-<<<<<<< HEAD
-## 🔧 Running Examples
-
-### Option 1: Docker (Recommended)
-```bash
-# Start the environment
-docker compose up -d
-
-# Run examples using the script
-./scripts/run-examples.sh quest recursive-cte
-```
-
-### Option 2: Manual Execution
-```bash
-# Connect to PostgreSQL
-psql -h localhost -p 5433 -U postgres -d sql_adventure_db
-
-# Run individual examples
-\i quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
-```
-
-### Option 3: Using the Master Script
-```bash
-# Run all examples at once
-psql -h localhost -p 5433 -U postgres -d sql_adventure_db -f quests/recursive-cte/run-all-examples.sql
-```
-
-## 🎯 Key Concepts
-=======
 ## 🔧 Key Concepts
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 ### Recursive CTE Structure
 ```sql

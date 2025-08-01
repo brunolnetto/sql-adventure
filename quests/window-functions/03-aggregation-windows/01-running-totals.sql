@@ -12,11 +12,7 @@
 -- 3. Running averages and percentages
 -- 4. Financial analysis with cumulative metrics
 -- 5. Customer transaction analysis with running balances
-<<<<<<< HEAD
 -- DIFFICULTY: 🟡 Intermediate (10-20 min)
-=======
--- DIFFICULTY: 🟢 Beginner (5-10 min)
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 -- CONCEPTS: SUM() OVER(), PARTITION BY, ORDER BY, ROWS UNBOUNDED PRECEDING, cumulative calculations
 
 -- Clean up existing tables (idempotent)

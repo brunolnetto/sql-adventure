@@ -9,11 +9,7 @@
 --   - Master state transition tracking and path analysis for games
 -- EXPECTED RESULTS: Simulate tic-tac-toe game progression and find winning paths
 -- DIFFICULTY: ⚫ Expert (30-45 min)
-<<<<<<< HEAD
--- CONCEPTS: Game simulation, state machines, turn-based logic
-=======
 -- CONCEPTS: Game simulation, state machines, turn-based logic, path analysis
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS game_moves CASCADE;

@@ -5,7 +5,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](../README.md) - Main project README
-- **[Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)** - **NEW!** Quick reference for interviews
+- **[Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - **NEW!** Quick reference for interviews
 - [Learning Path](./learning-path.md) - Structured learning progression
 - [Use Cases](./use-cases.md) - Industry-specific applications
 - [Technology Stack](./technology-stack.md) - Technical details
@@ -15,6 +15,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 🎯 What You'll Learn
 
 - **Recursive CTEs** - Master hierarchical data and iterative operations
+- **Window Functions** - Advanced analytics and ranking operations
 - **Advanced SQL Patterns** - Learn complex query techniques
 - **Performance Optimization** - Write efficient, scalable queries
 - **Real-world Applications** - Solve practical business problems
@@ -23,19 +24,19 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 🚀 Quick Start
 
 ### For Interviews & Quick Reference
-1. **Start with the [Recursive CTE Cheatsheet](./recursive-cte-cheatsheet.md)** - Complete reference with code examples
-2. **Practice with examples** - Run any of the 31 working examples
+1. **Start with the [Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - Complete reference with code examples
+2. **Practice with examples** - Run any of the 54+ working examples
 3. **Master patterns** - Understand base case + recursive case structure
 
 ### For Deep Learning
 1. **Follow the [Learning Path](./learning-path.md)** - Structured progression from beginner to advanced
-2. **Explore by category** - Choose your focus area (hierarchical, iteration, path finding, etc.)
+2. **Explore by category** - Choose your focus area (hierarchical, iteration, path finding, window functions, etc.)
 3. **Apply to your industry** - See [Use Cases](./use-cases.md) for real-world applications
 
 ## 📊 Project Statistics
 
-- **31 Working Examples** - 100% tested and verified
-- **8 Categories** - Comprehensive coverage of recursive CTE patterns
+- **54+ Working Examples** - 100% tested and verified
+- **2 Major Quests** - Recursive CTEs (31 examples) + Window Functions (23 examples)
 - **100% Idempotent** - Safe to run multiple times
 - **Docker Ready** - Easy setup and deployment
 - **Industry Focused** - Real-world business applications
@@ -65,6 +66,9 @@ Fibonacci algorithms, prime number generation, permutation generation
 
 ### 🎯 Bonus Quirky Examples (3 examples)
 Work streak analysis, password generation, spiral matrix generation
+
+### 🪟 Window Functions (23 examples)
+Basic ranking, advanced ranking, aggregation windows, partitioned analytics, advanced patterns
 
 ## 🛠️ Technology Stack
 

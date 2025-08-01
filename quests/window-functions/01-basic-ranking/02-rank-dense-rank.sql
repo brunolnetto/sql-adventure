@@ -2,7 +2,6 @@
 -- Window Functions: Basic RANK and DENSE_RANK
 -- =====================================================
 
-<<<<<<< HEAD
 -- PURPOSE: Demonstrate RANK() and DENSE_RANK() functions for handling ties
 --          and understanding the differences between ranking methods
 -- LEARNING OUTCOMES: Students will understand how to use RANK() and DENSE_RANK()
@@ -17,18 +16,6 @@
 -- 7. Percentile ranking calculations using RANK and DENSE_RANK
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: RANK(), DENSE_RANK(), ROW_NUMBER(), PARTITION BY, ranking with ties, percentile calculations
-=======
--- PURPOSE: Demonstrate basic RANK and DENSE_RANK functions for handling ties
---          and understanding the differences between ranking methods
--- LEARNING OUTCOMES: Students will understand how to use RANK and DENSE_RANK
---                    for handling tied values and creating ranking sequences
--- EXPECTED RESULTS:
--- 1. Understanding the difference between RANK and DENSE_RANK
--- 2. Handling ties in ranking data
--- 3. Basic partitioning with ranking functions
--- DIFFICULTY: 🟢 Beginner (5-10 min)
--- CONCEPTS: RANK(), DENSE_RANK(), PARTITION BY, handling ties
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS student_scores CASCADE;

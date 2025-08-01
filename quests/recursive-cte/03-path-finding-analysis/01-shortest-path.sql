@@ -9,11 +9,7 @@
 --   - Master distance calculation and shortest path identification
 -- EXPECTED RESULTS: Find shortest path from node A to node H in the graph
 -- DIFFICULTY: 🔴 Advanced (15-30 min)
-<<<<<<< HEAD
--- CONCEPTS: Graph algorithms, BFS, path finding, cycle detection
-=======
 -- CONCEPTS: Graph algorithms, BFS, path finding, cycle detection, distance calculation
->>>>>>> 4e036c9 (feat(quests) improve quest queries)
 
 -- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS graph_edges CASCADE;
