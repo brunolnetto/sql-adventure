@@ -168,11 +168,13 @@ analyze_output() {
             print_status "🔍 Use 'cat $output_file' to view complete output"
             
             # Show table results summary
-            local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
-            if [ $table_lines -gt 0 ]; then
-                print_status "📊 Table results found: $table_lines lines"
-                print_status "📋 Sample table output:"
-                grep "|" "$output_file" | head -5
+            if [ -f "$output_file" ]; then
+                local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
+                if [ "$table_lines" -gt 0 ] 2>/dev/null; then
+                    print_status "📊 Table results found: $table_lines lines"
+                    print_status "📋 Sample table output:"
+                    grep "|" "$output_file" | head -5
+                fi
             fi
         else
             # For smaller outputs, show everything
@@ -180,9 +182,11 @@ analyze_output() {
             print_status "💾 Full output saved to: $output_file"
             
             # Show table results summary for small outputs too
-            local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
-            if [ $table_lines -gt 0 ]; then
-                print_status "📊 Table results found: $table_lines lines"
+            if [ -f "$output_file" ]; then
+                local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
+                if [ "$table_lines" -gt 0 ] 2>/dev/null; then
+                    print_status "📊 Table results found: $table_lines lines"
+                fi
             fi
         fi
     else

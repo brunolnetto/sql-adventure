@@ -10,6 +10,7 @@ Master advanced SQL concepts through hands-on examples and real-world scenarios.
 | **[🪟 Window Functions](./window-functions/)** | 112 | 5 | ✅ Complete | Beginner → Expert |
 | **[🎯 JSON Operations](./json-operations/)** | 12 | 4 | ✅ Complete | Beginner → Advanced |
 | **[⚡ Performance Tuning](./performance-tuning/)** | 12 | 4 | ✅ Complete | Intermediate → Advanced |
+| **[🏗️ Data Modeling](./data-modeling/)** | 12 | 4 | ✅ Complete | Intermediate → Advanced |
 
 ## 🎯 Quick Start
 
