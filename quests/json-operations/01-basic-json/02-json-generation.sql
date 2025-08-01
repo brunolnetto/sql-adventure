@@ -64,8 +64,8 @@ ORDER BY emp_id;
 -- Example 2: JSON Array Generation
 -- Generate JSON arrays from query results
 SELECT 
-    dept_id,
-    dept_name,
+    d.dept_id,
+    d.dept_name,
     jsonb_agg(
         jsonb_build_object(
             'id', emp_id,
@@ -111,9 +111,9 @@ SELECT
     d.dept_name,
     jsonb_build_object(
         'department_info', jsonb_build_object(
-            'id', dept_id,
-            'name', dept_name,
-            'location', location
+            'id', d.dept_id,
+            'name', d.dept_name,
+            'location', d.location
         ),
         'employee_stats', jsonb_build_object(
             'total_employees', COUNT(e.emp_id),

@@ -126,25 +126,25 @@ ORDER BY view_count DESC;
 -- Analyze index usage and performance
 SELECT 
     schemaname,
-    tablename,
-    indexname,
+    relname as tablename,
+    indexrelname as indexname,
     idx_scan as index_scans,
     idx_tup_read as tuples_read,
     idx_tup_fetch as tuples_fetched,
     pg_size_pretty(pg_relation_size(indexrelid)) as index_size
 FROM pg_stat_user_indexes
-WHERE tablename IN ('articles', 'products_advanced', 'spatial_data')
+WHERE relname IN ('articles', 'products_advanced', 'spatial_data')
 ORDER BY idx_scan DESC;
 
 -- Show index sizes
 SELECT 
-    t.tablename,
-    indexname,
+    schemaname,
+    relname as tablename,
+    indexrelname as indexname,
     pg_size_pretty(pg_relation_size(indexrelid)) as index_size,
-    pg_size_pretty(pg_relation_size(t.tablename::regclass)) as table_size
-FROM pg_indexes i
-JOIN pg_tables t ON i.tablename = t.tablename
-WHERE t.tablename IN ('articles', 'products_advanced', 'spatial_data')
+    pg_size_pretty(pg_relation_size(relid)) as table_size
+FROM pg_stat_user_indexes
+WHERE relname IN ('articles', 'products_advanced', 'spatial_data')
 ORDER BY pg_relation_size(indexrelid) DESC;
 
 -- Clean up

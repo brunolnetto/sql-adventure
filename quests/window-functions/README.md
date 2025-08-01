@@ -42,12 +42,6 @@ Window functions are one of the most powerful features in SQL for data analysis.
 
 **💡 Learning Tip**: Start with Beginner examples and progress gradually. Each level builds upon the previous one, ensuring a solid foundation before tackling advanced concepts.
 
-### **🎯 Difficulty Percentage Guide:**
-- **10-25%**: Perfect for beginners - focus on understanding basic concepts
-- **30-60%**: Ideal for intermediate learners - build confidence with real applications
-- **65-85%**: Advanced learners - tackle complex patterns and optimization
-- **90-100%**: Expert level - master cutting-edge techniques and performance tuning
-
 **📚 Progression Strategy**: Aim to complete examples within 10-15% of your current comfort level for optimal learning progression.
 
 ### **Complete Example Difficulty Table:**

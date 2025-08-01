@@ -249,7 +249,7 @@ SELECT
         'success_rate', ROUND(
             (COUNT(*) FILTER (WHERE response_data->>'status' = 'success')::DECIMAL / COUNT(*)) * 100, 2
         ),
-        'avg_response_time', AVG(EXTRACT(EPOCH FROM (response_time - LAG(response_time) OVER (ORDER BY response_time)))),
+        'avg_response_time', AVG(EXTRACT(EPOCH FROM response_time)),
         'last_successful', MAX(response_time) FILTER (WHERE response_data->>'status' = 'success'),
         'common_errors', jsonb_agg(DISTINCT response_data->'error'->>'code') FILTER (WHERE response_data->>'status' = 'error')
     ) as api_metrics
