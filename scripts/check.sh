@@ -141,12 +141,49 @@ analyze_output() {
         print_status "📄 Output captured ($(wc -l < "$output_file") lines)"
         print_status "💾 Saved to: $output_file"
         
-        # Show first few lines for quick review
-        print_status "📋 Sample output:"
-        head -10 "$output_file"
+        # Show complete output for AI evaluation in manageable chunks
+        print_status "📋 Complete output for AI evaluation:"
+        print_status "📄 Total lines: $(wc -l < "$output_file")"
         
-        if [ $(wc -l < "$output_file") -gt 10 ]; then
-            print_status "... (truncated)"
+        # Display output in chunks to avoid terminal overflow
+        local line_count=$(wc -l < "$output_file")
+        if [ $line_count -gt 50 ]; then
+            print_status "📊 Large output detected - showing in sections:"
+            
+            # Show first 20 lines
+            print_status "📋 First 20 lines:"
+            head -20 "$output_file"
+            
+            # Show middle section if output is large
+            if [ $line_count -gt 100 ]; then
+                print_status "📋 Middle section (lines 21-40):"
+                sed -n '21,40p' "$output_file"
+            fi
+            
+            # Show last 20 lines
+            print_status "📋 Last 20 lines:"
+            tail -20 "$output_file"
+            
+            print_status "💾 Full output saved to: $output_file"
+            print_status "🔍 Use 'cat $output_file' to view complete output"
+            
+            # Show table results summary
+            local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
+            if [ $table_lines -gt 0 ]; then
+                print_status "📊 Table results found: $table_lines lines"
+                print_status "📋 Sample table output:"
+                grep "|" "$output_file" | head -5
+            fi
+        else
+            # For smaller outputs, show everything
+            cat "$output_file"
+            print_status "💾 Full output saved to: $output_file"
+            
+            # Show table results summary for small outputs too
+            local table_lines=$(grep -c "|" "$output_file" 2>/dev/null || echo "0")
+            if [ $table_lines -gt 0 ]; then
+                print_status "📊 Table results found: $table_lines lines"
+            fi
         fi
     else
         print_error "❌ Failed to capture output"
