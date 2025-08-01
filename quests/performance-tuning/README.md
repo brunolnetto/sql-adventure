@@ -1,252 +1,83 @@
 # Performance Tuning Quest ⚡
 
-Master PostgreSQL performance optimization techniques for production environments and career advancement.
+Master PostgreSQL performance optimization techniques for production environments.
 
-## 🎯 Overview
+## 📊 Overview
 
-The Performance Tuning Quest provides comprehensive examples of PostgreSQL query optimization, indexing strategies, execution plan analysis, and performance monitoring. Learn to write efficient, scalable queries and diagnose performance bottlenecks.
+- **12 Examples** across 4 categories
+- **Difficulty**: Intermediate → Advanced
+- **Status**: ✅ Complete
+- **Time**: 10-45 min per example
 
-## 📊 Quest Statistics
+## 🚀 Quick Start
 
-- **12 Planned Examples** - Comprehensive coverage of performance tuning
-- **4 Categories** - From basic optimization to advanced monitoring
-- **100% Idempotent** - Safe to run multiple times
-- **Real-world Scenarios** - Production-ready optimization techniques
-
-## 🏗️ Quest Structure
-
-### **01-query-optimization/** - Basic Query Optimization
-**Status:** 📋 **PLANNED** - 3 examples
-
-#### **01-basic-optimization.sql** 🟢 Beginner (5-10 min)
-**Concepts:** Query structure, WHERE clause optimization, JOIN efficiency
-
-**Learning Outcomes:**
-- Understand query execution order
-- Optimize WHERE clause conditions
-- Choose efficient JOIN strategies
-- Avoid common performance pitfalls
-
-**Examples:**
-- Basic query structure optimization
-- WHERE clause condition ordering
-- JOIN type selection (INNER vs LEFT)
-- Subquery vs JOIN performance
-
-#### **02-aggregation-optimization.sql** 🟡 Intermediate (10-15 min)
-**Concepts:** GROUP BY optimization, aggregate functions, HAVING clauses
-
-**Learning Outcomes:**
-- Optimize GROUP BY operations
-- Choose efficient aggregate functions
-- Use HAVING clauses effectively
-- Understand aggregation performance
-
-**Examples:**
-- GROUP BY column ordering
-- Aggregate function selection
-- HAVING vs WHERE performance
-- Window functions vs GROUP BY
-
-#### **03-subquery-optimization.sql** 🟡 Intermediate (10-15 min)
-**Concepts:** Subquery types, EXISTS vs IN, correlated subqueries
-
-**Learning Outcomes:**
-- Choose between EXISTS and IN
-- Optimize correlated subqueries
-- Use CTEs for complex queries
-- Understand subquery performance
-
-**Examples:**
-- EXISTS vs IN performance comparison
-- Correlated subquery optimization
-- CTE vs subquery performance
-- Lateral joins for complex queries
-
-### **02-indexing-strategies/** - Index Design Patterns
-**Status:** 📋 **PLANNED** - 3 examples
-
-#### **01-basic-indexing.sql** 🟢 Beginner (5-10 min)
-**Concepts:** Index types, B-tree indexes, index selection
-
-**Learning Outcomes:**
-- Understand different index types
-- Choose appropriate indexes
-- Analyze index usage
-- Monitor index performance
-
-**Examples:**
-- B-tree index creation and usage
-- Index on single columns
-- Composite index design
-- Index size and maintenance
-
-#### **02-advanced-indexing.sql** 🟡 Intermediate (10-15 min)
-**Concepts:** Partial indexes, expression indexes, covering indexes
-
-**Learning Outcomes:**
-- Create partial indexes for specific conditions
-- Use expression indexes for computed columns
-- Design covering indexes
-- Optimize index maintenance
-
-**Examples:**
-- Partial indexes for filtered queries
-- Expression indexes for functions
-- Covering indexes for SELECT queries
-- Index maintenance strategies
-
-#### **03-specialized-indexes.sql** 🔴 Advanced (15-20 min)
-**Concepts:** GIN indexes, GiST indexes, BRIN indexes, JSONB indexing
-
-**Learning Outcomes:**
-- Use GIN indexes for arrays and full-text search
-- Apply GiST indexes for geometric data
-- Implement BRIN indexes for large tables
-- Optimize JSONB queries with indexes
-
-**Examples:**
-- GIN indexes for array operations
-- GiST indexes for spatial data
-- BRIN indexes for time-series data
-- JSONB path indexes
-
-### **03-execution-plans/** - Plan Analysis
-**Status:** 📋 **PLANNED** - 3 examples
-
-#### **01-plan-analysis.sql** 🟡 Intermediate (10-15 min)
-**Concepts:** EXPLAIN output, plan interpretation, cost analysis
-
-**Learning Outcomes:**
-- Read and interpret EXPLAIN output
-- Understand plan costs and timing
-- Identify performance bottlenecks
-- Compare different query plans
-
-**Examples:**
-- Basic EXPLAIN analysis
-- Cost vs actual time comparison
-- Plan node interpretation
-- Query plan optimization
-
-#### **02-statistics-analysis.sql** 🔴 Advanced (15-20 min)
-**Concepts:** Table statistics, column statistics, plan accuracy
-
-**Learning Outcomes:**
-- Understand table and column statistics
-- Analyze plan accuracy
-- Update statistics for better plans
-- Handle statistics-related issues
-
-**Examples:**
-- Table statistics analysis
-- Column statistics impact
-- Statistics update strategies
-- Plan accuracy troubleshooting
-
-#### **03-query-rewriting.sql** 🔴 Advanced (15-20 min)
-**Concepts:** Query transformation, plan hints, optimization techniques
-
-**Learning Outcomes:**
-- Rewrite queries for better performance
-- Use query hints when necessary
-- Apply optimization techniques
-- Monitor query plan changes
-
-**Examples:**
-- Query rewriting strategies
-- Plan hints and directives
-- Optimization techniques
-- Plan stability analysis
-
-### **04-performance-monitoring/** - Monitoring & Tuning
-**Status:** 📋 **PLANNED** - 3 examples
-
-#### **01-slow-query-analysis.sql** 🟡 Intermediate (10-15 min)
-**Concepts:** Slow query identification, pg_stat_statements, query profiling
-
-**Learning Outcomes:**
-- Identify slow queries in production
-- Use pg_stat_statements for analysis
-- Profile query performance
-- Set up query monitoring
-
-**Examples:**
-- Slow query identification
-- pg_stat_statements analysis
-- Query profiling techniques
-- Performance baseline establishment
-
-#### **02-resource-monitoring.sql** 🔴 Advanced (15-20 min)
-**Concepts:** System resources, connection monitoring, lock analysis
-
-**Learning Outcomes:**
-- Monitor system resource usage
-- Analyze connection patterns
-- Identify and resolve locks
-- Optimize resource utilization
-
-**Examples:**
-- System resource monitoring
-- Connection pool analysis
-- Lock detection and resolution
-- Resource optimization strategies
-
-#### **03-performance-tuning.sql** ⚫ Expert (30-45 min)
-**Concepts:** Configuration tuning, workload optimization, capacity planning
-
-**Learning Outcomes:**
-- Tune PostgreSQL configuration
-- Optimize for specific workloads
-- Plan for capacity growth
-- Implement monitoring solutions
-
-**Examples:**
-- Configuration parameter tuning
-- Workload-specific optimization
-- Capacity planning strategies
-- Monitoring solution implementation
-
-## 🚀 Getting Started
-
-### Prerequisites
-- PostgreSQL 12+ with performance extensions
-- Basic SQL knowledge
-- Understanding of database concepts
-
-### Quick Start
 ```bash
-# Run all Performance Tuning examples
+# Start environment
+docker-compose up -d
+
+# Run all examples
 ./scripts/run-examples.sh quest performance-tuning
 
 # Run specific category
 ./scripts/run-examples.sh quest performance-tuning 01-query-optimization
-
-# Run individual example
-./scripts/run-examples.sh example quests/performance-tuning/01-query-optimization/01-basic-optimization.sql
 ```
+
+## 📚 Categories
+
+### **01-query-optimization/** 🟡 **Intermediate**
+- `01-basic-optimization.sql` - Query structure and WHERE clause optimization (3 examples)
+- `02-aggregation-optimization.sql` - GROUP BY and aggregate function optimization (3 examples)
+- `03-subquery-optimization.sql` - Subquery types and EXISTS vs IN (3 examples)
+
+### **02-indexing-strategies/** 🟡 **Intermediate**
+- `01-basic-indexing.sql` - B-tree indexes and index selection (6 examples)
+- `02-advanced-indexing.sql` - Partial, expression, and covering indexes (6 examples)
+
+### **03-execution-plans/** 🔴 **Advanced**
+- `01-plan-analysis.sql` - EXPLAIN output interpretation (6 examples)
+- `02-statistics-analysis.sql` - Table and column statistics (6 examples)
+- `03-query-rewriting.sql` - Query transformation techniques (6 examples)
+
+### **04-performance-monitoring/** 🔴 **Advanced**
+- `01-slow-query-analysis.sql` - Slow query identification and profiling (6 examples)
+- `02-resource-monitoring.sql` - System resources and connection monitoring (6 examples)
+- `03-performance-tuning.sql` - Configuration tuning and capacity planning (6 examples)
 
 ## 🎯 Learning Path
 
-### **Phase 1: Foundation** 📋 **PLANNED**
-1. **Basic Query Optimization** - Learn fundamental optimization techniques
-2. **Aggregation Optimization** - Optimize GROUP BY and aggregate operations
-3. **Subquery Optimization** - Master subquery performance
+### **🟡 Intermediate (Start Here)**
+1. `01-basic-optimization.sql` - Understand query execution order
+2. `02-aggregation-optimization.sql` - Optimize GROUP BY operations
+3. `03-subquery-optimization.sql` - Choose between EXISTS and IN
+4. `01-basic-indexing.sql` - Understand different index types
 
-### **Phase 2: Indexing** 📋 **PLANNED**
-4. **Basic Indexing** - Understand index types and selection
-5. **Advanced Indexing** - Master specialized index patterns
-6. **Specialized Indexes** - Use GIN, GiST, and BRIN indexes
+### **🔴 Advanced**
+1. `02-advanced-indexing.sql` - Master specialized index patterns
+2. `01-plan-analysis.sql` - Read and interpret execution plans
+3. `02-statistics-analysis.sql` - Understand and manage statistics
+4. `01-slow-query-analysis.sql` - Identify and analyze slow queries
 
-### **Phase 3: Analysis** 📋 **PLANNED**
-7. **Plan Analysis** - Read and interpret execution plans
-8. **Statistics Analysis** - Understand and manage statistics
-9. **Query Rewriting** - Transform queries for better performance
+### **⚫ Expert**
+1. `03-query-rewriting.sql` - Transform queries for better performance
+2. `02-resource-monitoring.sql` - Monitor system resources and locks
+3. `03-performance-tuning.sql` - Tune configuration and workloads
 
-### **Phase 4: Monitoring** 📋 **PLANNED**
-10. **Slow Query Analysis** - Identify and analyze slow queries
-11. **Resource Monitoring** - Monitor system resources and locks
-12. **Performance Tuning** - Tune configuration and workloads
+## 🔧 Key Concepts
+
+```sql
+-- Query analysis
+EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) 
+SELECT * FROM users WHERE email = 'test@example.com';
+
+-- Index creation
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_name_email ON users(name, email);
+CREATE INDEX idx_users_active ON users(id) WHERE is_active = true;
+
+-- Statistics analysis
+SELECT schemaname, tablename, attname, n_distinct, correlation 
+FROM pg_stats WHERE tablename = 'users';
+```
 
 ## 🛠️ Key PostgreSQL Performance Tools
 
@@ -270,63 +101,21 @@ The Performance Tuning Quest provides comprehensive examples of PostgreSQL query
 - `work_mem` - Sort and hash memory
 - `maintenance_work_mem` - Maintenance operations
 
-## 📊 Use Cases
+## 🏢 Real-World Applications
 
-### **Production Environments**
-- Query performance optimization
-- Index strategy implementation
-- Resource utilization monitoring
-- Capacity planning
+- **Production Environments**: Query optimization, index strategies, resource monitoring
+- **Development Teams**: Code review performance analysis, best practices
+- **Database Administration**: System tuning, query analysis, monitoring
+- **Data Science**: Large dataset optimization, analytical query performance
 
-### **Development Teams**
-- Code review performance analysis
-- Query optimization best practices
-- Performance testing strategies
-- Monitoring setup
+## 📊 Performance Tips
 
-### **Database Administration**
-- System performance tuning
-- Query analysis and optimization
-- Index maintenance strategies
-- Performance monitoring
-
-### **Data Science**
-- Large dataset query optimization
-- Analytical query performance
-- ETL process optimization
-- Reporting query tuning
-
-## 🎯 Success Metrics
-
-### **Learning Outcomes**
-- ✅ Understand query optimization principles
-- ✅ Master indexing strategies
-- ✅ Analyze execution plans effectively
-- ✅ Monitor and tune performance
-- ✅ Apply optimization techniques
-- ✅ Implement monitoring solutions
-
-### **Practical Skills**
-- ✅ Optimize slow queries
-- ✅ Design efficient indexes
-- ✅ Interpret execution plans
-- ✅ Monitor system performance
-- ✅ Tune PostgreSQL configuration
-- ✅ Plan for capacity growth
-
-## 🔗 Related Quests
-
-- **[Recursive CTEs](../recursive-cte/)** - Complex query optimization
-- **[Window Functions](../window-functions/)** - Analytical query performance
-- **[JSON Operations](../json-operations/)** - JSONB query optimization
-- **Data Modeling** - Schema optimization (planned)
-
-## 📚 Additional Resources
-
-- [PostgreSQL Performance Tuning](https://www.postgresql.org/docs/current/performance.html)
-- [Query Planning](https://www.postgresql.org/docs/current/runtime-config-query.html)
-- [Index Types](https://www.postgresql.org/docs/current/indexes.html)
+- **Use appropriate indexes** on frequently queried columns
+- **Monitor execution plans** for large datasets
+- **Update statistics regularly** for accurate query planning
+- **Consider query rewriting** for complex operations
+- **Monitor system resources** and connection patterns
 
 ---
 
-*Ready to optimize your PostgreSQL performance? Start with [Basic Query Optimization](01-query-optimization/01-basic-optimization.sql)! 🚀* 
+*Ready to optimize PostgreSQL performance? Start with [Query Optimization](./01-query-optimization/)! 🚀* 

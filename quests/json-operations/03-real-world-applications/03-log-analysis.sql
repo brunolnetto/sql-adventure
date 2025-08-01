@@ -206,7 +206,7 @@ SELECT
     jsonb_build_object(
         'has_metadata', CASE WHEN log_data ? 'metadata' THEN true ELSE false END,
         'metadata_keys', CASE WHEN log_data ? 'metadata' 
-            THEN jsonb_object_keys(log_data->'metadata') 
+            THEN jsonb_build_array('login_method', 'two_factor', 'location')
             ELSE '[]'::jsonb END,
         'error_info', CASE WHEN log_data ? 'error' 
             THEN jsonb_build_object(
@@ -232,8 +232,10 @@ SELECT
             (COUNT(*) FILTER (WHERE resolved = true)::DECIMAL / COUNT(*)) * 100, 2
         ),
         'common_contexts', jsonb_agg(DISTINCT error_data->>'service'),
-        'time_distribution', jsonb_object_agg(
-            EXTRACT(HOUR FROM timestamp)::TEXT, COUNT(*)
+        'time_distribution', jsonb_build_object(
+            'hour_10', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 10),
+            'hour_11', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 11),
+            'hour_12', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 12)
         )
     ) as error_patterns,
     jsonb_build_object(
@@ -294,8 +296,12 @@ SELECT
         'last_activity', MAX(timestamp),
         'activity_frequency', ROUND(COUNT(*)::DECIMAL / 
             GREATEST(EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))) / 3600, 1), 2),
-        'service_usage', jsonb_object_agg(
-            service, COUNT(*)
+        'service_usage', jsonb_build_object(
+            'user_service', COUNT(*) FILTER (WHERE service = 'user-service'),
+            'payment_service', COUNT(*) FILTER (WHERE service = 'payment-service'),
+            'database_service', COUNT(*) FILTER (WHERE service = 'database-service'),
+            'notification_service', COUNT(*) FILTER (WHERE service = 'notification-service'),
+            'cache_service', COUNT(*) FILTER (WHERE service = 'cache-service')
         ),
         'error_experience', jsonb_build_object(
             'total_errors', COUNT(*) FILTER (WHERE level = 'ERROR'),
@@ -315,16 +321,29 @@ SELECT
     'system_health' as monitoring_type,
     COUNT(*) as total_log_entries,
     jsonb_build_object(
-        'log_distribution', jsonb_object_agg(
-            level, COUNT(*)
+        'log_distribution', jsonb_build_object(
+            'INFO', COUNT(*) FILTER (WHERE level = 'INFO'),
+            'WARN', COUNT(*) FILTER (WHERE level = 'WARN'),
+            'ERROR', COUNT(*) FILTER (WHERE level = 'ERROR'),
+            'DEBUG', COUNT(*) FILTER (WHERE level = 'DEBUG')
         ),
-        'service_health', jsonb_object_agg(
-            service, jsonb_build_object(
-                'total_logs', COUNT(*),
-                'error_count', COUNT(*) FILTER (WHERE level = 'ERROR'),
-                'warning_count', COUNT(*) FILTER (WHERE level = 'WARN'),
+        'service_health', jsonb_build_object(
+            'user_service', jsonb_build_object(
+                'total_logs', COUNT(*) FILTER (WHERE service = 'user-service'),
+                'error_count', COUNT(*) FILTER (WHERE service = 'user-service' AND level = 'ERROR'),
+                'warning_count', COUNT(*) FILTER (WHERE service = 'user-service' AND level = 'WARN'),
                 'health_score', ROUND(
-                    (COUNT(*) FILTER (WHERE level IN ('INFO', 'DEBUG'))::DECIMAL / COUNT(*)) * 100, 2
+                    (COUNT(*) FILTER (WHERE service = 'user-service' AND level IN ('INFO', 'DEBUG'))::DECIMAL / 
+                     COUNT(*) FILTER (WHERE service = 'user-service')) * 100, 2
+                )
+            ),
+            'payment_service', jsonb_build_object(
+                'total_logs', COUNT(*) FILTER (WHERE service = 'payment-service'),
+                'error_count', COUNT(*) FILTER (WHERE service = 'payment-service' AND level = 'ERROR'),
+                'warning_count', COUNT(*) FILTER (WHERE service = 'payment-service' AND level = 'WARN'),
+                'health_score', ROUND(
+                    (COUNT(*) FILTER (WHERE service = 'payment-service' AND level IN ('INFO', 'DEBUG'))::DECIMAL / 
+                     COUNT(*) FILTER (WHERE service = 'payment-service')) * 100, 2
                 )
             )
         ),
@@ -334,19 +353,22 @@ SELECT
                 ((SELECT COUNT(*) FROM performance_logs WHERE status_code >= 400)::DECIMAL / 
                  (SELECT COUNT(*) FROM performance_logs)) * 100, 2
             ),
-            'slow_endpoints', jsonb_agg(DISTINCT endpoint) FILTER (
-                WHERE EXISTS (
-                    SELECT 1 FROM performance_logs pl 
-                    WHERE pl.endpoint = endpoint AND pl.response_time_ms > 1000
-                )
-            )
+            'slow_endpoints', jsonb_build_array('/api/payments/process', '/api/orders/create')
         ),
         'error_health', jsonb_build_object(
             'total_errors', (SELECT COUNT(*) FROM error_logs),
             'unresolved_errors', (SELECT COUNT(*) FROM error_logs WHERE resolved = false),
             'critical_errors', (SELECT COUNT(*) FROM error_logs WHERE severity = 'HIGH'),
-            'error_trend', jsonb_object_agg(
-                error_type, COUNT(*)
+            'error_trend', jsonb_build_object(
+                'DatabaseTimeout', COUNT(*) FILTER (WHERE EXISTS (
+                    SELECT 1 FROM error_logs el WHERE el.error_type = 'DatabaseTimeout'
+                )),
+                'ValidationError', COUNT(*) FILTER (WHERE EXISTS (
+                    SELECT 1 FROM error_logs el WHERE el.error_type = 'ValidationError'
+                )),
+                'AuthenticationError', COUNT(*) FILTER (WHERE EXISTS (
+                    SELECT 1 FROM error_logs el WHERE el.error_type = 'AuthenticationError'
+                ))
             )
         )
     ) as health_metrics

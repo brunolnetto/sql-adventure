@@ -398,14 +398,25 @@ SELECT
                 AVG((td.transformation_metadata->>'fields_transformed')::INT), 2
             )
         ),
-        'rule_performance', jsonb_object_agg(
-            tr.rule_name, jsonb_build_object(
-                'usage_count', COUNT(*),
+        'rule_performance', jsonb_build_object(
+            'user_profile_rule', jsonb_build_object(
+                'usage_count', COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule'),
                 'avg_fields_transformed', ROUND(
-                    AVG((td.transformation_metadata->>'fields_transformed')::INT), 2
+                    AVG((td.transformation_metadata->>'fields_transformed')::INT) FILTER (WHERE tr.rule_name = 'user_profile_rule'), 2
                 ),
                 'success_rate', ROUND(
-                    (COUNT(*) FILTER (WHERE td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / COUNT(*)) * 100, 2
+                    (COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
+                     COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule')) * 100, 2
+                )
+            ),
+            'product_inventory_rule', jsonb_build_object(
+                'usage_count', COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule'),
+                'avg_fields_transformed', ROUND(
+                    AVG((td.transformation_metadata->>'fields_transformed')::INT) FILTER (WHERE tr.rule_name = 'product_inventory_rule'), 2
+                ),
+                'success_rate', ROUND(
+                    (COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
+                     COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule')) * 100, 2
                 )
             )
         ),

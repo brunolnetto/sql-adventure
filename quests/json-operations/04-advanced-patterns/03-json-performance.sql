@@ -289,12 +289,10 @@ SELECT
         'storage_metrics', jsonb_build_object(
             'avg_data_size_bytes', ROUND(AVG((ptd.metadata->>'data_size_bytes')::INT), 2),
             'total_storage_bytes', SUM((ptd.metadata->>'data_size_bytes')::INT),
-            'complexity_distribution', jsonb_object_agg(
-                CASE 
-                    WHEN (ptd.metadata->>'complexity_score')::INT <= 5 THEN 'Low'
-                    WHEN (ptd.metadata->>'complexity_score')::INT <= 8 THEN 'Medium'
-                    ELSE 'High'
-                END, COUNT(*)
+            'complexity_distribution', jsonb_build_object(
+                'Low', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT <= 5),
+                'Medium', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT BETWEEN 6 AND 8),
+                'High', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT > 8)
             )
         ),
         'access_pattern_analysis', jsonb_build_object(
@@ -345,8 +343,11 @@ SELECT
             'min_execution_time', MIN(execution_time_ms),
             'execution_time_variance', ROUND(VARIANCE(execution_time_ms), 2)
         ),
-        'query_distribution', jsonb_object_agg(
-            query_name, COUNT(*)
+        'query_distribution', jsonb_build_object(
+            'simple_extraction', COUNT(*) FILTER (WHERE query_name = 'simple_extraction'),
+            'nested_extraction', COUNT(*) FILTER (WHERE query_name = 'nested_extraction'),
+            'array_operations', COUNT(*) FILTER (WHERE query_name = 'array_operations'),
+            'complex_aggregation', COUNT(*) FILTER (WHERE query_name = 'complex_aggregation')
         )
     ) as monitoring_metrics
 FROM performance_metrics;

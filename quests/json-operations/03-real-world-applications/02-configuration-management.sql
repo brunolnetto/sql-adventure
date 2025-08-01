@@ -265,26 +265,26 @@ SELECT
     app_name,
     jsonb_build_object(
         'production', jsonb_build_object(
-            'database_ssl', CASE WHEN environment = 'production' AND config_data->'database'->>'ssl' = 'true' THEN true ELSE false END,
-            'api_timeout', CASE WHEN environment = 'production' THEN (config_data->'api'->>'timeout')::INT ELSE null END,
-            'logging_level', CASE WHEN environment = 'production' THEN config_data->'logging'->>'level' ELSE null END
+            'database_ssl', COUNT(*) FILTER (WHERE environment = 'production' AND config_data->'database'->>'ssl' = 'true') > 0,
+            'api_timeout', MAX(CASE WHEN environment = 'production' THEN (config_data->'api'->>'timeout')::INT END),
+            'logging_level', MAX(CASE WHEN environment = 'production' THEN config_data->'logging'->>'level' END)
         ),
         'development', jsonb_build_object(
-            'database_ssl', CASE WHEN environment = 'development' AND config_data->'database'->>'ssl' = 'true' THEN true ELSE false END,
-            'api_timeout', CASE WHEN environment = 'development' THEN (config_data->'api'->>'timeout')::INT ELSE null END,
-            'logging_level', CASE WHEN environment = 'development' THEN config_data->'logging'->>'level' ELSE null END
+            'database_ssl', COUNT(*) FILTER (WHERE environment = 'development' AND config_data->'database'->>'ssl' = 'true') > 0,
+            'api_timeout', MAX(CASE WHEN environment = 'development' THEN (config_data->'api'->>'timeout')::INT END),
+            'logging_level', MAX(CASE WHEN environment = 'development' THEN config_data->'logging'->>'level' END)
         )
     ) as environment_comparison,
     jsonb_build_object(
         'ssl_difference', CASE 
-            WHEN MAX(CASE WHEN environment = 'production' THEN (config_data->'database'->>'ssl')::BOOLEAN END) != 
-                 MAX(CASE WHEN environment = 'development' THEN (config_data->'database'->>'ssl')::BOOLEAN END)
+            WHEN COUNT(*) FILTER (WHERE environment = 'production' AND (config_data->'database'->>'ssl')::BOOLEAN = true) > 0
+                 AND COUNT(*) FILTER (WHERE environment = 'development' AND (config_data->'database'->>'ssl')::BOOLEAN = false) > 0
             THEN 'Different SSL settings'
             ELSE 'Same SSL settings'
         END,
         'timeout_difference', CASE 
-            WHEN MAX(CASE WHEN environment = 'production' THEN (config_data->'api'->>'timeout')::INT END) != 
-                 MAX(CASE WHEN environment = 'development' THEN (config_data->'api'->>'timeout')::INT END)
+            WHEN COUNT(*) FILTER (WHERE environment = 'production' AND (config_data->'api'->>'timeout')::INT = 30) > 0
+                 AND COUNT(*) FILTER (WHERE environment = 'development' AND (config_data->'api'->>'timeout')::INT = 60) > 0
             THEN 'Different timeout settings'
             ELSE 'Same timeout settings'
         END
@@ -366,8 +366,9 @@ SELECT
         'health_score', ROUND(
             (COUNT(*) FILTER (WHERE config_data ? 'database' AND config_data ? 'api')::DECIMAL / COUNT(*)) * 100, 2
         ),
-        'environment_distribution', jsonb_object_agg(
-            environment, COUNT(*)
+        'environment_distribution', jsonb_build_object(
+            'production', COUNT(*) FILTER (WHERE environment = 'production'),
+            'development', COUNT(*) FILTER (WHERE environment = 'development')
         ),
         'ssl_compliance', jsonb_build_object(
             'ssl_enabled_count', COUNT(*) FILTER (WHERE config_data->'database'->>'ssl' = 'true'),
