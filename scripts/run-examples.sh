@@ -91,10 +91,11 @@ run_example() {
             -c "\pset pager off" \
             -f "$file"; then
             echo "----------------------------------------"
-            print_success "Completed: $filename"
+            print_success "✅ Completed: $filename"
         else
             echo "----------------------------------------"
-            print_error "Failed: $filename"
+            print_error "❌ Failed: $filename"
+            print_error "💡 Try running with --verbose for detailed error information"
             return 1
         fi
     else
@@ -102,9 +103,10 @@ run_example() {
         if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
             -c "\pset pager off" \
             -f "$file" > /dev/null 2>&1; then
-            print_success "Completed: $filename"
+            print_success "✅ Completed: $filename"
         else
-            print_error "Failed: $filename"
+            print_error "❌ Failed: $filename"
+            print_error "💡 Try running with --verbose for detailed error information"
             return 1
         fi
     fi
@@ -127,8 +129,21 @@ run_quest_category() {
         return 1
     fi
     
+    # Count total files for progress tracking
+    local total_files=0
+    local completed_files=0
+    
     for file in "$folder"/*.sql; do
         if [ -f "$file" ]; then
+            total_files=$((total_files + 1))
+        fi
+    done
+    
+    # Run examples with progress tracking
+    for file in "$folder"/*.sql; do
+        if [ -f "$file" ]; then
+            completed_files=$((completed_files + 1))
+            print_status "📊 Progress: $completed_files/$total_files"
             run_example "$file"
         fi
     done
@@ -136,7 +151,7 @@ run_quest_category() {
     if [ "$VERBOSE" = true ]; then
         echo "========================================"
     fi
-    print_success "Completed quest: $quest_name, category: $category"
+    print_success "✅ Completed quest: $quest_name, category: $category ($completed_files/$total_files files)"
     echo ""
 }
 
