@@ -8,6 +8,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 - [Learning Path](./docs/learning-path.md) - Complete learning guide with prerequisites and use cases
 - [Cheatsheets](./docs/cheatsheets) - Cheatsheets for available quests
 - [Run Examples](./docs/run-examples.md) - How to run examples with troubleshooting
+- [Output Validation](./docs/output-validation.md) - Validate SQL script outputs against expected results
 
 ## 🎯 What You'll Learn
 
@@ -53,7 +54,7 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 - **Markdown** - Documentation and guides
 
 ### Scripts
-- **`scripts/validate.sh`** - SQL validation with AI context analysis
+- **`scripts/validate.sh`** - Quest-agnostic SQL validation with AI-powered pattern detection and evaluation
 - **`scripts/run-examples.sh`** - Execute examples with progress tracking
 - **`scripts/commit.sh`** - Simplified git workflow
 
