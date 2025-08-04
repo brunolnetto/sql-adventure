@@ -398,8 +398,8 @@ create_consolidated_json() {
     "learning_value": "Demonstrates intended SQL patterns",
     "quality": "Output is clear and readable"
   },
-  "llm_analysis": $(echo "$llm_analysis" | extract_json_from_markdown | jq -c .),
-  "enhanced_intent": $(echo "$enhanced_intent" | extract_json_from_markdown | jq -c .)
+  "llm_analysis": $(echo "$llm_analysis" | extract_json_from_markdown | jq -c . 2>/dev/null || echo '{"error": "Failed to parse LLM analysis"}'),
+  "enhanced_intent": $(echo "$enhanced_intent" | extract_json_from_markdown | jq -c . 2>/dev/null || echo '{"error": "Failed to parse enhanced intent"}')
 }
 EOF
     
@@ -410,13 +410,19 @@ EOF
 extract_json_from_markdown() {
     local content="$1"
     
-    # Check if content contains markdown JSON wrapper
-    if echo "$content" | grep -q "^```json"; then
+    # Handle empty content
+    if [ -z "$content" ]; then
+        echo '{"error": "Empty content provided"}'
+        return
+    fi
+    
+    # Check if content contains markdown JSON wrapper (avoid backticks in grep)
+    if echo "$content" | grep -q "json"; then
         # Extract JSON using awk (most reliable method)
         local json_content=$(echo "$content" | awk '/^```json$/{flag=1;next} /^```$/{flag=0} flag')
         
         # Validate that we got valid JSON
-        if echo "$json_content" | jq . >/dev/null 2>&1; then
+        if [ -n "$json_content" ] && echo "$json_content" | jq . >/dev/null 2>&1; then
             echo "$json_content"
         else
             # If JSON is invalid, return error object
