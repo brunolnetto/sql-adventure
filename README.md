@@ -1,4 +1,4 @@
-# SQL Adventure Documentation 📚
+# 🧭 SQL Adventure
 
 This directory contains comprehensive documentation for the SQL Adventure project.
 
