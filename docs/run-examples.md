@@ -374,6 +374,90 @@ ls -la quests/recursive-cte/01-hierarchical-graph-traversal/
 bash -x ./scripts/run-examples.sh quest recursive-cte
 ```
 
+---
+
+## 🚨 **SQL Error Troubleshooting**
+
+### **Common SQL Errors**
+
+#### **"syntax error at or near"**
+**Problem**: SQL syntax is incorrect
+
+**Common Causes**:
+- Missing semicolons
+- Incorrect keyword spelling
+- Malformed parentheses
+- Wrong quote types
+
+**Solutions**:
+```sql
+-- ❌ Wrong: Missing semicolon
+SELECT * FROM users
+
+-- ✅ Correct: Add semicolon
+SELECT * FROM users;
+
+-- ❌ Wrong: Wrong quote type
+SELECT * FROM users WHERE name = "John"
+
+-- ✅ Correct: Use single quotes
+SELECT * FROM users WHERE name = 'John';
+```
+
+#### **"column does not exist"**
+**Problem**: Referencing a column that doesn't exist
+
+**Solutions**:
+```sql
+-- ❌ Wrong: Column doesn't exist
+SELECT user_name FROM users;
+
+-- ✅ Correct: Check actual column name
+SELECT username FROM users;
+```
+
+#### **"invalid input syntax for type"**
+**Problem**: Data type mismatch
+
+**Solutions**:
+```sql
+-- ❌ Wrong: String in numeric field
+SELECT * FROM products WHERE price > '100';
+
+-- ✅ Correct: Remove quotes for numbers
+SELECT * FROM products WHERE price > 100;
+```
+
+### **Performance Issues**
+
+#### **Slow Queries**
+**Solutions**:
+```sql
+-- Add indexes for frequently queried columns
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_date ON orders(order_date);
+
+-- Use LIMIT for large result sets
+SELECT * FROM users LIMIT 1000;
+```
+
+#### **Memory Issues**
+**Solutions**:
+```sql
+-- Use LIMIT for large aggregations
+SELECT category, COUNT(*) 
+FROM products 
+GROUP BY category
+LIMIT 1000;
+```
+
+### **Getting Help**
+1. **Include the error message** - Copy the exact error
+2. **Show your SQL code** - Include the problematic query
+3. **Describe what you're trying to do** - Explain your goal
+4. **Show your table structure** - Include CREATE TABLE statements
+5. **Provide sample data** - Show what data you're working with
+
 ## 📈 **Performance Tips**
 
 ### **For Large Quests**

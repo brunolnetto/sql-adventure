@@ -362,4 +362,304 @@ FROM gaps WHERE start_gap < end_gap;
 
 ---
 
+---
+
+## 🔬 **Advanced Patterns**
+
+### **Complex Workflow State Machine**
+```sql
+-- Model complex business workflows with state transitions
+WITH RECURSIVE workflow_states AS (
+    -- Base case: starting states
+    SELECT 
+        state_id,
+        state_name,
+        workflow_type,
+        ARRAY[state_id] as path,
+        ARRAY[state_name] as path_names,
+        0 as path_length,
+        is_final
+    FROM workflow_states 
+    WHERE state_name = 'START'
+    
+    UNION ALL
+    
+    -- Recursive case: follow transitions
+    SELECT 
+        ws.state_id,
+        ws.state_name,
+        ws.workflow_type,
+        wf.path || ws.state_id,
+        wf.path_names || ws.state_name,
+        wf.path_length + 1,
+        ws.is_final
+    FROM workflow_states ws
+    INNER JOIN workflow_transitions wt ON ws.state_id = wt.to_state_id
+    INNER JOIN workflow_states wf ON wt.from_state_id = wf.state_id
+    WHERE wf.path_length < 10  -- Prevent infinite loops
+      AND NOT (ws.state_id = ANY(wf.path))  -- Prevent cycles
+),
+workflow_analytics AS (
+    SELECT 
+        wi.instance_id,
+        wi.workflow_type,
+        wi.current_state_id,
+        ws.state_name,
+        wi.started_at,
+        wi.updated_at,
+        wi.data,
+        -- Time spent in current state
+        EXTRACT(EPOCH FROM (wi.updated_at - wi.started_at)) / 3600 as hours_in_state,
+        -- Workflow duration
+        EXTRACT(EPOCH FROM (wi.updated_at - wi.started_at)) / 3600 as total_hours,
+        -- State ranking by duration
+        RANK() OVER (PARTITION BY wi.workflow_type ORDER BY wi.updated_at - wi.started_at DESC) as duration_rank,
+        -- Bottleneck detection
+        AVG(EXTRACT(EPOCH FROM (wi.updated_at - wi.started_at))) OVER (PARTITION BY wi.current_state_id) as avg_state_duration,
+        -- Workflow progress
+        CASE 
+            WHEN ws.is_final THEN 100
+            ELSE (wp.path_length * 100.0 / MAX(wp.path_length) OVER (PARTITION BY wi.workflow_type))
+        END as progress_percentage
+    FROM workflow_instances wi
+    INNER JOIN workflow_states ws ON wi.current_state_id = ws.state_id
+    LEFT JOIN workflow_states wp ON ws.state_id = wp.state_id
+    WHERE wi.updated_at >= CURRENT_DATE - INTERVAL '30 days'
+)
+SELECT 
+    instance_id,
+    workflow_type,
+    state_name,
+    hours_in_state,
+    total_hours,
+    duration_rank,
+    avg_state_duration,
+    progress_percentage,
+    -- Performance insights
+    CASE 
+        WHEN hours_in_state > avg_state_duration * 2 THEN 'Bottleneck'
+        WHEN progress_percentage < 25 THEN 'Stuck Early'
+        WHEN progress_percentage > 75 AND NOT ws.is_final THEN 'Near Completion'
+        ELSE 'Normal Progress'
+    END as workflow_status,
+    -- Extract key metrics from JSON data
+    data->>'priority' as priority,
+    data->>'assigned_to' as assigned_to,
+    data->>'estimated_hours' as estimated_hours
+FROM workflow_analytics wa
+INNER JOIN workflow_states ws ON wa.current_state_id = ws.state_id
+ORDER BY workflow_type, duration_rank;
+```
+
+### **Multi-Dimensional Business Intelligence**
+```sql
+-- Comprehensive business intelligence with multiple data sources
+WITH RECURSIVE customer_network AS (
+    -- Base case: customers with referrals
+    SELECT 
+        c.customer_id,
+        c.name,
+        c.segment,
+        c.attributes->>'referred_by' as referred_by,
+        0 as network_level,
+        ARRAY[c.customer_id] as network_path
+    FROM customers c
+    WHERE c.attributes->>'referred_by' IS NULL
+    
+    UNION ALL
+    
+    -- Recursive case: referred customers
+    SELECT 
+        c.customer_id,
+        c.name,
+        c.segment,
+        c.attributes->>'referred_by',
+        cn.network_level + 1,
+        cn.network_path || c.customer_id
+    FROM customers c
+    INNER JOIN customer_network cn ON c.attributes->>'referred_by' = cn.customer_id::TEXT
+    WHERE cn.network_level < 3
+),
+sales_analytics AS (
+    SELECT 
+        s.sale_id,
+        s.customer_id,
+        s.product_id,
+        s.quantity,
+        s.unit_price,
+        s.sale_date,
+        s.region,
+        s.channel,
+        c.segment,
+        p.category,
+        cn.network_level,
+        -- Revenue calculations
+        s.quantity * s.unit_price as revenue,
+        s.quantity * (s.unit_price - p.cost) as profit,
+        -- Customer analytics
+        SUM(s.quantity * s.unit_price) OVER (
+            PARTITION BY s.customer_id 
+            ORDER BY s.sale_date 
+            ROWS UNBOUNDED PRECEDING
+        ) as customer_lifetime_value,
+        -- Product performance
+        RANK() OVER (PARTITION BY p.category ORDER BY s.quantity * s.unit_price DESC) as category_rank,
+        -- Regional trends
+        AVG(s.quantity * s.unit_price) OVER (
+            PARTITION BY s.region 
+            ORDER BY s.sale_date 
+            ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+        ) as regional_30day_avg,
+        -- Segment analysis
+        PERCENT_RANK() OVER (PARTITION BY c.segment ORDER BY s.quantity * s.unit_price) as segment_percentile,
+        -- Channel performance
+        ROW_NUMBER() OVER (PARTITION BY s.channel ORDER BY s.sale_date DESC) as channel_recency_rank
+    FROM sales s
+    INNER JOIN customers c ON s.customer_id = c.customer_id
+    INNER JOIN products p ON s.product_id = p.product_id
+    LEFT JOIN customer_network cn ON s.customer_id = cn.customer_id
+    WHERE s.sale_date >= CURRENT_DATE - INTERVAL '90 days'
+),
+enriched_analytics AS (
+    SELECT 
+        *,
+        -- Extract customer preferences from JSON
+        sa.metadata->>'payment_method' as payment_method,
+        sa.metadata->>'campaign_id' as campaign_id,
+        -- Extract product features
+        p.attributes->>'brand' as brand,
+        p.attributes->>'size' as size,
+        p.attributes->>'color' as color,
+        -- Extract customer attributes
+        c.attributes->>'loyalty_tier' as loyalty_tier,
+        c.attributes->>'preferred_category' as preferred_category
+    FROM sales_analytics sa
+    INNER JOIN customers c ON sa.customer_id = c.customer_id
+    INNER JOIN products p ON sa.product_id = p.product_id
+)
+SELECT 
+    customer_id,
+    segment,
+    region,
+    category,
+    channel,
+    network_level,
+    loyalty_tier,
+    payment_method,
+    -- Key metrics
+    revenue,
+    profit,
+    customer_lifetime_value,
+    category_rank,
+    regional_30day_avg,
+    segment_percentile,
+    channel_recency_rank,
+    -- Business insights
+    CASE 
+        WHEN customer_lifetime_value > 10000 THEN 'High Value'
+        WHEN customer_lifetime_value > 5000 THEN 'Medium Value'
+        ELSE 'Low Value'
+    END as customer_value_tier,
+    CASE 
+        WHEN regional_30day_avg > revenue * 1.5 THEN 'Above Regional Average'
+        WHEN regional_30day_avg < revenue * 0.5 THEN 'Below Regional Average'
+        ELSE 'Regional Average'
+    END as regional_performance,
+    CASE 
+        WHEN segment_percentile > 0.8 THEN 'Top Performer'
+        WHEN segment_percentile < 0.2 THEN 'Needs Attention'
+        ELSE 'Average Performer'
+    END as segment_performance
+FROM enriched_analytics
+ORDER BY customer_lifetime_value DESC, revenue DESC;
+```
+
+### **Real-Time Data Processing Pipeline**
+```sql
+-- Real-time data streams with complex transformations
+WITH RECURSIVE session_events AS (
+    SELECT 
+        user_id,
+        session_id,
+        event_type,
+        event_timestamp,
+        metrics,
+        analytics,
+        -- Build session sequence
+        ROW_NUMBER() OVER (
+            PARTITION BY user_id, session_id 
+            ORDER BY event_timestamp
+        ) as session_sequence,
+        -- Calculate session duration
+        FIRST_VALUE(event_timestamp) OVER (
+            PARTITION BY user_id, session_id 
+            ORDER BY event_timestamp
+        ) as session_start,
+        LAST_VALUE(event_timestamp) OVER (
+            PARTITION BY user_id, session_id 
+            ORDER BY event_timestamp
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) as session_end
+    FROM transformed_data
+),
+real_time_analytics AS (
+    SELECT 
+        user_id,
+        session_id,
+        event_type,
+        event_timestamp,
+        session_sequence,
+        session_start,
+        session_end,
+        metrics,
+        analytics,
+        -- Session-level analytics
+        COUNT(*) OVER (PARTITION BY user_id, session_id) as session_event_count,
+        SUM((metrics->>'duration')::INT) OVER (PARTITION BY user_id, session_id) as session_duration,
+        SUM((metrics->>'value')::DECIMAL(10,2)) OVER (PARTITION BY user_id, session_id) as session_value,
+        -- User-level analytics
+        COUNT(DISTINCT session_id) OVER (
+            PARTITION BY user_id 
+            ORDER BY event_timestamp 
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) as user_session_count,
+        -- Real-time trends
+        AVG((metrics->>'value')::DECIMAL(10,2)) OVER (
+            ORDER BY event_timestamp 
+            ROWS BETWEEN 99 PRECEDING AND CURRENT ROW
+        ) as global_value_trend,
+        -- Event type analysis
+        RANK() OVER (PARTITION BY event_type ORDER BY event_timestamp DESC) as event_recency_rank
+    FROM session_events
+)
+SELECT 
+    user_id,
+    session_id,
+    event_type,
+    event_timestamp,
+    session_sequence,
+    session_event_count,
+    session_duration,
+    session_value,
+    user_session_count,
+    global_value_trend,
+    event_recency_rank,
+    -- Real-time alerts
+    CASE 
+        WHEN session_duration > 3600 THEN 'Long Session'
+        WHEN session_value > global_value_trend * 3 THEN 'High Value Session'
+        WHEN user_session_count > 10 THEN 'Active User'
+        ELSE 'Normal Activity'
+    END as activity_alert,
+    -- Extract key metrics
+    metrics->>'duration' as event_duration,
+    metrics->>'value' as event_value,
+    analytics->>'page_url' as page_url
+FROM real_time_analytics
+WHERE event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '15 minutes'
+ORDER BY event_timestamp DESC;
+```
+
+---
+
 *Follow this cheatsheet to ace your SQL interviews and master recursive CTEs! 🚀* 

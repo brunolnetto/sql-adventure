@@ -5,34 +5,39 @@ Comprehensive documentation for the SQL Adventure project - your complete guide 
 ## 📖 Quick Navigation
 
 - **[Project Overview](../README.md)** - Main project README
-- **[Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - Complete reference for interviews
-- **[Learning Path](./learning-path.md)** - Structured progression guide
-- **[Use Cases](./use-cases.md)** - Industry-specific applications
-- **[Run Examples](./run-examples.md)** - How to execute examples
+- **[Learning Path](./learning-path.md)** - Complete learning guide with prerequisites and use cases
+- **[Run Examples](./run-examples.md)** - How to execute examples with troubleshooting
+- **[Data Modeling Cheatsheet](./cheatsheets/data-modeling.md)** - Database design patterns and advanced patterns
+- **[Performance Tuning Cheatsheet](./cheatsheets/performance-tuning.md)** - Query optimization and advanced techniques
+- **[Window Functions Cheatsheet](./cheatsheets/window-functions.md)** - Analytics patterns and advanced BI
+- **[JSON Operations Cheatsheet](./cheatsheets/json-operations.md)** - Modern PostgreSQL features and data pipelines
+- **[Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - Hierarchical data processing and complex workflows
 
 ## 🎯 What You'll Learn
 
-- **Recursive CTEs** - Hierarchical data and iterative operations (31 examples)
-- **Window Functions** - Advanced analytics and ranking (112 examples)
+- **Data Modeling** - Database design patterns (15 examples)
+- **Performance Tuning** - Query optimization techniques (15 examples)
+- **Window Functions** - Advanced analytics and ranking (18 examples)
 - **JSON Operations** - Modern PostgreSQL features (12 examples)
-- **Performance Tuning** - Query optimization techniques (12 examples)
-- **Data Modeling** - Database design patterns (12 examples)
+- **Recursive CTEs** - Hierarchical data and iterative operations (20 examples)
 
 ## 🚀 Quick Start
 
 ### **For Interviews & Quick Reference**
-1. **[Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - Complete reference with code examples
-2. **Practice with examples** - Run any of the 179+ working examples
-3. **Master patterns** - Understand base case + recursive case structure
+1. **[Data Modeling Cheatsheet](./cheatsheets/data-modeling.md)** - Database design patterns
+2. **[Performance Tuning Cheatsheet](./cheatsheets/performance-tuning.md)** - Query optimization
+3. **[Window Functions Cheatsheet](./cheatsheets/window-functions.md)** - Analytics patterns
+4. **[JSON Operations Cheatsheet](./cheatsheets/json-operations.md)** - Modern PostgreSQL features
+5. **[Recursive CTE Cheatsheet](./cheatsheets/recursive-cte.md)** - Complete reference with code examples
 
 ### **For Deep Learning**
-1. **[Learning Path](./learning-path.md)** - Structured progression from beginner to advanced
+1. **[Learning Path](./learning-path.md)** - Structured progression from Data Modeling to Recursive CTEs
 2. **Explore by category** - Choose your focus area
-3. **Apply to your industry** - See [Use Cases](./use-cases.md) for real-world applications
+3. **Apply to your industry** - See industry use cases in the Learning Path
 
 ## 📊 Project Statistics
 
-- **179+ Working Examples** - 100% tested and verified
+- **80 Working Examples** - 100% tested and verified
 - **5 Major Quests** - Complete coverage of advanced SQL
 - **100% Idempotent** - Safe to run multiple times
 - **Docker Ready** - Easy setup and deployment
@@ -41,17 +46,15 @@ Comprehensive documentation for the SQL Adventure project - your complete guide 
 
 | Quest | Examples | Status | Difficulty |
 |-------|----------|--------|------------|
-| **[🔄 Recursive CTE](../quests/recursive-cte/)** | 31 | ✅ Complete | Beginner → Expert |
-| **[🪟 Window Functions](../quests/window-functions/)** | 112 | ✅ Complete | Beginner → Expert |
-| **[🎯 JSON Operations](../quests/json-operations/)** | 12 | ✅ Complete | Beginner → Advanced |
-| **[⚡ Performance Tuning](../quests/performance-tuning/)** | 12 | ✅ Complete | Intermediate → Advanced |
-| **[🏗️ Data Modeling](../quests/data-modeling/)** | 12 | ✅ Complete | Intermediate → Advanced |
+| **[🏗️ Data Modeling](../quests/1-data-modeling/)** | 15 | ✅ Complete | Beginner → Advanced |
+| **[⚡ Performance Tuning](../quests/2-performance-tuning/)** | 15 | ✅ Complete | Beginner → Expert |
+| **[🪟 Window Functions](../quests/3-window-functions/)** | 18 | ✅ Complete | Beginner → Expert |
+| **[🎯 JSON Operations](../quests/4-json-operations/)** | 12 | ✅ Complete | Beginner → Advanced |
+| **[🔄 Recursive CTE](../quests/5-recursive-cte/)** | 20 | ✅ Complete | Beginner → Expert |
 
 ## 🛠️ Development Resources
 
-- **[Quality Assurance](./development/QUALITY_ASSURANCE.md)** - Testing and validation workflow
-- **[Git Workflow](./development/git-workflow.md)** - Scoped, small commits
-- **[Quality Patterns](./development/QUALITY_PATTERNS.md)** - Example standards
+- **[Quality Assurance](./development/quality-assurance.md)** - Testing and validation workflow
 
 ## 🤝 Contributing
 

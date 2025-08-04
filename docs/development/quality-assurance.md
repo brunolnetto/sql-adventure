@@ -2,26 +2,20 @@
 
 ## Overview
 
-SQL Adventure uses a **unified, lean quality assurance approach** with a single script that adapts to different needs through different modes.
+SQL Adventure uses a **simplified, focused quality assurance approach** with streamlined scripts for better user experience and faster development.
 
-## Unified Check Script
+## Simplified Validation Script
 
-### `scripts/check.sh` - Single Script for All Needs
+### `scripts/validate.sh` - Focused Validation with AI Context
 
-**One script, four modes, infinite possibilities!**
+**Two modes, clear purpose, better UX!**
 
 ```bash
 # During development (FAST)
-./scripts/check.sh fast <file>
-
-# Before commit (PERFORMANCE)  
-./scripts/check.sh full <file>
+./scripts/validate.sh fast <file>
 
 # For AI handover (CONTEXT)
-./scripts/check.sh ai <file>
-
-# Complete validation (EVERYTHING)
-./scripts/check.sh all <file>
+./scripts/validate.sh ai <file>
 ```
 
 ### Modes Explained
@@ -29,16 +23,14 @@ SQL Adventure uses a **unified, lean quality assurance approach** with a single 
 | Mode | Purpose | Speed | What it does |
 |------|---------|-------|--------------|
 | `fast` | Development cycle | ⚡⚡⚡ | Syntax, structure, execution |
-| `full` | Pre-commit | ⚡⚡ | Fast + performance benchmark |
-| `ai` | AI handover | ⚡⚡ | Fast + output capture for AI |
-| `all` | Complete QA | ⚡ | Everything (fast + performance + AI) |
+| `ai` | AI handover | ⚡⚡ | Fast + output capture for AI context |
 
 ## Development Workflow
 
 ### 1. During Development (Fast Mode)
 ```bash
 # Quick check while coding
-./scripts/check.sh fast quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
+./scripts/validate.sh fast quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
 ```
 
 **Checks:**
@@ -46,38 +38,16 @@ SQL Adventure uses a **unified, lean quality assurance approach** with a single 
 - ✅ Basic structure (comments, SQL patterns)
 - ✅ Execution test
 
-### 2. Before Commit (Full Mode)
-```bash
-# Performance check before committing
-./scripts/check.sh full quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
-```
-
-**Checks:**
-- ✅ All fast mode checks
-- ✅ Performance benchmark (3 iterations)
-- ✅ Performance assessment (< 1s = good)
-
-### 3. For AI Analysis (AI Mode)
+### 2. For AI Analysis (AI Mode)
 ```bash
 # Capture output for AI handover
-./scripts/check.sh ai quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
+./scripts/validate.sh ai quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
 ```
 
 **Checks:**
 - ✅ All fast mode checks
 - ✅ Output capture and storage
-- ✅ Sample output display
-
-### 4. Complete Validation (All Mode)
-```bash
-# Full validation when needed
-./scripts/check.sh all quests/recursive-cte/01-hierarchical-graph-traversal/01-employee-hierarchy.sql
-```
-
-**Checks:**
-- ✅ All fast mode checks
-- ✅ Performance benchmark
-- ✅ AI output analysis
+- ✅ Context summary for AI evaluation
 
 ## Directory Operations
 
@@ -85,10 +55,10 @@ Check all files in a directory:
 
 ```bash
 # Fast check all files in directory
-./scripts/check.sh fast quests/recursive-cte/01-hierarchical-graph-traversal
+./scripts/validate.sh fast quests/recursive-cte/01-hierarchical-graph-traversal
 
-# Full check all files in directory
-./scripts/check.sh full quests/recursive-cte/01-hierarchical-graph-traversal
+# AI context check all files in directory
+./scripts/validate.sh ai quests/recursive-cte/01-hierarchical-graph-traversal
 ```
 
 ## Quality Standards
