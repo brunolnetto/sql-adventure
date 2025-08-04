@@ -5,42 +5,40 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 ## 📖 Table of Contents
 
 - [Project Overview](./README.md) - Main project README
-- [Learning Path](./docs/learning-path.md) - Structured learning progression
-- [Use Cases](./docs/use-cases.md) - Industry-specific applications
-- [Run Examples](./docs/run-examples.md) - How to run examples with full output
-- [Git Workflow](./docs/git-workflow.md) - Development and contribution guidelines
-- [Roadmap](./docs/ROADMAP.md) - Future development plans
+- [Learning Path](./docs/learning-path.md) - Complete learning guide with prerequisites and use cases
+- [Cheatsheets](./docs/cheatsheets) - Cheatsheets for available quests
+- [Run Examples](./docs/run-examples.md) - How to run examples with troubleshooting
 
 ## 🎯 What You'll Learn
 
-- **Recursive CTEs** - Master hierarchical data and complex iterations
+- **Data Modeling** - Understand database design and relationships
+- **Performance Tuning** - Write efficient, scalable queries
 - **Window Functions** - Advanced analytics and ranking operations
 - **JSON Operations** - Modern PostgreSQL data handling
-- **Performance Tuning** - Write efficient, scalable queries
-- **Data Modeling** - Understand database design and relationships
+- **Recursive CTEs** - Master hierarchical data and complex iterations
 - **Real-world Applications** - Solve practical business problems
 
 ## 🚀 Quick Start
 
 ### For Interviews & Quick Reference
-1. **Start with the [Recursive CTE Cheatsheet](./docs/cheatsheets/recursive-cte.md)** - Complete reference with code examples
-2. **Practice with examples** - Run any of the 54+ working examples
-3. **Master patterns** - Understand base case + recursive case structure
+1. **Start with the [Data Modeling Cheatsheet](./docs/cheatsheets/data-modeling.md)** - Database design patterns
+2. **Practice with examples** - Run any of the 80 working examples
+3. **Master patterns** - Understand database design, optimization, and analytics
 
 ### For Deep Learning
-1. **Follow the [Learning Path](./docs/learning-path.md)** - Structured progression from beginner to advanced
-2. **Explore by category** - Choose your focus area (recursive CTEs, window functions, JSON, etc.)
-3. **Apply to your industry** - See [Use Cases](./docs/use-cases.md) for real-world applications
+1. **Follow the [Learning Path](./docs/learning-path.md)** - Structured progression from Data Modeling to Recursive CTEs
+2. **Explore by category** - Choose your focus area (data modeling, performance tuning, analytics, etc.)
+3. **Apply to your industry** - See industry use cases in the Learning Path
 4. **Run examples** - Use [Run Examples](./docs/run-examples.md) to execute with full output
 
 ## 📊 Project Statistics
 
- - **167+ Working Examples** - 100% tested and verified
- - **4 Major Quests** - Recursive CTEs (31 examples) + Window Functions (112 examples) + JSON Operations (12 examples) + Performance Tuning (12 examples)
- - **100% Idempotent** - Safe to run multiple times
- - **Docker Ready** - Easy setup and deployment
- - **Industry Focused** - Real-world business applications
- - **Expanding Repertoire** - Beyond recursive CTEs to comprehensive SQL learning
+- **80 Working Examples** - 100% tested and verified
+- **5 Major Quests** - Data Modeling (15) + Performance Tuning (15) + Window Functions (18) + JSON Operations (12) + Recursive CTE (20)
+- **100% Idempotent** - Safe to run multiple times
+- **Docker Ready** - Easy setup and deployment
+- **Industry Focused** - Real-world business applications
+- **Conceptual Learning** - Logical progression from foundation to advanced patterns
 
 ## 🛠️ Technology Stack
 
@@ -53,6 +51,11 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 - **SQL** - Standard SQL with PostgreSQL extensions
 - **Bash** - Automation and utility scripts
 - **Markdown** - Documentation and guides
+
+### Scripts
+- **`scripts/validate.sh`** - SQL validation with AI context analysis
+- **`scripts/run-examples.sh`** - Execute examples with progress tracking
+- **`scripts/commit.sh`** - Simplified git workflow
 
 ## 🤝 Contributing
 
@@ -75,7 +78,8 @@ We welcome contributions! Here's how you can help:
 
 ### 🔧 Code Contributions
 - Follow existing code style
-- Add tests for new features
+- Use `scripts/validate.sh` for SQL validation
+- Use `scripts/commit.sh` for git workflow
 - Update documentation
 
 ## 📞 Support
