@@ -1,6 +1,6 @@
 # JSON Operations Quest 🎯
 
-Master modern PostgreSQL JSON operations for handling semi-structured data and API responses.
+Master modern PostgreSQL JSON operations for handling semi-structured data and API responses. **Prerequisites:** Complete Data Modeling, Performance Tuning, and Window Functions quests first.
 
 ## 📊 Overview
 
@@ -46,7 +46,7 @@ docker-compose up -d
 
 ## 🎯 Learning Path
 
-### **🟢 Beginner (Start Here)**
+### **🟢 Beginner (After Core SQL Skills)**
 1. `01-json-parsing.sql` - Extract values from JSON objects
 2. `02-json-generation.sql` - Generate JSON from relational data
 3. `03-json-validation.sql` - Validate JSON structure and content

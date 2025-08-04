@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Analytics Denormalization
 -- PURPOSE: Demonstrate denormalization strategies for analytics and reporting
--- DIFFICULTY: Advanced (20-25 min)
+-- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: Star schema, snowflake schema, fact tables, dimension tables, data warehousing
 
 -- Example 1: Sales Analytics Star Schema

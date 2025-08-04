@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Normalization Trade-offs
 -- PURPOSE: Demonstrate when to normalize vs. denormalize based on use cases
--- DIFFICULTY: Advanced (15-20 min)
+-- DIFFICULTY: 🔴 Advanced (15-20 min)
 -- CONCEPTS: Normalization trade-offs, performance vs. flexibility, OLTP vs. OLAP
 
 -- Example 1: OLTP vs. OLAP Considerations

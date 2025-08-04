@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Hybrid Denormalization Approaches
 -- PURPOSE: Demonstrate balanced approaches combining normalization and denormalization
--- DIFFICULTY: Advanced (20-25 min)
+-- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: Hybrid schemas, read replicas, materialized views, caching strategies
 
 -- Example 1: Hybrid E-commerce Schema

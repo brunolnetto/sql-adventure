@@ -1,13 +1,13 @@
 # Performance Tuning Quest ⚡
 
-Master PostgreSQL performance optimization techniques for production environments.
+Master PostgreSQL performance optimization techniques for production environments. **Prerequisites:** Complete Data Modeling quest first.
 
 ## 📊 Overview
 
-- **12 Examples** across 4 categories
-- **Difficulty**: Intermediate → Advanced
+- **15 Examples** across 5 categories
+- **Difficulty**: Beginner → Expert
 - **Status**: ✅ Complete
-- **Time**: 10-45 min per example
+- **Time**: 5-45 min per example
 
 ## 🚀 Quick Start
 
@@ -24,43 +24,65 @@ docker-compose up -d
 
 ## 📚 Categories
 
-### **01-query-optimization/** 🟡 **Intermediate**
-- `01-basic-optimization.sql` - Query structure and WHERE clause optimization (3 examples)
-- `02-aggregation-optimization.sql` - GROUP BY and aggregate function optimization (3 examples)
-- `03-subquery-optimization.sql` - Subquery types and EXISTS vs IN (3 examples)
+### **00-basic-concepts/** 🟢 **Beginner** (3 examples)
+- `01-query-structure-basics.sql` - Basic query optimization (5-10 min)
+- `02-basic-indexing.sql` - Fundamental indexing concepts (5-10 min)
+- `03-query-planning.sql` - Understanding EXPLAIN plans (5-10 min)
 
-### **02-indexing-strategies/** 🟡 **Intermediate**
-- `01-basic-indexing.sql` - B-tree indexes and index selection (6 examples)
-- `02-advanced-indexing.sql` - Partial, expression, and covering indexes (6 examples)
+### **01-query-optimization/** 🟡 **Intermediate** (3 examples)
+- `01-basic-optimization.sql` - Query structure and WHERE clause optimization (10-15 min)
+- `02-aggregation-optimization.sql` - GROUP BY and aggregate function optimization (10-15 min)
+- `03-subquery-optimization.sql` - Subquery types and EXISTS vs IN (10-15 min)
+- `04-join-optimization.sql` - JOIN optimization techniques (10-15 min)
+- `05-aggregation-optimization.sql` - Advanced aggregation optimization (10-15 min)
 
-### **03-execution-plans/** 🔴 **Advanced**
-- `01-plan-analysis.sql` - EXPLAIN output interpretation (6 examples)
-- `02-statistics-analysis.sql` - Table and column statistics (6 examples)
-- `03-query-rewriting.sql` - Query transformation techniques (6 examples)
+### **02-indexing-strategies/** 🟡 **Intermediate** (3 examples)
+- `01-basic-indexing.sql` - B-tree indexes and index selection (10-15 min)
+- `02-advanced-indexing.sql` - Partial, expression, and covering indexes (15-20 min)
+- `03-composite-indexing.sql` - Composite indexing strategies (10-15 min)
 
-### **04-performance-monitoring/** 🔴 **Advanced**
-- `01-slow-query-analysis.sql` - Slow query identification and profiling (6 examples)
-- `02-resource-monitoring.sql` - System resources and connection monitoring (6 examples)
-- `03-performance-tuning.sql` - Configuration tuning and capacity planning (6 examples)
+### **03-execution-plans/** 🔴 **Advanced** (3 examples)
+- `01-plan-analysis.sql` - EXPLAIN output interpretation (15-20 min)
+- `02-statistics-analysis.sql` - Table and column statistics (15-20 min)
+- `03-query-rewriting.sql` - Query transformation techniques (15-20 min)
+
+### **04-performance-monitoring/** 🔴 **Advanced** (3 examples)
+- `01-slow-query-analysis.sql` - Slow query identification and profiling (15-20 min)
+- `02-resource-monitoring.sql` - System resources and connection monitoring (15-20 min)
+- `03-performance-tuning.sql` - Configuration tuning and capacity planning (15-20 min)
+
+### **05-expert-techniques/** ⚫ **Expert** (3 examples)
+- `01-advanced-query-optimization.sql` - Advanced optimization techniques (30-45 min)
+- `02-performance-monitoring.sql` - Comprehensive performance monitoring (30-45 min)
 
 ## 🎯 Learning Path
 
-### **🟡 Intermediate (Start Here)**
+### **🟢 Beginner (After Data Modeling)**
+1. `01-query-structure-basics.sql` - Basic query optimization concepts
+2. `02-basic-indexing.sql` - Fundamental indexing principles
+3. `03-query-planning.sql` - Understanding EXPLAIN output
+
+### **🟡 Intermediate**
 1. `01-basic-optimization.sql` - Understand query execution order
 2. `02-aggregation-optimization.sql` - Optimize GROUP BY operations
 3. `03-subquery-optimization.sql` - Choose between EXISTS and IN
-4. `01-basic-indexing.sql` - Understand different index types
+4. `04-join-optimization.sql` - Optimize JOIN operations
+5. `05-aggregation-optimization.sql` - Advanced aggregation techniques
+6. `01-basic-indexing.sql` - Understand different index types
+7. `02-advanced-indexing.sql` - Master specialized index patterns
+8. `03-composite-indexing.sql` - Composite indexing strategies
 
 ### **🔴 Advanced**
-1. `02-advanced-indexing.sql` - Master specialized index patterns
-2. `01-plan-analysis.sql` - Read and interpret execution plans
-3. `02-statistics-analysis.sql` - Understand and manage statistics
+1. `01-plan-analysis.sql` - Read and interpret execution plans
+2. `02-statistics-analysis.sql` - Understand and manage statistics
+3. `03-query-rewriting.sql` - Transform queries for better performance
 4. `01-slow-query-analysis.sql` - Identify and analyze slow queries
+5. `02-resource-monitoring.sql` - Monitor system resources and locks
+6. `03-performance-tuning.sql` - Tune configuration and workloads
 
 ### **⚫ Expert**
-1. `03-query-rewriting.sql` - Transform queries for better performance
-2. `02-resource-monitoring.sql` - Monitor system resources and locks
-3. `03-performance-tuning.sql` - Tune configuration and workloads
+1. `01-advanced-query-optimization.sql` - Advanced optimization techniques
+2. `02-performance-monitoring.sql` - Comprehensive performance monitoring
 
 ## 🔧 Key Concepts
 

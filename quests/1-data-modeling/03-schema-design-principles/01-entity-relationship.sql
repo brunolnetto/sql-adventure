@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Entity-Relationship Modeling
 -- PURPOSE: Demonstrate ER modeling principles and relationship types
--- DIFFICULTY: Intermediate (15-20 min)
+-- DIFFICULTY: 🟡 Intermediate (15-20 min)
 -- CONCEPTS: ER modeling, relationship types, cardinality, weak entities, associative entities
 
 -- Example 1: University ER Model

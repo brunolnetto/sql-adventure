@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Healthcare Data Model
 -- PURPOSE: Demonstrate healthcare data modeling with patient records and medical data
--- DIFFICULTY: Advanced (20-25 min)
+-- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: Healthcare modeling, patient records, medical data, HIPAA compliance
 
 -- Example 1: Core Healthcare Entities

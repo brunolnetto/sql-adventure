@@ -6,11 +6,11 @@ Master advanced SQL concepts through hands-on examples and real-world scenarios.
 
 | Quest | Examples | Categories | Status | Difficulty Range |
 |-------|----------|------------|--------|------------------|
-| **[🔄 Recursive CTE](./recursive-cte/)** | 31 | 8 | ✅ Complete | Beginner → Expert |
-| **[🪟 Window Functions](./window-functions/)** | 112 | 5 | ✅ Complete | Beginner → Expert |
-| **[🎯 JSON Operations](./json-operations/)** | 12 | 4 | ✅ Complete | Beginner → Advanced |
-| **[⚡ Performance Tuning](./performance-tuning/)** | 12 | 4 | ✅ Complete | Intermediate → Advanced |
-| **[🏗️ Data Modeling](./data-modeling/)** | 12 | 4 | ✅ Complete | Intermediate → Advanced |
+| **[🏗️ Data Modeling](./1-data-modeling/)** | 15 | 4 | ✅ Complete | Beginner → Advanced |
+| **[⚡ Performance Tuning](./2-performance-tuning/)** | 15 | 4 | ✅ Complete | Beginner → Expert |
+| **[🪟 Window Functions](./3-window-functions/)** | 18 | 5 | ✅ Complete | Beginner → Expert |
+| **[🎯 JSON Operations](./4-json-operations/)** | 12 | 4 | ✅ Complete | Beginner → Advanced |
+| **[🔄 Recursive CTE](./5-recursive-cte/)** | 20 | 8 | ✅ Complete | Beginner → Expert |
 
 ## 🎯 Quick Start
 
@@ -32,13 +32,18 @@ docker-compose up -d
 ## 📚 Learning Path
 
 ### **🟢 Beginner (Start Here)**
-1. **JSON Operations** - Modern data handling (3 beginner examples)
-2. **Recursive CTE** - Hierarchical data processing (8 beginner examples)
-3. **Window Functions** - Basic analytics (2 beginner examples)
+1. **Data Modeling** - Basic table creation and relationships (3 beginner examples)
+2. **Performance Tuning** - Basic optimization (5 beginner examples)
+3. **Window Functions** - Basic analytics (3 beginner examples)
+4. **JSON Operations** - Modern data handling (3 beginner examples)
+5. **Recursive CTE** - Hierarchical data processing (5 beginner examples)
 
 ### **🟡 Intermediate**
-1. **Performance Tuning** - Query optimization (6 intermediate examples)
-2. **Advanced patterns** across all quests
+1. **Data Modeling** - Schema design fundamentals (6 intermediate examples)
+2. **Performance Tuning** - Query optimization (5 intermediate examples)
+3. **Window Functions** - Advanced analytics (7 intermediate examples)
+4. **JSON Operations** - Advanced JSON operations (5 intermediate examples)
+5. **Recursive CTE** - Complex data processing (7 intermediate examples)
 
 ### **🔴 Advanced**
 1. **Complex algorithms** and optimization techniques
@@ -72,8 +77,8 @@ docker-compose up -d
 
 ## 📊 Statistics
 
-- **167+ Working Examples** - 100% tested and verified
-- **4 Major Quests** - Complete coverage of advanced SQL
+- **85 Working Examples** - 100% tested and verified
+- **5 Major Quests** - Complete coverage of advanced SQL
 - **100% Idempotent** - Safe to run multiple times
 - **Docker Ready** - Easy setup and deployment
 
@@ -81,10 +86,11 @@ docker-compose up -d
 
 Choose your path:
 
-- **🎯 New to SQL?** Start with [JSON Operations](./json-operations/) for modern data handling
-- **🔄 Need hierarchical data?** Master [Recursive CTEs](./recursive-cte/) for complex relationships
-- **🪟 Want analytics?** Learn [Window Functions](./window-functions/) for advanced reporting
-- **⚡ Production ready?** Optimize with [Performance Tuning](./performance-tuning/)
+- **🏗️ New to SQL?** Start with [Data Modeling](./1-data-modeling/) for database foundations
+- **⚡ Want to optimize?** Learn [Performance Tuning](./2-performance-tuning/) for query optimization
+- **🪟 Need analytics?** Master [Window Functions](./3-window-functions/) for advanced reporting
+- **🎯 Working with APIs?** Handle [JSON Operations](./4-json-operations/) for modern data
+- **🔄 Complex patterns?** Explore [Recursive CTEs](./5-recursive-cte/) for hierarchical data
 
 ---
 

@@ -4,10 +4,11 @@ Master advanced analytics, ranking, and time series analysis with Window Functio
 
 ## 📊 Overview
 
-- **112 Examples** across 5 categories
+- **18 Examples** across 5 categories
 - **Difficulty**: Beginner → Expert
 - **Status**: ✅ Complete
-- **Time**: 5-60 min per example
+- **Time**: 5-45 min per example
+- **Prerequisites**: Data Modeling + Performance Tuning
 
 ## 🚀 Quick Start
 
@@ -56,7 +57,7 @@ docker-compose up -d
 
 ## 🎯 Learning Path
 
-### **🟢 Beginner (Start Here)**
+### **🟢 Beginner (After Data Modeling + Performance Tuning)**
 1. `01-row-number.sql` - Understand basic window functions
 2. `02-rank-dense-rank.sql` - Handle ranking with ties
 3. `01-running-totals.sql` - Learn aggregation windows

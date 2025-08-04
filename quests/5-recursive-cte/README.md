@@ -4,10 +4,11 @@ Master hierarchical data, graph algorithms, and iterative operations with Recurs
 
 ## 📊 Overview
 
-- **31 Examples** across 8 categories
+- **20 Examples** across 8 categories
 - **Difficulty**: Beginner → Expert
 - **Status**: ✅ Complete
 - **Time**: 5-45 min per example
+- **Prerequisites**: All previous quests (Data Modeling + Performance Tuning + Window Functions + JSON Operations)
 
 ## 🚀 Quick Start
 
@@ -73,7 +74,7 @@ docker-compose up -d
 
 ## 🎯 Learning Path
 
-### **🟢 Beginner (Start Here)**
+### **🟢 Beginner (After All Previous Quests)**
 1. `01-number-series.sql` - Basic recursion patterns
 2. `01-employee-hierarchy.sql` - Hierarchical traversal
 3. `01-string-splitting.sql` - String manipulation
