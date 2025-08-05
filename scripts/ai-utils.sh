@@ -1,0 +1,579 @@
+#!/bin/bash
+
+# AI Utilities for SQL Adventure
+# Contains all LLM-related functions for AI-powered analysis
+
+# Function to extract JSON from markdown response
+extract_json_from_markdown() {
+    local content="$1"
+    
+    # Handle empty content
+    if [ -z "$content" ]; then
+        echo '{"error": "Empty content provided"}'
+        return
+    fi
+    
+    # Check if content contains markdown JSON wrapper (avoid backticks in grep)
+    if echo "$content" | grep -q "json"; then
+        # Extract JSON using awk (most reliable method)
+        local json_content=$(echo "$content" | awk '/^```json$/{flag=1;next} /^```$/{flag=0} flag')
+        
+        # Validate that we got valid JSON
+        if [ -n "$json_content" ] && echo "$json_content" | jq . >/dev/null 2>&1; then
+            echo "$json_content"
+        else
+            # If JSON is invalid, return error object
+            echo '{"error": "Invalid JSON extracted from markdown", "raw_content": "'$(echo "$content" | jq -R -s . | tr -d '\n')'"}'
+        fi
+    else
+        # Check if content is already valid JSON
+        if echo "$content" | jq . >/dev/null 2>&1; then
+            echo "$content"
+        else
+            # If not JSON, return as error object
+            echo '{"error": "Content is not valid JSON", "raw_content": "'$(echo "$content" | jq -R -s . | tr -d '\n')'"}'
+        fi
+    fi
+}
+
+# LLM Configuration
+LLM_CONFIG() {
+    cat << EOF
+# LLM Configuration Settings
+LLM_MODEL="gpt-4o-mini"
+LLM_TEMPERATURE="0.3"
+LLM_MAX_TOKENS="1200"
+LLM_TIMEOUT="30"
+
+# Analysis-specific configurations
+VALIDATION_TEMPERATURE="0.2"
+VALIDATION_MAX_TOKENS="600"
+DIFFICULTY_TEMPERATURE="0.2"
+DIFFICULTY_MAX_TOKENS="500"
+INTENT_TEMPERATURE="0.2"
+INTENT_MAX_TOKENS="800"
+EOF
+}
+
+# Function to get LLM configuration
+get_llm_config() {
+    local config_type="${1:-default}"
+    
+    case "$config_type" in
+        "validation")
+            echo "gpt-4o-mini|0.2|600"
+            ;;
+        "difficulty")
+            echo "gpt-4o-mini|0.2|500"
+            ;;
+        "comprehensive")
+            echo "gpt-4o-mini|0.3|1200"
+            ;;
+        "intent")
+            echo "gpt-4o-mini|0.2|800"
+            ;;
+        *)
+            echo "gpt-4o-mini|0.3|1200"
+            ;;
+    esac
+}
+
+# Function to build prompt for enhanced intent analysis
+build_intent_analysis_prompt() {
+    local sql_content="$1"
+    local quest_name="$2"
+    local basic_purpose="$3"
+    local basic_concepts="$4"
+    local basic_difficulty="$5"
+    
+    cat << EOF
+Analyze this SQL exercise for educational intent: Quest: $quest_name, Basic Purpose: $basic_purpose, Basic Concepts: $basic_concepts, Basic Difficulty: $basic_difficulty. SQL Code: $sql_content. Provide JSON with: purpose (detailed_learning_objective, educational_context, real_world_applicability), learning_outcomes (specific_skills, knowledge_gained, competencies_developed), expected_results (what_learners_should_achieve, success_criteria, measurable_outcomes), difficulty_assessment (refined_difficulty_level, complexity_factors, time_estimate), and concepts (detailed_concept_breakdown, prerequisites, related_topics).
+EOF
+}
+
+# Function to build LLM prompt for SQL analysis
+build_sql_analysis_prompt() {
+    local quest_name="$1"
+    local purpose="$2"
+    local difficulty="$3"
+    local concepts="$4"
+    local sql_patterns="$5"
+    local sql_content="$6"
+    local output_summary="$7"
+    
+    cat << EOF
+Analyze this SQL exercise: Quest: $quest_name, Purpose: $purpose, Difficulty: $difficulty, Concepts: $concepts, SQL Patterns: $sql_patterns. SQL Code: $sql_content. Output: $output_summary. Provide JSON with: technical_analysis (syntax, logic, quality, performance_notes), educational_analysis (learning_value, appropriateness, difficulty_assessment, time_estimate), assessment (grade A-F, score 1-10, overall_assessment PASS/FAIL/NEEDS_REVIEW), output_validation (correctness_check, expected_vs_actual, output_quality, completeness_assessment), difficulty_calibration (current_level, suggested_level, complexity_analysis, adjustment_reasoning), recommendations (improvements, next_steps, best_practices), and summary.
+EOF
+}
+
+# Function to build prompt for output validation only
+build_output_validation_prompt() {
+    local sql_content="$1"
+    local output_content="$2"
+    local expected_concepts="$3"
+    
+    cat << EOF
+Validate this SQL output: SQL Code: $sql_content. Output: $output_content. Expected Concepts: $expected_concepts. Provide JSON with: correctness_check (is_output_correct, error_analysis), expected_vs_actual (matches_expectations, discrepancies), output_quality (readability, structure, completeness), and validation_score (1-10).
+EOF
+}
+
+# Function to build prompt for difficulty assessment only
+build_difficulty_assessment_prompt() {
+    local sql_content="$1"
+    local current_difficulty="$2"
+    local concepts="$3"
+    
+    cat << EOF
+Assess the difficulty of this SQL exercise: SQL Code: $sql_content. Current Difficulty: $current_difficulty. Concepts: $concepts. Provide JSON with: current_level (beginner/intermediate/advanced/expert), suggested_level, complexity_analysis (factors, reasoning), and adjustment_recommendation (keep/upgrade/downgrade).
+EOF
+}
+
+# Function to build LLM system prompt
+build_system_prompt() {
+    local analysis_type="${1:-sql_analysis}"
+    
+    case "$analysis_type" in
+        "sql_analysis")
+            echo "You are an expert SQL instructor and educational content evaluator. Provide comprehensive analysis in JSON format."
+            ;;
+        "output_validation")
+            echo "You are an expert SQL output validator. Analyze SQL execution results for correctness and quality."
+            ;;
+        "difficulty_assessment")
+            echo "You are an expert educational content assessor. Evaluate the complexity and difficulty of SQL exercises."
+            ;;
+        "intent_analysis")
+            echo "You are an expert educational content evaluator. Analyze SQL exercises for educational intent and provide detailed JSON output."
+            ;;
+        *)
+            echo "You are an expert SQL instructor and educational content evaluator. Provide comprehensive analysis in JSON format."
+            ;;
+    esac
+}
+
+# Function to evaluate output using AI (simplified for JSON approach)
+evaluate_output_ai() {
+    local file="$1" quest_name="$2" output_dir="$3"
+    
+    print_status "🤖 AI Evaluation: $(basename "$file")"
+    
+    local subdir_path=$(dirname "$file" | sed 's|^quests/[^/]*/||')
+    local json_file="$output_dir/${subdir_path}/$(basename "$file" .sql).json"
+    
+    if [ -f "$json_file" ]; then
+        local assessment=$(jq -r '.basic_evaluation.overall_assessment' "$json_file")
+        local score=$(jq -r '.basic_evaluation.score' "$json_file")
+        local pattern_analysis=$(jq -r '.basic_evaluation.pattern_analysis' "$json_file")
+        echo "$assessment|$score||$pattern_analysis"
+    else
+        echo "FAIL|0|JSON file not found|No analysis available"
+    fi
+}
+
+# Function to detect SQL patterns using AI-like analysis
+detect_sql_patterns() {
+    local file="$1"
+    local patterns=()
+    
+    # Pattern definitions
+    local pattern_defs=(
+        "CREATE TABLE:table_creation"
+        "ALTER TABLE:table_modification"
+        "DROP TABLE:table_deletion"
+        "CREATE INDEX:index_creation"
+        "DROP INDEX:index_deletion"
+        "INSERT INTO:data_insertion"
+        "UPDATE.*SET:data_update"
+        "DELETE FROM:data_deletion"
+        "SELECT.*FROM:data_querying"
+        "WHERE:filtering"
+        "JOIN:joining"
+        "GROUP BY:aggregation"
+        "ORDER BY:sorting"
+        "LIMIT:limiting"
+        "WITH RECURSIVE:recursive_cte"
+        "WITH.*AS:common_table_expression"
+        "OVER|PARTITION BY|ROW_NUMBER|RANK|DENSE_RANK|NTILE|LAG|LEAD:window_functions"
+        "JSON|jsonb|->|->>|@>|?|jsonb_|json_:json_operations"
+        "EXPLAIN|ANALYZE:performance_analysis"
+        "VACUUM|REINDEX:maintenance"
+        "PRIMARY KEY:primary_key"
+        "FOREIGN KEY:foreign_key"
+        "UNIQUE:unique_constraint"
+        "CHECK:check_constraint"
+        "NOT NULL:not_null_constraint"
+        "EXISTS|NOT EXISTS:existence_check"
+        "IN|NOT IN:membership_check"
+        "UNION|UNION ALL:set_operations"
+        "INTERSECT|EXCEPT:set_operations"
+        "CASE.*WHEN:conditional_logic"
+        "DISTINCT:distinct_operation"
+        "HAVING:group_filtering"
+        "OFFSET:pagination"
+    )
+    
+    for pattern_def in "${pattern_defs[@]}"; do
+        local regex="${pattern_def%:*}"
+        local pattern_name="${pattern_def#*:}"
+        if grep -q "$regex" "$file"; then
+            patterns+=("$pattern_name")
+        fi
+    done
+    
+    echo "${patterns[*]}"
+}
+
+# Utility functions
+clean_number() {
+    local result=$(echo "$1" | tr -d '\n\r' | sed 's/^[[:space:]]*//' | sed 's/[^0-9]//g')
+    [ -z "$result" ] && result="0"
+    echo "$result"
+}
+
+count_matches() {
+    local content="$1"
+    local pattern="$2"
+    local count=$(echo "$content" | grep -c "$pattern" 2>/dev/null || echo "0")
+    clean_number "$count"
+}
+
+extract_metadata() {
+    local file="$1"
+    local field="$2"
+    grep "^--.*$field:" "$file" | head -1 | sed "s/^--.*$field:\\s*//" || echo ""
+}
+
+# Function to analyze SQL file content and understand intent
+analyze_sql_intent() {
+    local file="$1"
+    
+    local purpose=$(extract_metadata "$file" "PURPOSE")
+    local difficulty=$(extract_metadata "$file" "DIFFICULTY")
+    local concepts=$(extract_metadata "$file" "CONCEPTS")
+    local expected_results=$(grep -i "expected.*result" "$file" | head -1 || echo "")
+    local learning_outcomes=$(grep -i "learning.*outcome" "$file" | head -1 || echo "")
+    local sql_patterns=$(detect_sql_patterns "$file")
+    
+    echo "$purpose|$difficulty|$concepts|$expected_results|$learning_outcomes|$sql_patterns"
+}
+
+# Function to execute SQL file and capture output
+execute_and_capture() {
+    local file="$1"
+    local quest_name="$2"
+    local output_dir="$3"
+    
+    local filename=$(basename "$file")
+    local subdir_path=$(dirname "$file" | sed 's|^quests/[^/]*/||')
+    local json_file="$output_dir/${subdir_path}/$(basename "$file" .sql).json"
+    local json_dir=$(dirname "$json_file")
+    
+    mkdir -p "$json_dir"
+    print_status "🔍 Executing: $filename"
+    
+    # Analyze SQL intent
+    local intent_result=$(analyze_sql_intent "$file")
+    IFS='|' read -r purpose difficulty concepts expected_results learning_outcomes sql_patterns <<< "$intent_result"
+    
+    # Execute SQL file and capture output
+    local output_content=""
+    local execution_success=false
+    
+    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+        -f "$file" > /tmp/sql_output 2>&1; then
+        
+        output_content=$(cat /tmp/sql_output)
+        execution_success=true
+        print_success "✅ Output captured"
+        
+        # Analyze output
+        local output_lines=$(clean_number "$(echo "$output_content" | wc -l)")
+        local has_errors=$(count_matches "$output_content" "ERROR\|error")
+        local has_results=$(count_matches "$output_content" "rows\?$")
+        local has_warnings=$(count_matches "$output_content" "WARNING\|warning")
+        
+        print_status "📊 Output analysis: $output_lines lines, ${has_errors} errors, ${has_warnings} warnings, ${has_results} result sets"
+        
+        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
+            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
+            "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file"
+        
+        rm -f /tmp/sql_output
+        return 0
+    else
+        output_content=$(cat /tmp/sql_output)
+        print_error "❌ Failed to execute: $filename"
+        
+        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
+            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
+            "0" "1" "0" "0" "$json_file"
+        
+        rm -f /tmp/sql_output
+        return 1
+    fi
+}
+
+# Function to run AI evaluation
+run_ai_evaluation() {
+    local target="$1"
+    
+    if [ -n "$target" ]; then
+        if [ -d "$target" ]; then
+            # Quest directory evaluation
+            local quest_name=$(basename "$target")
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            print_header "🤖 AI Evaluation - Quest: $quest_name"
+            
+            local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
+            
+            for sql_file in "$target"/*/*.sql; do
+                [ ! -f "$sql_file" ] && continue
+                
+                total_files=$((total_files + 1))
+                
+                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
+                    total_processed=$((total_processed + 1))
+                    
+                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
+                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
+                    local score=$(echo "$eval_result" | cut -d'|' -f2)
+                    
+                    case "$assessment" in
+                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
+                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
+                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
+                    esac
+                fi
+            done
+            
+            echo ""
+            print_status "📊 Quest Evaluation Results: $total_processed/$total_files processed"
+            print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
+            
+            [ $total_processed -eq $total_files ] && print_success "🎉 Quest '$quest_name' fully processed and evaluated!"
+        else
+            # Single file evaluation
+            local quest_name=$(echo "$target" | cut -d'/' -f2)
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            if execute_and_capture "$target" "$quest_name" "$output_dir"; then
+                evaluate_output_ai "$target" "$quest_name" "$output_dir"
+            fi
+        fi
+    else
+        # All files evaluation
+        print_header "AI-Powered Output Evaluation"
+        
+        local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
+        
+        for quest_dir in quests/*; do
+            [ ! -d "$quest_dir" ] && continue
+            
+            local quest_name=$(basename "$quest_dir")
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            print_status "Processing quest: $quest_name"
+            
+            for sql_file in "$quest_dir"/*/*.sql; do
+                [ ! -f "$sql_file" ] && continue
+                
+                total_files=$((total_files + 1))
+                
+                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
+                    total_processed=$((total_processed + 1))
+                    
+                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
+                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
+                    local score=$(echo "$eval_result" | cut -d'|' -f2)
+                    
+                    case "$assessment" in
+                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
+                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
+                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
+                    esac
+                fi
+            done
+        done
+        
+        echo ""
+        print_status "📊 AI Evaluation Results: $total_processed/$total_files processed"
+        print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
+        
+        [ $total_processed -eq $total_files ] && print_success "🎉 All files processed and evaluated!"
+    fi
+}
+
+# Function to call LLM API
+call_llm_api() {
+    local system_prompt="$1"
+    local user_prompt="$2"
+    local model="${3:-gpt-4o-mini}"
+    local temperature="${4:-0.3}"
+    local max_tokens="${5:-1200}"
+    
+    if [ -z "$OPENAI_API_KEY" ]; then
+        echo "ERROR: OPENAI_API_KEY not set"
+        return 1
+    fi
+    
+    local response=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
+        -H "Authorization: Bearer $OPENAI_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"model\": \"$model\",
+            \"messages\": [
+                {
+                    \"role\": \"system\",
+                    \"content\": \"$system_prompt\"
+                },
+                {
+                    \"role\": \"user\",
+                    \"content\": \"$user_prompt\"
+                }
+            ],
+            \"temperature\": $temperature,
+            \"max_tokens\": $max_tokens
+        }" 2>/dev/null)
+    
+    if [ -z "$response" ]; then
+        echo "ERROR: Empty response from API"
+        return 1
+    fi
+    
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        echo "ERROR: API error: $(echo "$response" | jq -r '.error.message')"
+        return 1
+    fi
+    
+    echo "$response"
+}
+
+# Function to analyze intent with LLM
+analyze_intent_with_llm() {
+    local file="$1"
+    local quest_name="$2"
+    local basic_purpose="$3"
+    local basic_concepts="$4"
+    local basic_difficulty="$5"
+    
+
+    
+    # Read the SQL content
+    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+    
+    # Build prompts
+    local system_prompt=$(build_system_prompt "intent_analysis")
+    local user_prompt=$(build_intent_analysis_prompt "$sql_content" "$quest_name" "$basic_purpose" "$basic_concepts" "$basic_difficulty")
+    
+    # Get intent-specific configuration
+    local config=$(get_llm_config "intent")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    
+    if [ $? -ne 0 ]; then
+        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
+        return
+    fi
+    
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
+    else
+        extract_json_from_markdown "$llm_content"
+    fi
+}
+
+# Function to validate output only
+validate_output_with_llm() {
+    local sql_content="$1"
+    local output_content="$2"
+    local expected_concepts="$3"
+    
+    local system_prompt=$(build_system_prompt "output_validation")
+    local user_prompt=$(build_output_validation_prompt "$sql_content" "$output_content" "$expected_concepts")
+    
+    # Get validation-specific configuration
+    local config=$(get_llm_config "validation")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to validate output\", \"details\": \"API call failed\"}"
+    else
+        extract_json_from_markdown "$llm_content"
+    fi
+}
+
+# Function to assess difficulty only
+assess_difficulty_with_llm() {
+    local sql_content="$1"
+    local current_difficulty="$2"
+    local concepts="$3"
+    
+    local system_prompt=$(build_system_prompt "difficulty_assessment")
+    local user_prompt=$(build_difficulty_assessment_prompt "$sql_content" "$current_difficulty" "$concepts")
+    
+    # Get difficulty-specific configuration
+    local config=$(get_llm_config "difficulty")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to assess difficulty\", \"details\": \"API call failed\"}"
+    else
+        extract_json_from_markdown "$llm_content"
+    fi
+}
+
+# Function to process output with LLM
+process_output_with_llm() {
+    local file="$1"
+    local quest_name="$2"
+    local purpose="$3"
+    local difficulty="$4"
+    local concepts="$5"
+    local output_content="$6"
+    local sql_patterns="$7"
+    
+    # Read the original SQL content
+    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+    
+    # Create a simplified summary of the output
+    local output_summary=$(echo "$output_content" | head -20 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-500)
+    
+    # Build prompts
+    local system_prompt=$(build_system_prompt "sql_analysis")
+    local user_prompt=$(build_sql_analysis_prompt "$quest_name" "$purpose" "$difficulty" "$concepts" "$sql_patterns" "$sql_content" "$output_summary")
+    
+    # Get comprehensive analysis configuration
+    local config=$(get_llm_config "comprehensive")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to get LLM analysis\", \"details\": \"API call failed or invalid response\"}"
+    else
+        # Extract JSON from markdown response using our function
+        extract_json_from_markdown "$llm_content"
+    fi
+} 
