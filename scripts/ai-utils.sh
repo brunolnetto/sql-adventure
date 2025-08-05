@@ -1,7 +1,296 @@
 #!/bin/bash
 
 # AI Utilities for SQL Adventure
+
 # Contains all LLM-related functions for AI-powered analysis
+
+# Performance optimization settings
+PERF_CONFIG() {
+    cat << EOF
+# Performance Configuration
+MAX_PARALLEL_JOBS=4
+CACHE_DIR=".cache"
+CACHE_TTL=3600
+BATCH_SIZE=10
+API_RATE_LIMIT=10
+API_RATE_WINDOW=60
+EOF
+}
+
+# Function to get performance configuration
+get_perf_config() {
+    local config_type="${1:-default}"
+    
+    case "$config_type" in
+        "parallel")
+            echo "4"  # Max parallel jobs
+            ;;
+        "cache_ttl")
+            echo "3600"  # Cache TTL in seconds
+            ;;
+        "batch_size")
+            echo "10"  # Batch size for operations
+            ;;
+        "rate_limit")
+            echo "10|60"  # Requests per window
+            ;;
+        *)
+            echo "4|3600|10|10|60"
+            ;;
+    esac
+}
+
+# Function to create cache directory
+init_cache() {
+    local cache_dir="${1:-.cache}"
+    mkdir -p "$cache_dir"
+    echo "$cache_dir"
+}
+
+# Function to generate cache key
+generate_cache_key() {
+    local content="$1"
+    local prefix="${2:-ai}"
+    echo "${prefix}_$(echo "$content" | md5sum | cut -d' ' -f1)"
+}
+
+# Function to check cache
+check_cache() {
+    local cache_key="$1"
+    local cache_dir="${2:-.cache}"
+    local cache_file="$cache_dir/$cache_key.json"
+    local ttl="${3:-3600}"
+    
+    if [ -f "$cache_file" ]; then
+        local file_age=$(($(date +%s) - $(stat -c %Y "$cache_file")))
+        if [ $file_age -lt $ttl ]; then
+            cat "$cache_file"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Function to save to cache
+save_cache() {
+    local cache_key="$1"
+    local content="$2"
+    local cache_dir="${3:-.cache}"
+    local cache_file="$cache_dir/$cache_key.json"
+    
+    mkdir -p "$cache_dir"
+    echo "$content" > "$cache_file"
+}
+
+# Function to process files in parallel
+process_files_parallel() {
+    local files_array=("$@")
+    local quiet_mode="${2:-true}"  # Default to quiet mode for parallel processing
+    local max_jobs=$(get_perf_config "parallel")
+    local current_jobs=0
+    local pids=()
+    local results=()
+    local total_files=${#files_array[@]}
+    local completed_files=0
+    
+    print_status "⚡ Starting parallel processing with $max_jobs jobs for $total_files files..."
+    
+    for file in "${files_array[@]}"; do
+        # Wait if we've reached max parallel jobs
+        while [ $current_jobs -ge $max_jobs ]; do
+            for i in "${!pids[@]}"; do
+                if ! kill -0 "${pids[$i]}" 2>/dev/null; then
+                    unset pids[$i]
+                    current_jobs=$((current_jobs - 1))
+                    completed_files=$((completed_files + 1))
+                    
+                    # Show progress every 20 files or when complete (less verbose)
+                    if [ $((completed_files % 20)) -eq 0 ] || [ $completed_files -eq $total_files ]; then
+                        print_status "📊 Progress: $completed_files/$total_files files processed"
+                    fi
+                fi
+            done
+            sleep 0.1
+        done
+        
+        # Start new job
+        process_single_file "$file" "$quiet_mode" &
+        pids+=($!)
+        current_jobs=$((current_jobs + 1))
+    done
+    
+    # Wait for remaining jobs to complete
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+        completed_files=$((completed_files + 1))
+    done
+    
+    print_success "✅ Parallel processing completed: $completed_files/$total_files files"
+}
+
+# Function to process a single file (for parallel execution)
+process_single_file() {
+    local file="$1"
+    local quiet_mode="${2:-false}"
+    local quest_name=$(echo "$file" | cut -d'/' -f2)
+    local output_dir="ai-evaluations/$quest_name"
+    
+    mkdir -p "$output_dir"
+    
+    if [ "$quiet_mode" = "true" ]; then
+        # Quiet mode: minimal output
+        execute_and_capture_quiet "$file" "$quest_name" "$output_dir"
+    else
+        # Normal mode: full output
+        execute_and_capture "$file" "$quest_name" "$output_dir"
+    fi
+}
+
+# Function to batch LLM API calls
+batch_llm_calls() {
+    local files_array=("$@")
+    local batch_size=$(get_perf_config "batch_size")
+    local cache_dir=$(init_cache)
+    local total_files=${#files_array[@]}
+    local processed_files=0
+    
+    print_status "📦 Processing $total_files files in batches of $batch_size..."
+    
+    for ((i=0; i<${#files_array[@]}; i+=batch_size)); do
+        local batch=("${files_array[@]:i:batch_size}")
+        local batch_num=$((i/batch_size + 1))
+        local total_batches=$(((${#files_array[@]} + batch_size - 1) / batch_size))
+        
+        print_status "📦 Processing batch $batch_num/$total_batches (${#batch[@]} files)..."
+        
+        # Process each file in the batch
+        for file in "${batch[@]}"; do
+            local quest_name=$(echo "$file" | cut -d'/' -f2)
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            # Process the file using quiet mode
+            execute_and_capture_quiet "$file" "$quest_name" "$output_dir"
+            processed_files=$((processed_files + 1))
+        done
+        
+        # Show progress
+        if [ $((batch_num % 5)) -eq 0 ] || [ $batch_num -eq $total_batches ]; then
+            print_status "📊 Progress: $processed_files/$total_files files processed"
+        fi
+    done
+    
+    print_success "✅ Batch processing completed: $processed_files/$total_files files"
+}
+
+# Function to process a batch of files
+process_batch() {
+    local batch=("$@")
+    local cache_dir="${batch[-1]}"
+    unset batch[-1]
+    
+    local batch_prompts=()
+    local batch_files=()
+    
+    for file in "${batch[@]}"; do
+        local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+        local cache_key=$(generate_cache_key "$sql_content" "llm")
+        
+        # Check cache first
+        if ! check_cache "$cache_key" "$cache_dir"; then
+            batch_prompts+=("$sql_content")
+            batch_files+=("$file")
+        fi
+    done
+    
+    # Make batch API call if needed
+    if [ ${#batch_prompts[@]} -gt 0 ]; then
+        local batch_response=$(call_batch_llm_api "${batch_prompts[@]}")
+        
+        # Extract responses using jq with proper error handling
+        if echo "$batch_response" | jq -e '.responses' >/dev/null 2>&1; then
+            local responses=($(echo "$batch_response" | jq -r '.responses[]' 2>/dev/null))
+            
+            for i in "${!batch_files[@]}"; do
+                local file="${batch_files[$i]}"
+                local response="${responses[$i]:-}"
+                if [ -n "$response" ]; then
+                    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+                    local cache_key=$(generate_cache_key "$sql_content" "llm")
+                    
+                    save_cache "$cache_key" "$response" "$cache_dir"
+                fi
+            done
+        else
+            print_warning "⚠️  Failed to parse batch response"
+        fi
+    fi
+}
+
+# Function to call LLM API with rate limiting
+call_llm_api_with_rate_limit() {
+    local system_prompt="$1"
+    local user_prompt="$2"
+    local model="${3:-gpt-4o-mini}"
+    local temperature="${4:-0.3}"
+    local max_tokens="${5:-1200}"
+    
+    # Rate limiting
+    local rate_config=$(get_perf_config "rate_limit")
+    local max_requests=$(echo "$rate_config" | cut -d'|' -f1)
+    local window_seconds=$(echo "$rate_config" | cut -d'|' -f2)
+    
+    # Simple rate limiting using file-based tracking
+    local rate_file=".cache/rate_limit"
+    mkdir -p ".cache"
+    
+    local current_time=$(date +%s)
+    local requests_this_window=0
+    
+    if [ -f "$rate_file" ]; then
+        local last_request_time=$(head -1 "$rate_file" 2>/dev/null || echo "0")
+        local requests_count=$(tail -1 "$rate_file" 2>/dev/null || echo "0")
+        
+        if [ $((current_time - last_request_time)) -lt $window_seconds ]; then
+            requests_this_window=$requests_count
+        fi
+    fi
+    
+    if [ $requests_this_window -ge $max_requests ]; then
+        local sleep_time=$((window_seconds - (current_time - last_request_time)))
+        print_status "⏳ Rate limit reached, waiting ${sleep_time}s..."
+        sleep $sleep_time
+        requests_this_window=0
+    fi
+    
+    # Make API call
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    
+    # Update rate limit tracking
+    echo "$current_time" > "$rate_file"
+    echo "$((requests_this_window + 1))" >> "$rate_file"
+    
+    echo "$response"
+}
+
+# Function to call batch LLM API (if supported)
+call_batch_llm_api() {
+    local prompts=("$@")
+    
+    # For now, simulate batch processing by making individual calls
+    # In a real implementation, you'd use a batch API endpoint
+    local responses=()
+    for prompt in "${prompts[@]}"; do
+        local response=$(call_llm_api "You are an expert SQL instructor." "$prompt")
+        # Escape the response properly for JSON
+        local escaped_response=$(echo "$response" | jq -R -s .)
+        responses+=("$escaped_response")
+    done
+    
+    # Build proper JSON array using jq
+    local json_array=$(printf '%s\n' "${responses[@]}" | jq -R . | jq -s .)
+    echo "{\"responses\": $json_array}"
+}
 
 # Function to extract JSON from markdown response
 extract_json_from_markdown() {
@@ -313,6 +602,61 @@ execute_and_capture() {
     fi
 }
 
+# Function to execute SQL file and capture output (quiet mode)
+execute_and_capture_quiet() {
+    local file="$1"
+    local quest_name="$2"
+    local output_dir="$3"
+    
+    local filename=$(basename "$file")
+    local subdir_path=$(dirname "$file" | sed 's|^quests/[^/]*/||')
+    local json_file="$output_dir/${subdir_path}/$(basename "$file" .sql).json"
+    local json_dir=$(dirname "$json_file")
+    
+    mkdir -p "$json_dir"
+    
+    # Analyze SQL intent (quiet)
+    local intent_result=$(analyze_sql_intent "$file")
+    IFS='|' read -r purpose difficulty concepts expected_results learning_outcomes sql_patterns <<< "$intent_result"
+    
+    # Execute SQL file and capture output
+    local output_content=""
+    local execution_success=false
+    
+    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+        -f "$file" > /tmp/sql_output 2>&1; then
+        
+        output_content=$(cat /tmp/sql_output)
+        execution_success=true
+        
+        # Analyze output (quiet)
+        local output_lines=$(clean_number "$(echo "$output_content" | wc -l)")
+        local has_errors=$(count_matches "$output_content" "ERROR\|error")
+        local has_results=$(count_matches "$output_content" "rows\?$")
+        local has_warnings=$(count_matches "$output_content" "WARNING\|warning")
+        
+        # Call the regular function but suppress its output
+        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
+            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
+            "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file" >/dev/null 2>&1
+        
+        rm -f /tmp/sql_output
+        return 0
+    else
+        output_content=$(cat /tmp/sql_output 2>/dev/null || echo "")
+        
+        # Call the regular function but suppress its output
+        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
+            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
+            "0" "1" "0" "0" "$json_file" >/dev/null 2>&1
+        
+        rm -f /tmp/sql_output
+        return 1
+    fi
+}
+
+
+
 # Function to run AI evaluation
 run_ai_evaluation() {
     local target="$1"
@@ -543,6 +887,80 @@ assess_difficulty_with_llm() {
 
 # Function to process output with LLM
 process_output_with_llm() {
+    local file="$1"
+    local quest_name="$2"
+    local purpose="$3"
+    local difficulty="$4"
+    local concepts="$5"
+    local output_content="$6"
+    local sql_patterns="$7"
+    
+    # Read the original SQL content
+    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+    
+    # Create a simplified summary of the output
+    local output_summary=$(echo "$output_content" | head -20 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-500)
+    
+    # Build prompts
+    local system_prompt=$(build_system_prompt "sql_analysis")
+    local user_prompt=$(build_sql_analysis_prompt "$quest_name" "$purpose" "$difficulty" "$concepts" "$sql_patterns" "$sql_content" "$output_summary")
+    
+    # Get comprehensive analysis configuration
+    local config=$(get_llm_config "comprehensive")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to get LLM analysis\", \"details\": \"API call failed or invalid response\"}"
+    else
+        # Extract JSON from markdown response using our function
+        extract_json_from_markdown "$llm_content"
+    fi
+} 
+
+# Function to analyze intent with LLM (quiet version)
+analyze_intent_with_llm_quiet() {
+    local file="$1"
+    local quest_name="$2"
+    local basic_purpose="$3"
+    local basic_concepts="$4"
+    local basic_difficulty="$5"
+    
+    # Read the SQL content
+    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
+    
+    # Build prompts
+    local system_prompt=$(build_system_prompt "intent_analysis")
+    local user_prompt=$(build_intent_analysis_prompt "$sql_content" "$quest_name" "$basic_purpose" "$basic_concepts" "$basic_difficulty")
+    
+    # Get intent-specific configuration
+    local config=$(get_llm_config "intent")
+    local model=$(echo "$config" | cut -d'|' -f1)
+    local temperature=$(echo "$config" | cut -d'|' -f2)
+    local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
+    
+    if [ $? -ne 0 ]; then
+        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
+        return
+    fi
+    
+    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    
+    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
+        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
+    else
+        extract_json_from_markdown "$llm_content"
+    fi
+}
+
+# Function to process output with LLM (quiet version)
+process_output_with_llm_quiet() {
     local file="$1"
     local quest_name="$2"
     local purpose="$3"
