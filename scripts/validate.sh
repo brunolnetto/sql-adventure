@@ -39,9 +39,27 @@ load_env() {
         [ "$key" = "DB_PASSWORD" ] && env_key="POSTGRES_PASSWORD"
         export "$key"="${!env_key:-$default}"
     done
+    
+    # Ensure OPENAI_API_KEY is available
+    if [ -z "$OPENAI_API_KEY" ]; then
+        print_warning "⚠️  OPENAI_API_KEY not found in environment"
+    else
+        print_status "✅ OPENAI_API_KEY loaded successfully"
+    fi
 }
 
 load_env
+
+# Export environment variables for child processes
+export OPENAI_API_KEY
+export DB_HOST DB_PORT DB_USER DB_NAME DB_PASSWORD
+
+# Ensure all environment variables are available
+if [ -f ".env" ]; then
+    set -a
+    source .env
+    set +a
+fi
 
 # Function to check SQL file structure
 check_structure() {

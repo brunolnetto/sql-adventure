@@ -1002,11 +1002,11 @@ EOF
 EOF
 }
 
-# Function to create consolidated JSON file
+# Function to create consolidated JSON file (unified with quiet mode flag)
 create_consolidated_json() {
     local file="$1" quest_name="$2" purpose="$3" difficulty="$4" concepts="$5"
     local expected_results="$6" learning_outcomes="$7" sql_patterns="$8" output_content="$9"
-    local output_lines="${10}" has_errors="${11}" has_warnings="${12}" has_results="${13}" json_file="${14}"
+    local output_lines="${10}" has_errors="${11}" has_warnings="${12}" has_results="${13}" json_file="${14}" quiet_mode="${15:-false}"
     
     # Convert patterns string to array
     local patterns_array=()
@@ -1077,12 +1077,21 @@ create_consolidated_json() {
     # LLM processing
     local llm_analysis="" enhanced_intent=""
     
+    # Ensure environment variables are available
+    if [ -z "$OPENAI_API_KEY" ] && [ -f ".env" ]; then
+        source .env
+    fi
+    
     if command -v curl >/dev/null 2>&1 && [ -n "$OPENAI_API_KEY" ]; then
-        print_status "🤖 Processing with LLM..."
-        print_status "📚 Analyzing educational intent..."
-        enhanced_intent=$(analyze_intent_with_llm "$file" "$quest_name" "$purpose" "$concepts" "$difficulty")
-        print_status "🔍 Comprehensive analysis..."
-        llm_analysis=$(process_output_with_llm "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" "$output_content" "$sql_patterns")
+        if [ "$quiet_mode" != "true" ]; then
+            print_status "🤖 Processing with LLM..."
+            print_status "📚 Analyzing educational intent..."
+        fi
+        enhanced_intent=$(analyze_intent_with_llm "$file" "$quest_name" "$purpose" "$concepts" "$difficulty" "$quiet_mode")
+        if [ "$quiet_mode" != "true" ]; then
+            print_status "🔍 Comprehensive analysis..."
+        fi
+        llm_analysis=$(process_output_with_llm "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" "$output_content" "$sql_patterns" "$quiet_mode")
     else
         enhanced_intent="Enhanced intent analysis not available (missing curl or API key)"
         llm_analysis="LLM analysis not available (missing curl or API key)"
@@ -1173,178 +1182,12 @@ create_consolidated_json() {
             enhanced_intent: ($enhanced_intent | fromjson? // {"error": "Failed to parse enhanced intent"})
         }' > "$json_file" 2>/dev/null
     
-    print_success "✅ Consolidated JSON created: $json_file"
+    if [ "$quiet_mode" != "true" ]; then
+        print_success "✅ Consolidated JSON created: $json_file"
+    fi
 }
 
-# Function to create consolidated JSON file (quiet version)
-create_consolidated_json_quiet() {
-    local file="$1" quest_name="$2" purpose="$3" difficulty="$4" concepts="$5"
-    local expected_results="$6" learning_outcomes="$7" sql_patterns="$8" output_content="$9"
-    local output_lines="${10}" has_errors="${11}" has_warnings="${12}" has_results="${13}" json_file="${14}"
-    
-    # Convert patterns string to array
-    local patterns_array=()
-    [ -n "$sql_patterns" ] && IFS=' ' read -ra patterns_array <<< "$sql_patterns"
-    
-    # Determine assessment with more nuanced scoring
-    local overall_assessment="PASS" score=8 issues="" pattern_analysis=""
-    
-    # Base scoring logic
-    if [ "$has_errors" -gt 0 ]; then
-        overall_assessment="FAIL"
-        if [ "$has_errors" -eq 1 ]; then
-            score=4  # Minor error
-        elif [ "$has_errors" -le 3 ]; then
-            score=3  # Multiple errors
-        else
-            score=2  # Many errors
-        fi
-        issues="Contains $has_errors error(s)"
-    elif [ "$has_warnings" -gt 0 ]; then
-        overall_assessment="NEEDS_REVIEW"
-        if [ "$has_warnings" -eq 1 ]; then
-            score=7  # Minor warning
-        elif [ "$has_warnings" -le 3 ]; then
-            score=6  # Multiple warnings
-        else
-            score=5  # Many warnings
-        fi
-        issues="Contains $has_warnings warning(s)"
-    elif [ "$has_results" -eq 0 ] && [ "$output_lines" -lt 5 ]; then
-        overall_assessment="NEEDS_REVIEW"
-        score=5
-        issues="Very little output generated"
-    else
-        # PASS with nuanced scoring
-        score=8  # Base score for successful execution
-        
-        # Bonus for good output
-        [ "$has_results" -gt 0 ] && score=$((score + 1))
-        [ "$output_lines" -gt 20 ] && score=$((score + 1))
-        
-        # Cap at 10
-        [ $score -gt 10 ] && score=10
-    fi
-    
-    # Pattern analysis
-    if [ ${#patterns_array[@]} -gt 0 ]; then
-        pattern_analysis="Detected ${#patterns_array[@]} SQL patterns: $sql_patterns"
-        echo "$sql_patterns" | grep -q "window_functions\|recursive_cte\|json_operations" && score=$((score + 1))
-    else
-        pattern_analysis="No SQL patterns detected"
-        score=$((score - 1))
-    fi
-    
-    # Purpose alignment
-    [ -n "$purpose" ] && {
-        if echo "$sql_patterns" | grep -q "table_creation" && echo "$purpose" | grep -q -i "table\|create"; then
-            pattern_analysis="$pattern_analysis (Purpose aligned)"
-        elif echo "$sql_patterns" | grep -q "window_functions" && echo "$purpose" | grep -q -i "window\|rank\|percentile"; then
-            pattern_analysis="$pattern_analysis (Purpose aligned)"
-        elif echo "$sql_patterns" | grep -q "json_operations" && echo "$purpose" | grep -q -i "json\|data"; then
-            pattern_analysis="$pattern_analysis (Purpose aligned)"
-        else
-            pattern_analysis="$pattern_analysis (Purpose alignment unclear)"
-        fi
-    }
-    
-    # LLM processing (quiet)
-    local llm_analysis="" enhanced_intent=""
-    
-    if command -v curl >/dev/null 2>&1 && [ -n "$OPENAI_API_KEY" ]; then
-        # Use quiet versions of LLM functions
-        enhanced_intent=$(analyze_intent_with_llm_quiet "$file" "$quest_name" "$purpose" "$concepts" "$difficulty" 2>/dev/null)
-        llm_analysis=$(process_output_with_llm_quiet "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" "$output_content" "$sql_patterns" 2>/dev/null)
-    else
-        enhanced_intent="Enhanced intent analysis not available (missing curl or API key)"
-        llm_analysis="LLM analysis not available (missing curl or API key)"
-    fi
-    
-    # Format values using our utility function
-    local formatted_purpose=$(format_json_value "$purpose" "string")
-    local formatted_difficulty=$(format_json_value "$difficulty" "string")
-    local formatted_concepts=$(format_json_value "$concepts" "string")
-    local formatted_expected_results=$(format_json_value "$expected_results" "string")
-    local formatted_learning_outcomes=$(format_json_value "$learning_outcomes" "string")
-    local formatted_output_content=$(format_json_value "$output_content" "string")
-    local formatted_overall_assessment=$(format_json_value "$overall_assessment" "string")
-    local formatted_pattern_analysis=$(format_json_value "$pattern_analysis" "string")
-    local formatted_issues=$(format_json_value "$issues" "string")
-    local formatted_recommendations=$(format_json_value "$(get_recommendations "$overall_assessment" "$score" "$issues")" "string")
-    local formatted_llm_analysis=$(format_json_value "$llm_analysis" "string")
-    local formatted_enhanced_intent=$(format_json_value "$enhanced_intent" "string")
-    local formatted_output_lines=$(format_json_value "$output_lines" "number")
-    local formatted_has_errors=$(format_json_value "$has_errors" "number")
-    local formatted_has_warnings=$(format_json_value "$has_warnings" "number")
-    local formatted_has_results=$(format_json_value "$has_results" "number")
-    local formatted_score=$(format_json_value "$score" "number")
-    local formatted_execution_success=$(format_json_value "true" "boolean")
-    
-    # Create JSON using jq for proper formatting (quiet)
-    jq -n \
-        --arg generated "$(date -Iseconds)" \
-        --arg file "$(basename "$file")" \
-        --arg quest "$quest_name" \
-        --arg full_path "$file" \
-        --arg purpose "$formatted_purpose" \
-        --arg difficulty "$formatted_difficulty" \
-        --arg concepts "$formatted_concepts" \
-        --arg expected_results "$formatted_expected_results" \
-        --arg learning_outcomes "$formatted_learning_outcomes" \
-        --arg output_content "$formatted_output_content" \
-        --arg overall_assessment "$formatted_overall_assessment" \
-        --arg pattern_analysis "$formatted_pattern_analysis" \
-        --arg issues "$formatted_issues" \
-        --arg recommendations "$formatted_recommendations" \
-        --arg llm_analysis "$formatted_llm_analysis" \
-        --arg enhanced_intent "$formatted_enhanced_intent" \
-        --argjson output_lines $formatted_output_lines \
-        --argjson has_errors $formatted_has_errors \
-        --argjson has_warnings $formatted_has_warnings \
-        --argjson has_results $formatted_has_results \
-        --argjson score $formatted_score \
-        --argjson execution_success $formatted_execution_success \
-        --argjson sql_patterns "$(printf '%s\n' "${patterns_array[@]}" | jq -R . | jq -s .)" \
-        '{
-            metadata: {
-                generated: $generated,
-                file: $file,
-                quest: $quest,
-                full_path: $full_path
-            },
-            intent: {
-                purpose: $purpose,
-                difficulty: $difficulty,
-                concepts: $concepts,
-                expected_results: $expected_results,
-                learning_outcomes: $learning_outcomes,
-                sql_patterns: $sql_patterns
-            },
-            execution: {
-                success: $execution_success,
-                output_lines: $output_lines,
-                errors: $has_errors,
-                warnings: $has_warnings,
-                result_sets: $has_results,
-                raw_output: $output_content
-            },
-            basic_evaluation: {
-                overall_assessment: $overall_assessment,
-                score: $score,
-                pattern_analysis: $pattern_analysis,
-                issues: $issues,
-                recommendations: $recommendations
-            },
-            basic_analysis: {
-                correctness: "Output appears to execute successfully",
-                completeness: ("Generated " + ($output_lines | tostring) + " lines of output with " + ($has_results | tostring) + " result sets"),
-                learning_value: "Demonstrates intended SQL patterns",
-                quality: "Output is clear and readable"
-            },
-            llm_analysis: ($llm_analysis | fromjson? // {"error": "Failed to parse LLM analysis"}),
-            enhanced_intent: ($enhanced_intent | fromjson? // {"error": "Failed to parse enhanced intent"})
-        }' > "$json_file" 2>/dev/null
-}
+
 
 # Function to show comprehensive report
 show_comprehensive_report() {

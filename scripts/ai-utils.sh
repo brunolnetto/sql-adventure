@@ -136,14 +136,174 @@ process_single_file() {
     local output_dir="ai-evaluations/$quest_name"
     
     mkdir -p "$output_dir"
+    execute_and_capture "$file" "$quest_name" "$output_dir" "$quiet_mode"
+}
+
+# Function to run AI evaluation
+run_ai_evaluation() {
+    local target="$1"
     
-    if [ "$quiet_mode" = "true" ]; then
-        # Quiet mode: minimal output
-        execute_and_capture_quiet "$file" "$quest_name" "$output_dir"
+    if [ -n "$target" ]; then
+        if [ -d "$target" ]; then
+            # Quest directory evaluation
+            local quest_name=$(basename "$target")
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            print_header "🤖 AI Evaluation - Quest: $quest_name"
+            
+            local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
+            
+            for sql_file in "$target"/*/*.sql; do
+                [ ! -f "$sql_file" ] && continue
+                
+                total_files=$((total_files + 1))
+                
+                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
+                    total_processed=$((total_processed + 1))
+                    
+                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
+                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
+                    local score=$(echo "$eval_result" | cut -d'|' -f2)
+                    
+                    case "$assessment" in
+                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
+                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
+                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
+                    esac
+                fi
+            done
+            
+            echo ""
+            print_status "📊 Quest Evaluation Results: $total_processed/$total_files processed"
+            print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
+            
+            [ $total_processed -eq $total_files ] && print_success "🎉 Quest '$quest_name' fully processed and evaluated!"
+        else
+            # Single file evaluation
+            local quest_name=$(echo "$target" | cut -d'/' -f2)
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            if execute_and_capture "$target" "$quest_name" "$output_dir"; then
+                evaluate_output_ai "$target" "$quest_name" "$output_dir"
+            fi
+        fi
     else
-        # Normal mode: full output
-        execute_and_capture "$file" "$quest_name" "$output_dir"
+        # All files evaluation
+        print_header "AI-Powered Output Evaluation"
+        
+        local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
+        
+        for quest_dir in quests/*; do
+            [ ! -d "$quest_dir" ] && continue
+            
+            local quest_name=$(basename "$quest_dir")
+            local output_dir="ai-evaluations/$quest_name"
+            mkdir -p "$output_dir"
+            
+            print_status "Processing quest: $quest_name"
+            
+            for sql_file in "$quest_dir"/*/*.sql; do
+                [ ! -f "$sql_file" ] && continue
+                
+                total_files=$((total_files + 1))
+                
+                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
+                    total_processed=$((total_processed + 1))
+                    
+                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
+                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
+                    local score=$(echo "$eval_result" | cut -d'|' -f2)
+                    
+                    case "$assessment" in
+                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
+                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
+                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
+                    esac
+                fi
+            done
+        done
+        
+        echo ""
+        print_status "📊 AI Evaluation Results: $total_processed/$total_files processed"
+        print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
+        
+        [ $total_processed -eq $total_files ] && print_success "🎉 All files processed and evaluated!"
     fi
+}
+
+# Function to call LLM API
+call_llm_api() {
+    local system_prompt="$1"
+    local user_prompt="$2"
+    local model="${3:-gpt-4o-mini}"
+    local temperature="${4:-0.3}"
+    local max_tokens="${5:-1200}"
+    
+    # Ensure environment variables are available
+    if [ -z "$OPENAI_API_KEY" ]; then
+        # Try to load from .env file if not set
+        if [ -f ".env" ]; then
+            set -a
+            source .env
+            set +a
+        fi
+    fi
+    
+    if [ -z "$OPENAI_API_KEY" ]; then
+        echo "ERROR: OPENAI_API_KEY not set"
+        echo "DEBUG: Current working directory: $(pwd)"
+        echo "DEBUG: .env file exists: $([ -f ".env" ] && echo "yes" || echo "no")"
+        return 1
+    fi
+    
+    # Debug: Check if we're in the right directory
+    if [ ! -f ".env" ]; then
+        echo "DEBUG: .env not found in $(pwd), trying parent directory"
+        if [ -f "../.env" ]; then
+            source ../.env
+        fi
+    fi
+    
+    local response=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
+        -H "Authorization: Bearer $OPENAI_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"model\": \"$model\",
+            \"messages\": [
+                {
+                    \"role\": \"system\",
+                    \"content\": \"$system_prompt\"
+                },
+                {
+                    \"role\": \"user\",
+                    \"content\": \"$user_prompt\"
+                }
+            ],
+            \"temperature\": $temperature,
+            \"max_tokens\": $max_tokens
+        }" 2>/dev/null)
+    
+    if [ -z "$response" ]; then
+        echo "ERROR: Empty response from API"
+        return 1
+    fi
+    
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        echo "ERROR: API error: $(echo "$response" | jq -r '.error.message')"
+        return 1
+    fi
+    
+    # Debug: Check if response has content
+    local content_check=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
+    if [ "$content_check" = "null" ] || [ -z "$content_check" ]; then
+        echo "ERROR: No content in API response"
+        echo "DEBUG: Full response: $response"
+        return 1
+    fi
+    
+    echo "$response"
 }
 
 # Function to batch LLM API calls
@@ -170,7 +330,7 @@ batch_llm_calls() {
             mkdir -p "$output_dir"
             
             # Process the file using quiet mode
-            execute_and_capture_quiet "$file" "$quest_name" "$output_dir"
+            execute_and_capture "$file" "$quest_name" "$output_dir" "true"
             processed_files=$((processed_files + 1))
         done
         
@@ -546,11 +706,12 @@ analyze_sql_intent() {
     echo "$purpose|$difficulty|$concepts|$expected_results|$learning_outcomes|$sql_patterns"
 }
 
-# Function to execute SQL file and capture output
+# Function to execute SQL file and capture output (unified with quiet mode flag)
 execute_and_capture() {
     local file="$1"
     local quest_name="$2"
     local output_dir="$3"
+    local quiet_mode="${4:-false}"
     
     local filename=$(basename "$file")
     local subdir_path=$(dirname "$file" | sed 's|^quests/[^/]*/||')
@@ -558,7 +719,6 @@ execute_and_capture() {
     local json_dir=$(dirname "$json_file")
     
     mkdir -p "$json_dir"
-    print_status "🔍 Executing: $filename"
     
     # Analyze SQL intent
     local intent_result=$(analyze_sql_intent "$file")
@@ -568,12 +728,19 @@ execute_and_capture() {
     local output_content=""
     local execution_success=false
     
+    if [ "$quiet_mode" != "true" ]; then
+        print_status "🔍 Executing: $filename"
+    fi
+    
     if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
         -f "$file" > /tmp/sql_output 2>&1; then
         
         output_content=$(cat /tmp/sql_output)
         execution_success=true
-        print_success "✅ Output captured"
+        
+        if [ "$quiet_mode" != "true" ]; then
+            print_success "✅ Output captured"
+        fi
         
         # Analyze output
         local output_lines=$(clean_number "$(echo "$output_content" | wc -l)")
@@ -581,230 +748,40 @@ execute_and_capture() {
         local has_results=$(count_matches "$output_content" "rows\?$")
         local has_warnings=$(count_matches "$output_content" "WARNING\|warning")
         
-        print_status "📊 Output analysis: $output_lines lines, ${has_errors} errors, ${has_warnings} warnings, ${has_results} result sets"
+        if [ "$quiet_mode" != "true" ]; then
+            print_status "📊 Output analysis: $output_lines lines, $has_errors errors, $has_warnings warnings, $has_results result sets"
+        fi
         
         create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
             "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
-            "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file"
-        
-        rm -f /tmp/sql_output
-        return 0
-    else
-        output_content=$(cat /tmp/sql_output)
-        print_error "❌ Failed to execute: $filename"
-        
-        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
-            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
-            "0" "1" "0" "0" "$json_file"
-        
-        rm -f /tmp/sql_output
-        return 1
-    fi
-}
-
-# Function to execute SQL file and capture output (quiet mode)
-execute_and_capture_quiet() {
-    local file="$1"
-    local quest_name="$2"
-    local output_dir="$3"
-    
-    local filename=$(basename "$file")
-    local subdir_path=$(dirname "$file" | sed 's|^quests/[^/]*/||')
-    local json_file="$output_dir/${subdir_path}/$(basename "$file" .sql).json"
-    local json_dir=$(dirname "$json_file")
-    
-    mkdir -p "$json_dir"
-    
-    # Analyze SQL intent (quiet)
-    local intent_result=$(analyze_sql_intent "$file")
-    IFS='|' read -r purpose difficulty concepts expected_results learning_outcomes sql_patterns <<< "$intent_result"
-    
-    # Execute SQL file and capture output
-    local output_content=""
-    local execution_success=false
-    
-    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -f "$file" > /tmp/sql_output 2>&1; then
-        
-        output_content=$(cat /tmp/sql_output)
-        execution_success=true
-        
-        # Analyze output (quiet)
-        local output_lines=$(clean_number "$(echo "$output_content" | wc -l)")
-        local has_errors=$(count_matches "$output_content" "ERROR\|error")
-        local has_results=$(count_matches "$output_content" "rows\?$")
-        local has_warnings=$(count_matches "$output_content" "WARNING\|warning")
-        
-        # Call the regular function but suppress its output
-        create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
-            "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
-            "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file" >/dev/null 2>&1
+            "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file" "$quiet_mode"
         
         rm -f /tmp/sql_output
         return 0
     else
         output_content=$(cat /tmp/sql_output 2>/dev/null || echo "")
         
-        # Call the regular function but suppress its output
+        if [ "$quiet_mode" != "true" ]; then
+            print_error "❌ Failed to execute: $filename"
+        fi
+        
         create_consolidated_json "$file" "$quest_name" "$purpose" "$difficulty" "$concepts" \
             "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
-            "0" "1" "0" "0" "$json_file" >/dev/null 2>&1
+            "0" "1" "0" "0" "$json_file" "$quiet_mode"
         
         rm -f /tmp/sql_output
         return 1
     fi
 }
 
-
-
-# Function to run AI evaluation
-run_ai_evaluation() {
-    local target="$1"
-    
-    if [ -n "$target" ]; then
-        if [ -d "$target" ]; then
-            # Quest directory evaluation
-            local quest_name=$(basename "$target")
-            local output_dir="ai-evaluations/$quest_name"
-            mkdir -p "$output_dir"
-            
-            print_header "🤖 AI Evaluation - Quest: $quest_name"
-            
-            local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
-            
-            for sql_file in "$target"/*/*.sql; do
-                [ ! -f "$sql_file" ] && continue
-                
-                total_files=$((total_files + 1))
-                
-                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
-                    total_processed=$((total_processed + 1))
-                    
-                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
-                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
-                    local score=$(echo "$eval_result" | cut -d'|' -f2)
-                    
-                    case "$assessment" in
-                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
-                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
-                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
-                    esac
-                fi
-            done
-            
-            echo ""
-            print_status "📊 Quest Evaluation Results: $total_processed/$total_files processed"
-            print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
-            
-            [ $total_processed -eq $total_files ] && print_success "🎉 Quest '$quest_name' fully processed and evaluated!"
-        else
-            # Single file evaluation
-            local quest_name=$(echo "$target" | cut -d'/' -f2)
-            local output_dir="ai-evaluations/$quest_name"
-            mkdir -p "$output_dir"
-            
-            if execute_and_capture "$target" "$quest_name" "$output_dir"; then
-                evaluate_output_ai "$target" "$quest_name" "$output_dir"
-            fi
-        fi
-    else
-        # All files evaluation
-        print_header "AI-Powered Output Evaluation"
-        
-        local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
-        
-        for quest_dir in quests/*; do
-            [ ! -d "$quest_dir" ] && continue
-            
-            local quest_name=$(basename "$quest_dir")
-            local output_dir="ai-evaluations/$quest_name"
-            mkdir -p "$output_dir"
-            
-            print_status "Processing quest: $quest_name"
-            
-            for sql_file in "$quest_dir"/*/*.sql; do
-                [ ! -f "$sql_file" ] && continue
-                
-                total_files=$((total_files + 1))
-                
-                if execute_and_capture "$sql_file" "$quest_name" "$output_dir"; then
-                    total_processed=$((total_processed + 1))
-                    
-                    local eval_result=$(evaluate_output_ai "$sql_file" "$quest_name" "$output_dir")
-                    local assessment=$(echo "$eval_result" | cut -d'|' -f1)
-                    local score=$(echo "$eval_result" | cut -d'|' -f2)
-                    
-                    case "$assessment" in
-                        "PASS") total_passed=$((total_passed + 1)); print_success "✅ $(basename "$sql_file") - PASS ($score/10)" ;;
-                        "FAIL") total_failed=$((total_failed + 1)); print_error "❌ $(basename "$sql_file") - FAIL ($score/10)" ;;
-                        "NEEDS_REVIEW") total_needs_review=$((total_needs_review + 1)); print_warning "⚠️  $(basename "$sql_file") - NEEDS REVIEW ($score/10)" ;;
-                    esac
-                fi
-            done
-        done
-        
-        echo ""
-        print_status "📊 AI Evaluation Results: $total_processed/$total_files processed"
-        print_status "✅ Passed: $total_passed, ❌ Failed: $total_failed, ⚠️ Needs Review: $total_needs_review"
-        
-        [ $total_processed -eq $total_files ] && print_success "🎉 All files processed and evaluated!"
-    fi
-}
-
-# Function to call LLM API
-call_llm_api() {
-    local system_prompt="$1"
-    local user_prompt="$2"
-    local model="${3:-gpt-4o-mini}"
-    local temperature="${4:-0.3}"
-    local max_tokens="${5:-1200}"
-    
-    if [ -z "$OPENAI_API_KEY" ]; then
-        echo "ERROR: OPENAI_API_KEY not set"
-        return 1
-    fi
-    
-    local response=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
-        -H "Authorization: Bearer $OPENAI_API_KEY" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"model\": \"$model\",
-            \"messages\": [
-                {
-                    \"role\": \"system\",
-                    \"content\": \"$system_prompt\"
-                },
-                {
-                    \"role\": \"user\",
-                    \"content\": \"$user_prompt\"
-                }
-            ],
-            \"temperature\": $temperature,
-            \"max_tokens\": $max_tokens
-        }" 2>/dev/null)
-    
-    if [ -z "$response" ]; then
-        echo "ERROR: Empty response from API"
-        return 1
-    fi
-    
-    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
-        echo "ERROR: API error: $(echo "$response" | jq -r '.error.message')"
-        return 1
-    fi
-    
-    echo "$response"
-}
-
-# Function to analyze intent with LLM
+# Function to analyze intent with LLM (unified with quiet mode flag)
 analyze_intent_with_llm() {
     local file="$1"
     local quest_name="$2"
     local basic_purpose="$3"
     local basic_concepts="$4"
     local basic_difficulty="$5"
-    
-
+    local quiet_mode="${6:-false}"
     
     # Read the SQL content
     local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
@@ -818,6 +795,10 @@ analyze_intent_with_llm() {
     local model=$(echo "$config" | cut -d'|' -f1)
     local temperature=$(echo "$config" | cut -d'|' -f2)
     local max_tokens=$(echo "$config" | cut -d'|' -f3)
+    
+    if [ "$quiet_mode" != "true" ]; then
+        print_status "📚 Analyzing educational intent..."
+    fi
     
     local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
     
@@ -885,7 +866,7 @@ assess_difficulty_with_llm() {
     fi
 }
 
-# Function to process output with LLM
+# Function to process output with LLM (unified with quiet mode flag)
 process_output_with_llm() {
     local file="$1"
     local quest_name="$2"
@@ -894,6 +875,7 @@ process_output_with_llm() {
     local concepts="$5"
     local output_content="$6"
     local sql_patterns="$7"
+    local quiet_mode="${8:-false}"
     
     # Read the original SQL content
     local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
@@ -911,6 +893,10 @@ process_output_with_llm() {
     local temperature=$(echo "$config" | cut -d'|' -f2)
     local max_tokens=$(echo "$config" | cut -d'|' -f3)
     
+    if [ "$quiet_mode" != "true" ]; then
+        print_status "🔍 Comprehensive analysis..."
+    fi
+    
     local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
     local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
     
@@ -922,76 +908,4 @@ process_output_with_llm() {
     fi
 } 
 
-# Function to analyze intent with LLM (quiet version)
-analyze_intent_with_llm_quiet() {
-    local file="$1"
-    local quest_name="$2"
-    local basic_purpose="$3"
-    local basic_concepts="$4"
-    local basic_difficulty="$5"
-    
-    # Read the SQL content
-    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
-    
-    # Build prompts
-    local system_prompt=$(build_system_prompt "intent_analysis")
-    local user_prompt=$(build_intent_analysis_prompt "$sql_content" "$quest_name" "$basic_purpose" "$basic_concepts" "$basic_difficulty")
-    
-    # Get intent-specific configuration
-    local config=$(get_llm_config "intent")
-    local model=$(echo "$config" | cut -d'|' -f1)
-    local temperature=$(echo "$config" | cut -d'|' -f2)
-    local max_tokens=$(echo "$config" | cut -d'|' -f3)
-    
-    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
-    
-    if [ $? -ne 0 ]; then
-        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
-        return
-    fi
-    
-    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
-    
-    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
-        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
-    else
-        extract_json_from_markdown "$llm_content"
-    fi
-}
-
-# Function to process output with LLM (quiet version)
-process_output_with_llm_quiet() {
-    local file="$1"
-    local quest_name="$2"
-    local purpose="$3"
-    local difficulty="$4"
-    local concepts="$5"
-    local output_content="$6"
-    local sql_patterns="$7"
-    
-    # Read the original SQL content
-    local sql_content=$(cat "$file" | head -50 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-800)
-    
-    # Create a simplified summary of the output
-    local output_summary=$(echo "$output_content" | head -20 | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-500)
-    
-    # Build prompts
-    local system_prompt=$(build_system_prompt "sql_analysis")
-    local user_prompt=$(build_sql_analysis_prompt "$quest_name" "$purpose" "$difficulty" "$concepts" "$sql_patterns" "$sql_content" "$output_summary")
-    
-    # Get comprehensive analysis configuration
-    local config=$(get_llm_config "comprehensive")
-    local model=$(echo "$config" | cut -d'|' -f1)
-    local temperature=$(echo "$config" | cut -d'|' -f2)
-    local max_tokens=$(echo "$config" | cut -d'|' -f3)
-    
-    local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
-    local llm_content=$(echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null)
-    
-    if [ "$llm_content" = "null" ] || [ -z "$llm_content" ]; then
-        echo "{\"error\": \"Failed to get LLM analysis\", \"details\": \"API call failed or invalid response\"}"
-    else
-        # Extract JSON from markdown response using our function
-        extract_json_from_markdown "$llm_content"
-    fi
-} 
+ 
