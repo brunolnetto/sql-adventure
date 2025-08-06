@@ -10,6 +10,7 @@ import asyncio
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine, text, func, and_, or_
 from sqlalchemy.orm import sessionmaker, Session
@@ -40,11 +41,11 @@ class DatabaseManager:
         self._initialize_data()
     
     def _get_connection_string(self, separate_db: bool = True) -> str:
-        """Get database connection string from environment"""
+        """Get database connection string from environment and URL-escape credentials"""
         host = os.getenv('DB_HOST', 'localhost')
         port = os.getenv('DB_PORT', '5432')
-        user = os.getenv('DB_USER', 'postgres')
-        password = os.getenv('DB_PASSWORD', 'postgres')
+        user = quote_plus(os.getenv('DB_USER', 'postgres'))
+        password = quote_plus(os.getenv('DB_PASSWORD', 'postgres'))
         
         if separate_db:
             database = os.getenv('EVALUATOR_DB_NAME', 'sql_adventure_db')
@@ -86,17 +87,19 @@ class DatabaseManager:
             temp_engine = create_engine(base_connection)
             
             with temp_engine.connect() as conn:
-                conn.execute(text("COMMIT"))  # End any existing transaction
-                
-                # Check if database exists
+                conn.execute(text("COMMIT"))  # ensure we are outside of TX block
+
                 db_name = self.connection_string.split('/')[-1]
-                result = conn.execute(text(
-                    f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'"
-                ))
-                
+
+                # Existence check (safe parameter binding)
+                exists_q = text("SELECT 1 FROM pg_database WHERE datname = :dbname").bindparams(dbname=db_name)
+                result = conn.execute(exists_q)
+
                 if not result.fetchone():
-                    conn.execute(text(f"CREATE DATABASE {db_name}"))
-                    print(f"✅ Created evaluator database: {db_name}")
+                    # NOTE: Postgres does not allow database identifiers as bind-params; quote safely
+                    safe_db = db_name.replace('"', '')  # basic sanitisation
+                    conn.execute(text(f'CREATE DATABASE "{safe_db}"'))
+                    print(f"✅ Created evaluator database: {safe_db}")
             
             temp_engine.dispose()
             
@@ -385,10 +388,10 @@ class DatabaseManager:
             # Read SQL content
             with open(file_path, 'r') as f:
                 sql_content = f.read()
-            
-            # Split into individual statements
+
+            # Split into individual statements (basic splitter; does not account for PL/pgSQL)
             statements = [stmt.strip() for stmt in sql_content.split(';') if stmt.strip()]
-            
+
             results = {
                 'success': True,
                 'execution_time_ms': 0,
@@ -400,43 +403,39 @@ class DatabaseManager:
                 'raw_output': '',
                 'statement_results': []
             }
-            
+
             start_time = datetime.now()
-            
-            # Execute each statement
-            for i, statement in enumerate(statements):
-                if not statement:
-                    continue
-                
-                stmt_start = datetime.now()
-                stmt_result = {
-                    'order': i + 1,
-                    'statement': statement,
-                    'success': False,
-                    'execution_time_ms': 0,
-                    'rows_affected': 0,
-                    'rows_returned': 0,
-                    'error_message': None,
-                    'warning_message': None
-                }
-                
-                try:
-                    with self.engine.connect() as conn:
+
+            # Use single connection/transaction for entire file for consistency & performance
+            with self.engine.begin() as conn:
+                for i, statement in enumerate(statements):
+                    if not statement:
+                        continue
+
+                    stmt_start = datetime.now()
+                    stmt_result = {
+                        'order': i + 1,
+                        'statement': statement,
+                        'success': False,
+                        'execution_time_ms': 0,
+                        'rows_affected': 0,
+                        'rows_returned': 0,
+                        'error_message': None,
+                        'warning_message': None
+                    }
+
+                    try:
                         result = conn.execute(text(statement))
-                        conn.commit()
-                        
+
                         stmt_end = datetime.now()
                         stmt_result['execution_time_ms'] = int((stmt_end - stmt_start).total_seconds() * 1000)
                         stmt_result['success'] = True
-                        
-                        # Capture output
+
                         if result.returns_rows:
                             rows = result.fetchall()
                             stmt_result['rows_returned'] = len(rows)
                             results['result_sets'] += 1
                             results['raw_output'] += f"Statement {i+1}: {len(rows)} rows returned\n"
-                            
-                            # Limit output for performance
                             for row in rows[:5]:
                                 results['raw_output'] += str(row) + "\n"
                             if len(rows) > 5:
@@ -445,16 +444,16 @@ class DatabaseManager:
                             stmt_result['rows_affected'] = result.rowcount if hasattr(result, 'rowcount') else 0
                             results['rows_affected'] += stmt_result['rows_affected']
                             results['raw_output'] += f"Statement {i+1}: {stmt_result['rows_affected']} rows affected\n"
-                        
-                except SQLAlchemyError as e:
-                    stmt_end = datetime.now()
-                    stmt_result['execution_time_ms'] = int((stmt_end - stmt_start).total_seconds() * 1000)
-                    stmt_result['error_message'] = str(e)
-                    results['error_count'] += 1
-                    results['success'] = False
-                    results['raw_output'] += f"Statement {i+1}: ERROR - {str(e)}\n"
-                
-                results['statement_results'].append(stmt_result)
+
+                    except SQLAlchemyError as e:
+                        stmt_end = datetime.now()
+                        stmt_result['execution_time_ms'] = int((stmt_end - stmt_start).total_seconds() * 1000)
+                        stmt_result['error_message'] = str(e)
+                        results['error_count'] += 1
+                        results['success'] = False
+                        results['raw_output'] += f"Statement {i+1}: ERROR - {str(e)}\n"
+
+                    results['statement_results'].append(stmt_result)
             
             end_time = datetime.now()
             results['execution_time_ms'] = int((end_time - start_time).total_seconds() * 1000)
