@@ -132,6 +132,11 @@ class EvaluationConfig:
     backup_directory: str = "evaluation-backups"
     max_backup_files: int = 10
     
+    # Quest discovery
+    quests_directory: str = "quests"
+    enable_quest_discovery: bool = True
+    auto_generate_metadata: bool = False
+    
     # Quality control
     min_score_threshold: int = 1
     max_score_threshold: int = 10

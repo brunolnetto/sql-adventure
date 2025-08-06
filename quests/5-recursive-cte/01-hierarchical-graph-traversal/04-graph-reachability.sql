@@ -48,30 +48,31 @@ INSERT INTO graph_edges VALUES
 -- Find all nodes reachable from node 1
 WITH RECURSIVE reachable_nodes AS (
     -- Base case: start node
-    SELECT 
-        from_node as node,
-        0 as distance,
-        CAST(from_node AS VARCHAR(100)) as path
-    FROM graph_edges 
+    SELECT
+        from_node AS node,
+        0 AS distance,
+        CAST(from_node AS VARCHAR(100)) AS path
+    FROM graph_edges
     WHERE from_node = 1
-    
+
     UNION ALL
-    
+
     -- Recursive case: follow edges
-    SELECT 
+    SELECT
         ge.to_node,
         rn.distance + 1,
         CAST(rn.path || ' → ' || ge.to_node AS VARCHAR(100))
-    FROM graph_edges ge
-    INNER JOIN reachable_nodes rn ON ge.from_node = rn.node
+    FROM graph_edges AS ge
+    INNER JOIN reachable_nodes AS rn ON ge.from_node = rn.node
 )
+
 SELECT DISTINCT
     node,
-    MIN(distance) as shortest_distance,
-    MIN(path) as shortest_path
+    MIN(distance) AS shortest_distance,
+    MIN(path) AS shortest_path
 FROM reachable_nodes
 GROUP BY node
 ORDER BY shortest_distance, node;
 
 -- Clean up
-DROP TABLE IF EXISTS graph_edges CASCADE; 
+DROP TABLE IF EXISTS graph_edges CASCADE;

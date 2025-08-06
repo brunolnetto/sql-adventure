@@ -231,159 +231,258 @@ INSERT INTO config_versions VALUES
 
 -- Example 1: Configuration Validation and Schema Checking
 -- Validate configuration data against defined schemas
-SELECT 
+SELECT
     ac.id,
     ac.app_name,
     ac.environment,
-    CASE 
-        WHEN ac.config_data ? 'database' AND ac.config_data ? 'api' THEN 'Valid Structure'
+    CASE
+        WHEN
+            ac.config_data ? 'database' AND ac.config_data ? 'api'
+            THEN 'Valid Structure'
         ELSE 'Missing Required Sections'
-    END as structure_validation,
-    CASE 
-        WHEN jsonb_typeof(ac.config_data->'database'->'port') = 'number' 
-         AND (ac.config_data->'database'->>'port')::INT BETWEEN 1 AND 65535 
-        THEN 'Valid Port'
+    END AS structure_validation,
+    CASE
+        WHEN
+            JSONB_TYPEOF(ac.config_data -> 'database' -> 'port') = 'number'
+            AND (
+                ac.config_data -> 'database' ->> 'port'
+            )::INT BETWEEN 1 AND 65535
+            THEN 'Valid Port'
         ELSE 'Invalid Port'
-    END as port_validation,
-    CASE 
-        WHEN jsonb_typeof(ac.config_data->'api'->'timeout') = 'number'
-         AND (ac.config_data->'api'->>'timeout')::INT BETWEEN 1 AND 300
-        THEN 'Valid Timeout'
+    END AS port_validation,
+    CASE
+        WHEN
+            JSONB_TYPEOF(ac.config_data -> 'api' -> 'timeout') = 'number'
+            AND (ac.config_data -> 'api' ->> 'timeout')::INT BETWEEN 1 AND 300
+            THEN 'Valid Timeout'
         ELSE 'Invalid Timeout'
-    END as timeout_validation,
-    jsonb_build_object(
-        'has_ssl', CASE WHEN ac.config_data->'database'->>'ssl' = 'true' THEN true ELSE false END,
-        'has_rate_limit', CASE WHEN ac.config_data->'api' ? 'rate_limit' THEN true ELSE false END,
-        'debug_enabled', CASE WHEN ac.config_data->'features'->>'debug_mode' = 'true' THEN true ELSE false END
-    ) as feature_flags
-FROM app_configurations ac
+    END AS timeout_validation,
+    JSONB_BUILD_OBJECT(
+        'has_ssl',
+        COALESCE(ac.config_data -> 'database' ->> 'ssl' = 'true', FALSE),
+        'has_rate_limit',
+        COALESCE(ac.config_data -> 'api' ? 'rate_limit', FALSE),
+        'debug_enabled',
+        COALESCE(ac.config_data -> 'features' ->> 'debug_mode' = 'true', FALSE)
+    ) AS feature_flags
+FROM app_configurations AS ac
 ORDER BY ac.app_name, ac.environment;
 
 -- Example 2: Environment-Specific Configuration Management
 -- Compare and manage configurations across different environments
-SELECT 
+SELECT
     app_name,
-    jsonb_build_object(
-        'production', jsonb_build_object(
-            'database_ssl', COUNT(*) FILTER (WHERE environment = 'production' AND config_data->'database'->>'ssl' = 'true') > 0,
-            'api_timeout', MAX(CASE WHEN environment = 'production' THEN (config_data->'api'->>'timeout')::INT END),
-            'logging_level', MAX(CASE WHEN environment = 'production' THEN config_data->'logging'->>'level' END)
+    JSONB_BUILD_OBJECT(
+        'production', JSONB_BUILD_OBJECT(
+            'database_ssl',
+            COUNT(*) FILTER (
+                WHERE environment = 'production'
+                AND config_data -> 'database' ->> 'ssl' = 'true'
+            )
+            > 0,
+            'api_timeout',
+            MAX(
+                CASE
+                    WHEN
+                        environment = 'production'
+                        THEN (config_data -> 'api' ->> 'timeout')::INT
+                END
+            ),
+            'logging_level',
+            MAX(
+                CASE
+                    WHEN
+                        environment = 'production'
+                        THEN config_data -> 'logging' ->> 'level'
+                END
+            )
         ),
-        'development', jsonb_build_object(
-            'database_ssl', COUNT(*) FILTER (WHERE environment = 'development' AND config_data->'database'->>'ssl' = 'true') > 0,
-            'api_timeout', MAX(CASE WHEN environment = 'development' THEN (config_data->'api'->>'timeout')::INT END),
-            'logging_level', MAX(CASE WHEN environment = 'development' THEN config_data->'logging'->>'level' END)
+        'development', JSONB_BUILD_OBJECT(
+            'database_ssl',
+            COUNT(*) FILTER (
+                WHERE environment = 'development'
+                AND config_data -> 'database' ->> 'ssl' = 'true'
+            )
+            > 0,
+            'api_timeout',
+            MAX(
+                CASE
+                    WHEN
+                        environment = 'development'
+                        THEN (config_data -> 'api' ->> 'timeout')::INT
+                END
+            ),
+            'logging_level',
+            MAX(
+                CASE
+                    WHEN
+                        environment = 'development'
+                        THEN config_data -> 'logging' ->> 'level'
+                END
+            )
         )
-    ) as environment_comparison,
-    jsonb_build_object(
-        'ssl_difference', CASE 
-            WHEN COUNT(*) FILTER (WHERE environment = 'production' AND (config_data->'database'->>'ssl')::BOOLEAN = true) > 0
-                 AND COUNT(*) FILTER (WHERE environment = 'development' AND (config_data->'database'->>'ssl')::BOOLEAN = false) > 0
-            THEN 'Different SSL settings'
+    ) AS environment_comparison,
+    JSONB_BUILD_OBJECT(
+        'ssl_difference', CASE
+            WHEN
+                COUNT(*) FILTER (
+                    WHERE environment = 'production'
+                    AND (config_data -> 'database' ->> 'ssl')::BOOLEAN = true
+                )
+                > 0
+                AND COUNT(*) FILTER (
+                    WHERE environment = 'development'
+                    AND (config_data -> 'database' ->> 'ssl')::BOOLEAN = false
+                )
+                > 0
+                THEN 'Different SSL settings'
             ELSE 'Same SSL settings'
         END,
-        'timeout_difference', CASE 
-            WHEN COUNT(*) FILTER (WHERE environment = 'production' AND (config_data->'api'->>'timeout')::INT = 30) > 0
-                 AND COUNT(*) FILTER (WHERE environment = 'development' AND (config_data->'api'->>'timeout')::INT = 60) > 0
-            THEN 'Different timeout settings'
+        'timeout_difference', CASE
+            WHEN
+                COUNT(*) FILTER (
+                    WHERE environment = 'production'
+                    AND (config_data -> 'api' ->> 'timeout')::INT = 30
+                )
+                > 0
+                AND COUNT(*) FILTER (
+                    WHERE environment = 'development'
+                    AND (config_data -> 'api' ->> 'timeout')::INT = 60
+                )
+                > 0
+                THEN 'Different timeout settings'
             ELSE 'Same timeout settings'
         END
-    ) as configuration_differences
+    ) AS configuration_differences
 FROM app_configurations
 WHERE app_name = 'webapp'
 GROUP BY app_name;
 
 -- Example 3: Configuration Versioning and Change Tracking
 -- Track configuration changes and version history
-SELECT 
+SELECT
     cv.app_name,
     cv.version_number,
     cv.deployed_at,
-    cv.change_log->>'changes' as changes,
-    cv.change_log->>'author' as author,
-    cv.change_log->>'approved_by' as approved_by,
-    jsonb_build_object(
-        'database_config', CASE 
-            WHEN cv.config_data ? 'database' THEN jsonb_build_object(
-                'host', cv.config_data->'database'->>'host',
-                'port', cv.config_data->'database'->>'port',
-                'ssl_enabled', CASE WHEN cv.config_data->'database'->>'ssl' = 'true' THEN true ELSE false END
-            )
-            ELSE null
+    cv.change_log ->> 'changes' AS changes,
+    cv.change_log ->> 'author' AS author,
+    cv.change_log ->> 'approved_by' AS approved_by,
+    JSONB_BUILD_OBJECT(
+        'database_config', CASE
+            WHEN cv.config_data ? 'database'
+                THEN JSONB_BUILD_OBJECT(
+                    'host', cv.config_data -> 'database' ->> 'host',
+                    'port', cv.config_data -> 'database' ->> 'port',
+                    'ssl_enabled',
+                    COALESCE(cv.config_data -> 'database' ->> 'ssl' = 'true',
+                    FALSE)
+                )
         END,
-        'api_config', CASE 
-            WHEN cv.config_data ? 'api' THEN jsonb_build_object(
-                'timeout', cv.config_data->'api'->>'timeout',
-                'retries', cv.config_data->'api'->>'retries',
-                'has_rate_limit', CASE WHEN cv.config_data->'api' ? 'rate_limit' THEN true ELSE false END
-            )
-            ELSE null
+        'api_config', CASE
+            WHEN cv.config_data ? 'api'
+                THEN JSONB_BUILD_OBJECT(
+                    'timeout', cv.config_data -> 'api' ->> 'timeout',
+                    'retries', cv.config_data -> 'api' ->> 'retries',
+                    'has_rate_limit',
+                    COALESCE(cv.config_data -> 'api' ? 'rate_limit', FALSE)
+                )
         END
-    ) as configuration_summary
-FROM config_versions cv
+    ) AS configuration_summary
+FROM config_versions AS cv
 ORDER BY cv.app_name, cv.deployed_at;
 
 -- Example 4: Dynamic Configuration Updates
 -- Create dynamic configuration management with validation
-SELECT 
+SELECT
     ac.app_name,
     ac.environment,
-    ac.config_data->'database'->>'host' as db_host,
-    ac.config_data->'database'->>'name' as db_name,
-    ac.config_data->'api'->>'timeout' as api_timeout,
-    jsonb_build_object(
+    ac.config_data -> 'database' ->> 'host' AS db_host,
+    ac.config_data -> 'database' ->> 'name' AS db_name,
+    ac.config_data -> 'api' ->> 'timeout' AS api_timeout,
+    JSONB_BUILD_OBJECT(
         'current_config', ac.config_data,
-        'validation_status', CASE 
-            WHEN ac.config_data ? 'database' AND ac.config_data ? 'api' THEN 'valid'
+        'validation_status', CASE
+            WHEN
+                ac.config_data ? 'database' AND ac.config_data ? 'api'
+                THEN 'valid'
             ELSE 'invalid'
         END,
-        'environment_specific', CASE 
-            WHEN ac.environment = 'production' THEN jsonb_build_object(
-                'ssl_required', true,
-                'min_timeout', 30,
-                'logging_level', 'info'
-            )
-            WHEN ac.environment = 'development' THEN jsonb_build_object(
-                'ssl_required', false,
-                'min_timeout', 60,
-                'logging_level', 'debug'
-            )
-            ELSE jsonb_build_object('unknown_environment', true)
+        'environment_specific', CASE
+            WHEN ac.environment = 'production'
+                THEN JSONB_BUILD_OBJECT(
+                    'ssl_required', true,
+                    'min_timeout', 30,
+                    'logging_level', 'info'
+                )
+            WHEN ac.environment = 'development'
+                THEN JSONB_BUILD_OBJECT(
+                    'ssl_required', false,
+                    'min_timeout', 60,
+                    'logging_level', 'debug'
+                )
+            ELSE JSONB_BUILD_OBJECT('unknown_environment', true)
         END
-    ) as dynamic_config
-FROM app_configurations ac
+    ) AS dynamic_config
+FROM app_configurations AS ac
 WHERE ac.is_active = true
 ORDER BY ac.app_name, ac.environment;
 
 -- Example 5: Configuration Health Monitoring
 -- Monitor configuration health and compliance
-SELECT 
-    'configuration_health' as check_type,
-    COUNT(*) as total_configs,
-    COUNT(*) FILTER (WHERE config_data ? 'database' AND config_data ? 'api') as valid_configs,
-    COUNT(*) FILTER (WHERE NOT (config_data ? 'database' AND config_data ? 'api')) as invalid_configs,
-    jsonb_build_object(
+SELECT
+    'configuration_health' AS check_type,
+    COUNT(*) AS total_configs,
+    COUNT(*) FILTER (WHERE config_data ? 'database' AND config_data ? 'api')
+        AS valid_configs,
+    COUNT(*) FILTER (
+        WHERE NOT (config_data ? 'database' AND config_data ? 'api')
+    ) AS invalid_configs,
+    JSONB_BUILD_OBJECT(
         'health_score', ROUND(
-            (COUNT(*) FILTER (WHERE config_data ? 'database' AND config_data ? 'api')::DECIMAL / COUNT(*)) * 100, 2
+            (
+                COUNT(*) FILTER (
+                    WHERE config_data ? 'database' AND config_data ? 'api'
+                )::DECIMAL
+                / COUNT(*)
+            )
+            * 100,
+            2
         ),
-        'environment_distribution', jsonb_build_object(
+        'environment_distribution', JSONB_BUILD_OBJECT(
             'production', COUNT(*) FILTER (WHERE environment = 'production'),
             'development', COUNT(*) FILTER (WHERE environment = 'development')
         ),
-        'ssl_compliance', jsonb_build_object(
-            'ssl_enabled_count', COUNT(*) FILTER (WHERE config_data->'database'->>'ssl' = 'true'),
-            'ssl_disabled_count', COUNT(*) FILTER (WHERE config_data->'database'->>'ssl' = 'false'),
-            'ssl_missing_count', COUNT(*) FILTER (WHERE NOT (config_data->'database' ? 'ssl'))
+        'ssl_compliance', JSONB_BUILD_OBJECT(
+            'ssl_enabled_count',
+            COUNT(*) FILTER (
+                WHERE config_data -> 'database' ->> 'ssl' = 'true'
+            ),
+            'ssl_disabled_count',
+            COUNT(*) FILTER (
+                WHERE config_data -> 'database' ->> 'ssl' = 'false'
+            ),
+            'ssl_missing_count',
+            COUNT(*) FILTER (WHERE NOT (config_data -> 'database' ? 'ssl'))
         ),
-        'timeout_compliance', jsonb_build_object(
-            'valid_timeouts', COUNT(*) FILTER (WHERE (config_data->'api'->>'timeout')::INT BETWEEN 1 AND 300),
-            'invalid_timeouts', COUNT(*) FILTER (WHERE NOT ((config_data->'api'->>'timeout')::INT BETWEEN 1 AND 300))
+        'timeout_compliance', JSONB_BUILD_OBJECT(
+            'valid_timeouts',
+            COUNT(*) FILTER (
+                WHERE (
+                    config_data -> 'api' ->> 'timeout'
+                )::INT BETWEEN 1 AND 300
+            ),
+            'invalid_timeouts',
+            COUNT(*) FILTER (
+                WHERE NOT (
+                    (config_data -> 'api' ->> 'timeout')::INT BETWEEN 1 AND 300
+                )
+            )
         )
-    ) as health_metrics
+    ) AS health_metrics
 FROM app_configurations
 WHERE is_active = true;
 
 -- Clean up
 DROP TABLE IF EXISTS app_configurations CASCADE;
 DROP TABLE IF EXISTS environment_configs CASCADE;
-DROP TABLE IF EXISTS config_versions CASCADE; 
+DROP TABLE IF EXISTS config_versions CASCADE;

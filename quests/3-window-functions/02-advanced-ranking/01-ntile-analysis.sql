@@ -27,9 +27,9 @@ CREATE TABLE employee_performance (
     employee_id INT PRIMARY KEY,
     name VARCHAR(100),
     department VARCHAR(50),
-    sales_amount DECIMAL(10,2),
-    customer_satisfaction DECIMAL(3,2),
-    efficiency_score DECIMAL(3,2)
+    sales_amount DECIMAL(10, 2),
+    customer_satisfaction DECIMAL(3, 2),
+    efficiency_score DECIMAL(3, 2)
 );
 
 -- Insert sample data
@@ -47,31 +47,39 @@ INSERT INTO employee_performance VALUES
 
 -- Example 1: NTILE for Performance Tiers
 -- Create performance tiers (Top, High, Medium, Low) based on sales amount
-SELECT 
+SELECT
     employee_id,
     name,
     department,
     sales_amount,
-    NTILE(4) OVER (ORDER BY sales_amount DESC) as performance_tier,
-    CASE 
+    NTILE(4) OVER (ORDER BY sales_amount DESC) AS performance_tier,
+    CASE
         WHEN NTILE(4) OVER (ORDER BY sales_amount DESC) = 1 THEN 'Top Performer'
-        WHEN NTILE(4) OVER (ORDER BY sales_amount DESC) = 2 THEN 'High Performer'
-        WHEN NTILE(4) OVER (ORDER BY sales_amount DESC) = 3 THEN 'Medium Performer'
+        WHEN
+            NTILE(4) OVER (ORDER BY sales_amount DESC) = 2
+            THEN 'High Performer'
+        WHEN
+            NTILE(4) OVER (ORDER BY sales_amount DESC) = 3
+            THEN 'Medium Performer'
         ELSE 'Low Performer'
-    END as tier_description
+    END AS tier_description
 FROM employee_performance
 ORDER BY sales_amount DESC;
 
 -- Example 2: Ranking with Multiple Criteria
 -- Rank employees by sales amount, then by customer satisfaction (tie-breaker)
-SELECT 
+SELECT
     employee_id,
     name,
     department,
     sales_amount,
     customer_satisfaction,
-    RANK() OVER (ORDER BY sales_amount DESC, customer_satisfaction DESC) as overall_rank,
-    DENSE_RANK() OVER (ORDER BY sales_amount DESC, customer_satisfaction DESC) as dense_rank
+    RANK()
+        OVER (ORDER BY sales_amount DESC, customer_satisfaction DESC)
+        AS overall_rank,
+    DENSE_RANK()
+        OVER (ORDER BY sales_amount DESC, customer_satisfaction DESC)
+        AS dense_rank
 FROM employee_performance
 ORDER BY overall_rank;
 
@@ -81,7 +89,7 @@ CREATE TABLE student_scores (
     name VARCHAR(100),
     subject VARCHAR(50),
     score INT,
-    attendance_percentage DECIMAL(5,2)
+    attendance_percentage DECIMAL(5, 2)
 );
 
 -- Insert sample data
@@ -99,15 +107,24 @@ INSERT INTO student_scores VALUES
 
 -- Example 3: Top N Students by Subject
 -- Find top 3 students in each subject based on score and attendance
-SELECT 
+SELECT
     student_id,
     name,
     subject,
     score,
     attendance_percentage,
-    ROW_NUMBER() OVER (PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC) as subject_rank
+    ROW_NUMBER()
+        OVER (
+            PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC
+        )
+        AS subject_rank
 FROM student_scores
-WHERE ROW_NUMBER() OVER (PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC) <= 3
+WHERE
+    ROW_NUMBER()
+        OVER (
+            PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC
+        )
+    <= 3
 ORDER BY subject, subject_rank;
 
 -- Create department salaries table
@@ -115,7 +132,7 @@ CREATE TABLE department_salaries (
     employee_id INT PRIMARY KEY,
     name VARCHAR(100),
     department VARCHAR(50),
-    salary DECIMAL(10,2),
+    salary DECIMAL(10, 2),
     years_experience INT
 );
 
@@ -139,24 +156,32 @@ INSERT INTO department_salaries VALUES
 
 -- Example 4: Salary Quartiles by Department
 -- Create salary quartiles within each department
-SELECT 
+SELECT
     employee_id,
     name,
     department,
     salary,
     years_experience,
-    NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) as salary_quartile,
-    CASE 
-        WHEN NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 1 THEN 'Top 25%'
-        WHEN NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 2 THEN 'Upper Middle 25%'
-        WHEN NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 3 THEN 'Lower Middle 25%'
+    NTILE(4)
+        OVER (PARTITION BY department ORDER BY salary DESC)
+        AS salary_quartile,
+    CASE
+        WHEN
+            NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 1
+            THEN 'Top 25%'
+        WHEN
+            NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 2
+            THEN 'Upper Middle 25%'
+        WHEN
+            NTILE(4) OVER (PARTITION BY department ORDER BY salary DESC) = 3
+            THEN 'Lower Middle 25%'
         ELSE 'Bottom 25%'
-    END as quartile_description,
-    ROUND(AVG(salary) OVER (PARTITION BY department), 2) as dept_avg_salary
+    END AS quartile_description,
+    ROUND(AVG(salary) OVER (PARTITION BY department), 2) AS dept_avg_salary
 FROM department_salaries
 ORDER BY department, salary_quartile;
 
 -- Clean up
 DROP TABLE IF EXISTS employee_performance CASCADE;
 DROP TABLE IF EXISTS student_scores CASCADE;
-DROP TABLE IF EXISTS department_salaries CASCADE; 
+DROP TABLE IF EXISTS department_salaries CASCADE;

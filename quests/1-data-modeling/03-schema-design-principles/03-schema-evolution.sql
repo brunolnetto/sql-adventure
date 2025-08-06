@@ -18,7 +18,14 @@ CREATE TABLE schema_versions (
 
 -- Initial schema version
 INSERT INTO schema_versions VALUES
-(1, 'v1.0.0', '2024-01-01 00:00:00', 'Initial schema', 'Initial migration', 'Drop all tables');
+(
+    1,
+    'v1.0.0',
+    '2024-01-01 00:00:00',
+    'Initial schema',
+    'Initial migration',
+    'Drop all tables'
+);
 
 -- Example 2: Evolving Customer Schema
 -- Demonstrate schema evolution with customer data
@@ -54,15 +61,24 @@ CREATE TABLE customers_v1_1 (
 );
 
 -- Migration script from v1 to v1.1
-INSERT INTO customers_v1_1 (customer_id, customer_name, email, phone, created_at)
-SELECT customer_id, customer_name, email, phone, created_at
+INSERT INTO customers_v1_1 (
+    customer_id, customer_name, email, phone, created_at
+)
+SELECT
+    customer_id,
+    customer_name,
+    email,
+    phone,
+    created_at
 FROM customers_v1;
 
 -- Update schema version
 INSERT INTO schema_versions VALUES
-(2, 'v1.1.0', '2024-02-01 00:00:00', 'Added address fields', 
- 'ALTER TABLE customers ADD COLUMN address VARCHAR(200), ADD COLUMN city VARCHAR(100), ADD COLUMN state VARCHAR(50), ADD COLUMN postal_code VARCHAR(20), ADD COLUMN country VARCHAR(50) DEFAULT ''USA'', ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;',
- 'ALTER TABLE customers DROP COLUMN address, DROP COLUMN city, DROP COLUMN state, DROP COLUMN postal_code, DROP COLUMN country, DROP COLUMN updated_at;');
+(
+    2, 'v1.1.0', '2024-02-01 00:00:00', 'Added address fields',
+    'ALTER TABLE customers ADD COLUMN address VARCHAR(200), ADD COLUMN city VARCHAR(100), ADD COLUMN state VARCHAR(50), ADD COLUMN postal_code VARCHAR(20), ADD COLUMN country VARCHAR(50) DEFAULT ''USA'', ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;',
+    'ALTER TABLE customers DROP COLUMN address, DROP COLUMN city, DROP COLUMN state, DROP COLUMN postal_code, DROP COLUMN country, DROP COLUMN updated_at;'
+);
 
 -- Version 1.2: Add customer segmentation
 CREATE TABLE customers_v1_2 (
@@ -76,29 +92,54 @@ CREATE TABLE customers_v1_2 (
     postal_code VARCHAR(20),
     country VARCHAR(50) DEFAULT 'USA',
     customer_segment VARCHAR(20) DEFAULT 'standard',
-    lifetime_value DECIMAL(12,2) DEFAULT 0,
+    lifetime_value DECIMAL(12, 2) DEFAULT 0,
     last_purchase_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Migration script from v1.1 to v1.2
-INSERT INTO customers_v1_2 (customer_id, customer_name, email, phone, address, city, state, postal_code, country, created_at, updated_at)
-SELECT customer_id, customer_name, email, phone, address, city, state, postal_code, country, created_at, updated_at
+INSERT INTO customers_v1_2 (
+    customer_id,
+    customer_name,
+    email,
+    phone,
+    address,
+    city,
+    state,
+    postal_code,
+    country,
+    created_at,
+    updated_at
+)
+SELECT
+    customer_id,
+    customer_name,
+    email,
+    phone,
+    address,
+    city,
+    state,
+    postal_code,
+    country,
+    created_at,
+    updated_at
 FROM customers_v1_1;
 
 -- Update schema version
 INSERT INTO schema_versions VALUES
-(3, 'v1.2.0', '2024-03-01 00:00:00', 'Added customer segmentation fields',
- 'ALTER TABLE customers ADD COLUMN customer_segment VARCHAR(20) DEFAULT ''standard'', ADD COLUMN lifetime_value DECIMAL(12,2) DEFAULT 0, ADD COLUMN last_purchase_date DATE;',
- 'ALTER TABLE customers DROP COLUMN customer_segment, DROP COLUMN lifetime_value, DROP COLUMN last_purchase_date;');
+(
+    3, 'v1.2.0', '2024-03-01 00:00:00', 'Added customer segmentation fields',
+    'ALTER TABLE customers ADD COLUMN customer_segment VARCHAR(20) DEFAULT ''standard'', ADD COLUMN lifetime_value DECIMAL(12,2) DEFAULT 0, ADD COLUMN last_purchase_date DATE;',
+    'ALTER TABLE customers DROP COLUMN customer_segment, DROP COLUMN lifetime_value, DROP COLUMN last_purchase_date;'
+);
 
 -- Example 3: Backward Compatibility Strategies
 -- Demonstrate maintaining backward compatibility during schema evolution
 
 -- Create a view for backward compatibility
 CREATE VIEW customers AS
-SELECT 
+SELECT
     customer_id,
     customer_name,
     email,
@@ -116,7 +157,7 @@ SELECT
 FROM customers_v1_2;
 
 -- Create a function to handle schema versioning
-CREATE OR REPLACE FUNCTION get_schema_version()
+CREATE OR REPLACE FUNCTION GET_SCHEMA_VERSION()
 RETURNS VARCHAR(50) AS $$
 DECLARE
     current_version VARCHAR(50);
@@ -134,7 +175,7 @@ $$ LANGUAGE plpgsql;
 -- Demonstrate different data migration approaches
 
 -- Function to migrate customer data with validation
-CREATE OR REPLACE FUNCTION migrate_customer_data(
+CREATE OR REPLACE FUNCTION MIGRATE_CUSTOMER_DATA(
     p_source_version VARCHAR(50),
     p_target_version VARCHAR(50)
 )
@@ -179,7 +220,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE products_v1 (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(200) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -187,7 +228,7 @@ CREATE TABLE products_v1 (
 CREATE TABLE products_v2 (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(200) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
     category VARCHAR(100) DEFAULT 'uncategorized',
     description TEXT,
     is_active BOOLEAN DEFAULT true,
@@ -200,7 +241,7 @@ CREATE TABLE orders_v1 (
     order_id INT PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10,2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
     customer_name VARCHAR(100) NOT NULL,
     customer_email VARCHAR(100) NOT NULL,
     customer_phone VARCHAR(20)
@@ -217,9 +258,9 @@ CREATE TABLE customers_evolved (
 
 CREATE TABLE orders_v2 (
     order_id INT PRIMARY KEY,
-    customer_id INT NOT NULL REFERENCES customers_evolved(customer_id),
+    customer_id INT NOT NULL REFERENCES customers_evolved (customer_id),
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10,2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending'
 );
 
@@ -241,7 +282,7 @@ CREATE TABLE users_v2 (
 );
 
 -- Migration function for data type conversion
-CREATE OR REPLACE FUNCTION migrate_user_data_types()
+CREATE OR REPLACE FUNCTION MIGRATE_USER_DATA_TYPES()
 RETURNS INTEGER AS $$
 DECLARE
     records_processed INTEGER := 0;
@@ -274,7 +315,8 @@ CREATE TABLE schema_evolution_log (
     log_id BIGSERIAL PRIMARY KEY,
     version_from VARCHAR(50),
     version_to VARCHAR(50),
-    migration_type VARCHAR(50), -- 'add_column', 'drop_column', 'change_type', 'split_table', etc.
+    -- 'add_column', 'drop_column', 'change_type', 'split_table', etc.
+    migration_type VARCHAR(50),
     table_name VARCHAR(100),
     column_name VARCHAR(100),
     old_value TEXT,
@@ -289,7 +331,7 @@ CREATE TABLE schema_evolution_log (
 );
 
 -- Function to log schema changes
-CREATE OR REPLACE FUNCTION log_schema_change(
+CREATE OR REPLACE FUNCTION LOG_SCHEMA_CHANGE(
     p_version_from VARCHAR(50),
     p_version_to VARCHAR(50),
     p_migration_type VARCHAR(50),
@@ -335,8 +377,10 @@ CREATE TABLE test_customers_v1_1 AS SELECT * FROM customers_v1_1;
 CREATE TABLE test_customers_v1_2 AS SELECT * FROM customers_v1_2;
 
 -- Function to validate schema evolution
-CREATE OR REPLACE FUNCTION validate_schema_evolution()
-RETURNS TABLE(validation_type VARCHAR(100), status VARCHAR(20), details TEXT) AS $$
+CREATE OR REPLACE FUNCTION VALIDATE_SCHEMA_EVOLUTION()
+RETURNS TABLE (
+    validation_type VARCHAR(100), status VARCHAR(20), details TEXT
+) AS $$
 BEGIN
     -- Test 1: Data integrity after migration
     RETURN QUERY
@@ -379,13 +423,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Run validation tests
-SELECT * FROM validate_schema_evolution();
+SELECT * FROM VALIDATE_SCHEMA_EVOLUTION();
 
 -- Example 8: Rollback Strategy
 -- Demonstrate rollback strategies for failed migrations
 
 -- Function to rollback to a specific version
-CREATE OR REPLACE FUNCTION rollback_to_version(p_target_version VARCHAR(50))
+CREATE OR REPLACE FUNCTION ROLLBACK_TO_VERSION(p_target_version VARCHAR(50))
 RETURNS BOOLEAN AS $$
 DECLARE
     current_version VARCHAR(50);
@@ -439,6 +483,8 @@ DROP TABLE IF EXISTS schema_evolution_log CASCADE;
 DROP FUNCTION IF EXISTS get_schema_version() CASCADE;
 DROP FUNCTION IF EXISTS migrate_customer_data(VARCHAR, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS migrate_user_data_types() CASCADE;
-DROP FUNCTION IF EXISTS log_schema_change(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS log_schema_change(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, TEXT, TEXT, TEXT
+) CASCADE;
 DROP FUNCTION IF EXISTS validate_schema_evolution() CASCADE;
-DROP FUNCTION IF EXISTS rollback_to_version(VARCHAR) CASCADE; 
+DROP FUNCTION IF EXISTS rollback_to_version(VARCHAR) CASCADE;

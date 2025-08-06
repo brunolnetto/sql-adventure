@@ -30,7 +30,7 @@ CREATE TABLE sales_trends (
     id INT PRIMARY KEY,
     date_id DATE,
     product_category VARCHAR(50),
-    daily_sales DECIMAL(10,2),
+    daily_sales DECIMAL(10, 2),
     units_sold INT
 );
 
@@ -54,24 +54,42 @@ INSERT INTO sales_trends VALUES
 
 -- Example 1: Moving Average Trend Analysis
 -- Calculate moving averages and identify trend direction
-SELECT 
+SELECT
     date_id,
     daily_sales,
     units_sold,
-    ROUND(AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) as ma_3day,
-    ROUND(AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 2) as ma_7day,
-    CASE 
-        WHEN daily_sales > LAG(daily_sales) OVER (ORDER BY date_id) THEN 'Increasing'
-        WHEN daily_sales < LAG(daily_sales) OVER (ORDER BY date_id) THEN 'Decreasing'
+    ROUND(
+        AVG(daily_sales)
+            OVER (ORDER BY date_id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),
+        2
+    ) AS ma_3day,
+    ROUND(
+        AVG(daily_sales)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW),
+        2
+    ) AS ma_7day,
+    CASE
+        WHEN
+            daily_sales > LAG(daily_sales) OVER (ORDER BY date_id)
+            THEN 'Increasing'
+        WHEN
+            daily_sales < LAG(daily_sales) OVER (ORDER BY date_id)
+            THEN 'Decreasing'
         ELSE 'Stable'
-    END as day_over_day_trend,
-    CASE 
-        WHEN AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) > 
-             AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING) THEN 'Upward Trend'
-        WHEN AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) < 
-             AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING) THEN 'Downward Trend'
+    END AS day_over_day_trend,
+    CASE
+        WHEN
+            AVG(daily_sales)
+                OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)
+            > AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING)
+            THEN 'Upward Trend'
+        WHEN
+            AVG(daily_sales)
+                OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)
+            < AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING)
+            THEN 'Downward Trend'
         ELSE 'Sideways Trend'
-    END as overall_trend
+    END AS overall_trend
 FROM sales_trends
 ORDER BY date_id;
 
@@ -80,7 +98,7 @@ CREATE TABLE stock_prices (
     id INT PRIMARY KEY,
     date_id DATE,
     stock_symbol VARCHAR(10),
-    close_price DECIMAL(8,2),
+    close_price DECIMAL(8, 2),
     volume INT
 );
 
@@ -105,33 +123,44 @@ INSERT INTO stock_prices VALUES
 -- Example 2: Anomaly Detection in Stock Prices
 -- Detect price anomalies using statistical measures
 WITH price_stats AS (
-    SELECT 
+    SELECT
         date_id,
         close_price,
         volume,
-        AVG(close_price) OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) as avg_price,
-        STDDEV(close_price) OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) as price_stddev,
-        AVG(volume) OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) as avg_volume,
-        STDDEV(volume) OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) as volume_stddev
+        AVG(close_price)
+            OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
+            AS avg_price,
+        STDDEV(close_price)
+            OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
+            AS price_stddev,
+        AVG(volume)
+            OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
+            AS avg_volume,
+        STDDEV(volume)
+            OVER (ORDER BY date_id ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
+            AS volume_stddev
     FROM stock_prices
     WHERE stock_symbol = 'AAPL'
 )
-SELECT 
+
+SELECT
     date_id,
     close_price,
     volume,
-    ROUND(avg_price, 2) as moving_avg_price,
-    ROUND(price_stddev, 2) as price_volatility,
-    ROUND(avg_volume, 0) as moving_avg_volume,
-    ROUND(volume_stddev, 0) as volume_volatility,
-    CASE 
-        WHEN ABS(close_price - avg_price) > 2 * price_stddev THEN 'Price Anomaly'
+    ROUND(avg_price, 2) AS moving_avg_price,
+    ROUND(price_stddev, 2) AS price_volatility,
+    ROUND(avg_volume, 0) AS moving_avg_volume,
+    ROUND(volume_stddev, 0) AS volume_volatility,
+    CASE
+        WHEN
+            ABS(close_price - avg_price) > 2 * price_stddev
+            THEN 'Price Anomaly'
         ELSE 'Normal Price'
-    END as price_anomaly_status,
-    CASE 
+    END AS price_anomaly_status,
+    CASE
         WHEN ABS(volume - avg_volume) > 2 * volume_stddev THEN 'Volume Anomaly'
         ELSE 'Normal Volume'
-    END as volume_anomaly_status
+    END AS volume_anomaly_status
 FROM price_stats
 WHERE date_id >= '2024-01-11'  -- Show recent data with enough history
 ORDER BY date_id;
@@ -142,7 +171,7 @@ CREATE TABLE website_metrics (
     date_id DATE,
     page_views INT,
     unique_visitors INT,
-    bounce_rate DECIMAL(5,2),
+    bounce_rate DECIMAL(5, 2),
     avg_session_duration INT
 );
 
@@ -166,13 +195,13 @@ INSERT INTO website_metrics VALUES
 
 -- Example 3: Seasonal Pattern Detection
 -- Identify weekly patterns in website traffic
-SELECT 
+SELECT
     date_id,
     page_views,
     unique_visitors,
     bounce_rate,
     avg_session_duration,
-    EXTRACT(DOW FROM date_id) as day_of_week,
+    EXTRACT(DOW FROM date_id) AS day_of_week,
     CASE EXTRACT(DOW FROM date_id)
         WHEN 0 THEN 'Sunday'
         WHEN 1 THEN 'Monday'
@@ -181,14 +210,24 @@ SELECT
         WHEN 4 THEN 'Thursday'
         WHEN 5 THEN 'Friday'
         WHEN 6 THEN 'Saturday'
-    END as day_name,
-    ROUND(AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id)), 0) as avg_page_views_by_day,
-    ROUND(AVG(bounce_rate) OVER (PARTITION BY EXTRACT(DOW FROM date_id)), 2) as avg_bounce_rate_by_day,
-    CASE 
-        WHEN page_views > AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id)) * 1.1 THEN 'High Traffic Day'
-        WHEN page_views < AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id)) * 0.9 THEN 'Low Traffic Day'
+    END AS day_name,
+    ROUND(AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id)), 0)
+        AS avg_page_views_by_day,
+    ROUND(AVG(bounce_rate) OVER (PARTITION BY EXTRACT(DOW FROM date_id)), 2)
+        AS avg_bounce_rate_by_day,
+    CASE
+        WHEN
+            page_views
+            > AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id))
+            * 1.1
+            THEN 'High Traffic Day'
+        WHEN
+            page_views
+            < AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM date_id))
+            * 0.9
+            THEN 'Low Traffic Day'
         ELSE 'Normal Traffic Day'
-    END as traffic_pattern
+    END AS traffic_pattern
 FROM website_metrics
 ORDER BY date_id;
 
@@ -196,8 +235,8 @@ ORDER BY date_id;
 CREATE TABLE temperature_data (
     id INT PRIMARY KEY,
     timestamp TIMESTAMP,
-    temperature_celsius DECIMAL(4,2),
-    humidity_percent DECIMAL(5,2)
+    temperature_celsius DECIMAL(4, 2),
+    humidity_percent DECIMAL(5, 2)
 );
 
 -- Insert sample data with temperature trends
@@ -221,31 +260,43 @@ INSERT INTO temperature_data VALUES
 -- Example 4: Breakpoint Detection
 -- Identify trend changes and breakpoints
 WITH temperature_trends AS (
-    SELECT 
+    SELECT
         timestamp,
         temperature_celsius,
-        AVG(temperature_celsius) OVER (ORDER BY timestamp ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING) as prev_avg_temp,
-        AVG(temperature_celsius) OVER (ORDER BY timestamp ROWS BETWEEN 1 FOLLOWING AND 5 FOLLOWING) as next_avg_temp,
-        STDDEV(temperature_celsius) OVER (ORDER BY timestamp ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING) as prev_stddev,
-        STDDEV(temperature_celsius) OVER (ORDER BY timestamp ROWS BETWEEN 1 FOLLOWING AND 5 FOLLOWING) as next_stddev
+        AVG(temperature_celsius)
+            OVER (ORDER BY timestamp ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING)
+            AS prev_avg_temp,
+        AVG(temperature_celsius)
+            OVER (ORDER BY timestamp ROWS BETWEEN 1 FOLLOWING AND 5 FOLLOWING)
+            AS next_avg_temp,
+        STDDEV(temperature_celsius)
+            OVER (ORDER BY timestamp ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING)
+            AS prev_stddev,
+        STDDEV(temperature_celsius)
+            OVER (ORDER BY timestamp ROWS BETWEEN 1 FOLLOWING AND 5 FOLLOWING)
+            AS next_stddev
     FROM temperature_data
 )
-SELECT 
+
+SELECT
     timestamp,
     temperature_celsius,
-    ROUND(prev_avg_temp, 2) as previous_avg,
-    ROUND(next_avg_temp, 2) as next_avg,
-    ROUND(prev_stddev, 2) as previous_volatility,
-    ROUND(next_stddev, 2) as next_volatility,
-    CASE 
-        WHEN ABS(next_avg_temp - prev_avg_temp) > 2 * GREATEST(prev_stddev, next_stddev) THEN 'Trend Breakpoint'
+    ROUND(prev_avg_temp, 2) AS previous_avg,
+    ROUND(next_avg_temp, 2) AS next_avg,
+    ROUND(prev_stddev, 2) AS previous_volatility,
+    ROUND(next_stddev, 2) AS next_volatility,
+    CASE
+        WHEN
+            ABS(next_avg_temp - prev_avg_temp)
+            > 2 * GREATEST(prev_stddev, next_stddev)
+            THEN 'Trend Breakpoint'
         ELSE 'Normal Variation'
-    END as breakpoint_status,
-    CASE 
+    END AS breakpoint_status,
+    CASE
         WHEN next_avg_temp > prev_avg_temp + 1 THEN 'Trend Increasing'
         WHEN next_avg_temp < prev_avg_temp - 1 THEN 'Trend Decreasing'
         ELSE 'Trend Stable'
-    END as trend_direction
+    END AS trend_direction
 FROM temperature_trends
 WHERE timestamp BETWEEN '2024-01-02 08:00:00' AND '2024-01-03 20:00:00'
 ORDER BY timestamp;
@@ -255,7 +306,7 @@ CREATE TABLE customer_behavior (
     id INT PRIMARY KEY,
     date_id DATE,
     customer_id INT,
-    purchase_amount DECIMAL(10,2),
+    purchase_amount DECIMAL(10, 2),
     purchase_count INT,
     session_duration INT
 );
@@ -281,35 +332,52 @@ INSERT INTO customer_behavior VALUES
 -- Example 5: Predictive Trend Analysis
 -- Analyze customer behavior trends and predict future patterns
 WITH customer_trends AS (
-    SELECT 
+    SELECT
         date_id,
         customer_id,
         purchase_amount,
         purchase_count,
         session_duration,
-        AVG(purchase_amount) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING) as avg_purchase_amount,
-        AVG(purchase_count) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING) as avg_purchase_count,
-        AVG(session_duration) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING) as avg_session_duration,
-        STDDEV(purchase_amount) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING) as purchase_amount_stddev,
-        STDDEV(purchase_count) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING) as purchase_count_stddev
+        AVG(purchase_amount)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING)
+            AS avg_purchase_amount,
+        AVG(purchase_count)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING)
+            AS avg_purchase_count,
+        AVG(session_duration)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING)
+            AS avg_session_duration,
+        STDDEV(purchase_amount)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING)
+            AS purchase_amount_stddev,
+        STDDEV(purchase_count)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND 1 PRECEDING)
+            AS purchase_count_stddev
     FROM customer_behavior
     WHERE customer_id = 1001
 )
-SELECT 
+
+SELECT
     date_id,
     purchase_amount,
     purchase_count,
     session_duration,
-    ROUND(avg_purchase_amount, 2) as predicted_purchase_amount,
-    ROUND(avg_purchase_count, 1) as predicted_purchase_count,
-    ROUND(avg_session_duration, 0) as predicted_session_duration,
-    ROUND(avg_purchase_amount + 2 * purchase_amount_stddev, 2) as upper_bound_amount,
-    ROUND(avg_purchase_amount - 2 * purchase_amount_stddev, 2) as lower_bound_amount,
-    CASE 
-        WHEN purchase_amount > avg_purchase_amount + 2 * purchase_amount_stddev THEN 'Above Expected'
-        WHEN purchase_amount < avg_purchase_amount - 2 * purchase_amount_stddev THEN 'Below Expected'
+    ROUND(avg_purchase_amount, 2) AS predicted_purchase_amount,
+    ROUND(avg_purchase_count, 1) AS predicted_purchase_count,
+    ROUND(avg_session_duration, 0) AS predicted_session_duration,
+    ROUND(avg_purchase_amount + 2 * purchase_amount_stddev, 2)
+        AS upper_bound_amount,
+    ROUND(avg_purchase_amount - 2 * purchase_amount_stddev, 2)
+        AS lower_bound_amount,
+    CASE
+        WHEN
+            purchase_amount > avg_purchase_amount + 2 * purchase_amount_stddev
+            THEN 'Above Expected'
+        WHEN
+            purchase_amount < avg_purchase_amount - 2 * purchase_amount_stddev
+            THEN 'Below Expected'
         ELSE 'Within Expected Range'
-    END as performance_status
+    END AS performance_status
 FROM customer_trends
 WHERE date_id >= '2024-01-08'  -- Show recent data with enough history
 ORDER BY date_id;
@@ -320,8 +388,8 @@ CREATE TABLE production_metrics (
     date_id DATE,
     production_line VARCHAR(50),
     units_produced INT,
-    defect_rate DECIMAL(5,2),
-    efficiency_score DECIMAL(5,2)
+    defect_rate DECIMAL(5, 2),
+    efficiency_score DECIMAL(5, 2)
 );
 
 -- Insert sample data with production trends
@@ -344,40 +412,64 @@ INSERT INTO production_metrics VALUES
 
 -- Example 6: Comprehensive Trend Analysis
 -- Combine multiple trend detection techniques
-SELECT 
+SELECT
     date_id,
     units_produced,
     defect_rate,
     efficiency_score,
     -- Production trend
-    CASE 
-        WHEN units_produced > LAG(units_produced) OVER (ORDER BY date_id) THEN 'Increasing'
-        WHEN units_produced < LAG(units_produced) OVER (ORDER BY date_id) THEN 'Decreasing'
+    CASE
+        WHEN
+            units_produced > LAG(units_produced) OVER (ORDER BY date_id)
+            THEN 'Increasing'
+        WHEN
+            units_produced < LAG(units_produced) OVER (ORDER BY date_id)
+            THEN 'Decreasing'
         ELSE 'Stable'
-    END as production_trend,
+    END AS production_trend,
     -- Quality trend
-    CASE 
-        WHEN defect_rate < LAG(defect_rate) OVER (ORDER BY date_id) THEN 'Improving'
-        WHEN defect_rate > LAG(defect_rate) OVER (ORDER BY date_id) THEN 'Declining'
+    CASE
+        WHEN
+            defect_rate < LAG(defect_rate) OVER (ORDER BY date_id)
+            THEN 'Improving'
+        WHEN
+            defect_rate > LAG(defect_rate) OVER (ORDER BY date_id)
+            THEN 'Declining'
         ELSE 'Stable'
-    END as quality_trend,
+    END AS quality_trend,
     -- Efficiency trend
-    CASE 
-        WHEN efficiency_score > LAG(efficiency_score) OVER (ORDER BY date_id) THEN 'Improving'
-        WHEN efficiency_score < LAG(efficiency_score) OVER (ORDER BY date_id) THEN 'Declining'
+    CASE
+        WHEN
+            efficiency_score > LAG(efficiency_score) OVER (ORDER BY date_id)
+            THEN 'Improving'
+        WHEN
+            efficiency_score < LAG(efficiency_score) OVER (ORDER BY date_id)
+            THEN 'Declining'
         ELSE 'Stable'
-    END as efficiency_trend,
+    END AS efficiency_trend,
     -- Moving averages
-    ROUND(AVG(units_produced) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 0) as ma_units_produced,
-    ROUND(AVG(defect_rate) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 2) as ma_defect_rate,
-    ROUND(AVG(efficiency_score) OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 2) as ma_efficiency_score,
+    ROUND(
+        AVG(units_produced)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW),
+        0
+    ) AS ma_units_produced,
+    ROUND(
+        AVG(defect_rate)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW),
+        2
+    ) AS ma_defect_rate,
+    ROUND(
+        AVG(efficiency_score)
+            OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW),
+        2
+    ) AS ma_efficiency_score,
     -- Overall performance rating
-    CASE 
+    CASE
         WHEN efficiency_score > 98 AND defect_rate < 1.0 THEN 'Excellent'
         WHEN efficiency_score > 95 AND defect_rate < 1.5 THEN 'Good'
         WHEN efficiency_score > 90 AND defect_rate < 2.0 THEN 'Average'
         ELSE 'Needs Improvement'
-    END as performance_rating
+    END AS performance_rating
 FROM production_metrics
 WHERE production_line = 'Line A'
 ORDER BY date_id;
@@ -388,4 +480,4 @@ DROP TABLE IF EXISTS stock_prices CASCADE;
 DROP TABLE IF EXISTS website_metrics CASCADE;
 DROP TABLE IF EXISTS temperature_data CASCADE;
 DROP TABLE IF EXISTS customer_behavior CASCADE;
-DROP TABLE IF EXISTS production_metrics CASCADE; 
+DROP TABLE IF EXISTS production_metrics CASCADE;

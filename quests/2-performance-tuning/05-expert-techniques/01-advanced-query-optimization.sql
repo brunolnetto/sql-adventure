@@ -13,8 +13,8 @@ CREATE TABLE sales_transactions (
     product_id INT,
     sale_date DATE,
     quantity INT,
-    unit_price DECIMAL(10,2),
-    total_amount DECIMAL(10,2),
+    unit_price DECIMAL(10, 2),
+    total_amount DECIMAL(10, 2),
     region VARCHAR(50),
     salesperson_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -36,121 +36,142 @@ CREATE TABLE products (
     product_name VARCHAR(200),
     category VARCHAR(100),
     brand VARCHAR(100),
-    unit_cost DECIMAL(10,2),
+    unit_cost DECIMAL(10, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert large sample dataset
-INSERT INTO customers (customer_id, customer_name, email, city, state, country, customer_segment)
-SELECT 
-    generate_series(1, 10000) as customer_id,
-    'Customer ' || generate_series(1, 10000) as customer_name,
-    'customer' || generate_series(1, 10000) || '@email.com' as email,
-    CASE (random() * 4)::int
+INSERT INTO customers (
+    customer_id, customer_name, email, city, state, country, customer_segment
+)
+SELECT
+    GENERATE_SERIES(1, 10000) AS customer_id,
+    'Customer ' || GENERATE_SERIES(1, 10000) AS customer_name,
+    'customer' || GENERATE_SERIES(1, 10000) || '@email.com' AS email,
+    CASE (RANDOM() * 4)::INT
         WHEN 0 THEN 'New York'
         WHEN 1 THEN 'Los Angeles'
         WHEN 2 THEN 'Chicago'
         WHEN 3 THEN 'Houston'
-    END as city,
-    CASE (random() * 4)::int
+    END AS city,
+    CASE (RANDOM() * 4)::INT
         WHEN 0 THEN 'NY'
         WHEN 1 THEN 'CA'
         WHEN 2 THEN 'IL'
         WHEN 3 THEN 'TX'
-    END as state,
-    'USA' as country,
-    CASE (random() * 2)::int
+    END AS state,
+    'USA' AS country,
+    CASE (RANDOM() * 2)::INT
         WHEN 0 THEN 'Premium'
         WHEN 1 THEN 'Standard'
-    END as customer_segment;
+    END AS customer_segment;
 
 INSERT INTO products (product_id, product_name, category, brand, unit_cost)
-SELECT 
-    generate_series(1, 1000) as product_id,
-    'Product ' || generate_series(1, 1000) as product_name,
-    CASE (random() * 4)::int
+SELECT
+    GENERATE_SERIES(1, 1000) AS product_id,
+    'Product ' || GENERATE_SERIES(1, 1000) AS product_name,
+    CASE (RANDOM() * 4)::INT
         WHEN 0 THEN 'Electronics'
         WHEN 1 THEN 'Clothing'
         WHEN 2 THEN 'Books'
         WHEN 3 THEN 'Home'
-    END as category,
-    'Brand ' || (random() * 10)::int as brand,
-    (random() * 1000 + 10)::decimal(10,2) as unit_cost;
+    END AS category,
+    'Brand ' || (RANDOM() * 10)::INT AS brand,
+    (RANDOM() * 1000 + 10)::DECIMAL(10, 2) AS unit_cost;
 
-INSERT INTO sales_transactions (customer_id, product_id, sale_date, quantity, unit_price, total_amount, region, salesperson_id)
-SELECT 
-    (random() * 10000 + 1)::int as customer_id,
-    (random() * 1000 + 1)::int as product_id,
-    '2024-01-01'::date + (random() * 365)::int as sale_date,
-    (random() * 10 + 1)::int as quantity,
-    (random() * 500 + 10)::decimal(10,2) as unit_price,
-    (random() * 5000 + 10)::decimal(10,2) as total_amount,
-    CASE (random() * 4)::int
+INSERT INTO sales_transactions (
+    customer_id,
+    product_id,
+    sale_date,
+    quantity,
+    unit_price,
+    total_amount,
+    region,
+    salesperson_id
+)
+SELECT
+    (RANDOM() * 10000 + 1)::INT AS customer_id,
+    (RANDOM() * 1000 + 1)::INT AS product_id,
+    '2024-01-01'::DATE + (RANDOM() * 365)::INT AS sale_date,
+    (RANDOM() * 10 + 1)::INT AS quantity,
+    (RANDOM() * 500 + 10)::DECIMAL(10, 2) AS unit_price,
+    (RANDOM() * 5000 + 10)::DECIMAL(10, 2) AS total_amount,
+    CASE (RANDOM() * 4)::INT
         WHEN 0 THEN 'North'
         WHEN 1 THEN 'South'
         WHEN 2 THEN 'East'
         WHEN 3 THEN 'West'
-    END as region,
-    (random() * 100 + 1)::int as salesperson_id
-FROM generate_series(1, 100000);
+    END AS region,
+    (RANDOM() * 100 + 1)::INT AS salesperson_id
+FROM GENERATE_SERIES(1, 100000);
 
 -- Create comprehensive indexes
-CREATE INDEX idx_sales_customer_date ON sales_transactions(customer_id, sale_date);
-CREATE INDEX idx_sales_product_date ON sales_transactions(product_id, sale_date);
-CREATE INDEX idx_sales_region_date ON sales_transactions(region, sale_date);
-CREATE INDEX idx_sales_amount ON sales_transactions(total_amount);
-CREATE INDEX idx_customers_segment ON customers(customer_segment);
-CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_sales_customer_date ON sales_transactions (
+    customer_id, sale_date
+);
+CREATE INDEX idx_sales_product_date ON sales_transactions (
+    product_id, sale_date
+);
+CREATE INDEX idx_sales_region_date ON sales_transactions (region, sale_date);
+CREATE INDEX idx_sales_amount ON sales_transactions (total_amount);
+CREATE INDEX idx_customers_segment ON customers (customer_segment);
+CREATE INDEX idx_products_category ON products (category);
 
 -- Example 2: Complex Query Optimization
 -- Demonstrate optimizing complex analytical queries
 
 -- POOR: Complex query with multiple subqueries
-SELECT 
+SELECT
     c.customer_name,
     c.customer_segment,
-    COUNT(s.transaction_id) as total_transactions,
-    SUM(s.total_amount) as total_spent,
-    AVG(s.total_amount) as avg_transaction,
-    (SELECT COUNT(*) FROM sales_transactions s2 
-     WHERE s2.customer_id = c.customer_id 
-     AND s2.sale_date >= '2024-06-01') as recent_transactions
-FROM customers c
-LEFT JOIN sales_transactions s ON c.customer_id = s.customer_id
+    COUNT(s.transaction_id) AS total_transactions,
+    SUM(s.total_amount) AS total_spent,
+    AVG(s.total_amount) AS avg_transaction,
+    (
+        SELECT COUNT(*) FROM sales_transactions AS s2
+        WHERE
+            s2.customer_id = c.customer_id
+            AND s2.sale_date >= '2024-06-01'
+    ) AS recent_transactions
+FROM customers AS c
+LEFT JOIN sales_transactions AS s ON c.customer_id = s.customer_id
 WHERE c.customer_segment = 'Premium'
 GROUP BY c.customer_id, c.customer_name, c.customer_segment
 HAVING COUNT(s.transaction_id) > 5;
 
 -- BETTER: Optimized query with CTEs and pre-aggregation
 WITH customer_stats AS (
-    SELECT 
+    SELECT
         customer_id,
-        COUNT(transaction_id) as total_transactions,
-        SUM(total_amount) as total_spent,
-        AVG(total_amount) as avg_transaction
+        COUNT(transaction_id) AS total_transactions,
+        SUM(total_amount) AS total_spent,
+        AVG(total_amount) AS avg_transaction
     FROM sales_transactions
     GROUP BY customer_id
 ),
+
 recent_transactions AS (
-    SELECT 
+    SELECT
         customer_id,
-        COUNT(*) as recent_count
+        COUNT(*) AS recent_count
     FROM sales_transactions
     WHERE sale_date >= '2024-06-01'
     GROUP BY customer_id
 )
-SELECT 
+
+SELECT
     c.customer_name,
     c.customer_segment,
-    COALESCE(cs.total_transactions, 0) as total_transactions,
-    COALESCE(cs.total_spent, 0) as total_spent,
-    COALESCE(cs.avg_transaction, 0) as avg_transaction,
-    COALESCE(rt.recent_count, 0) as recent_transactions
-FROM customers c
-LEFT JOIN customer_stats cs ON c.customer_id = cs.customer_id
-LEFT JOIN recent_transactions rt ON c.customer_id = rt.customer_id
-WHERE c.customer_segment = 'Premium'
-  AND COALESCE(cs.total_transactions, 0) > 5
+    COALESCE(cs.total_transactions, 0) AS total_transactions,
+    COALESCE(cs.total_spent, 0) AS total_spent,
+    COALESCE(cs.avg_transaction, 0) AS avg_transaction,
+    COALESCE(rt.recent_count, 0) AS recent_transactions
+FROM customers AS c
+LEFT JOIN customer_stats AS cs ON c.customer_id = cs.customer_id
+LEFT JOIN recent_transactions AS rt ON c.customer_id = rt.customer_id
+WHERE
+    c.customer_segment = 'Premium'
+    AND COALESCE(cs.total_transactions, 0) > 5
 ORDER BY cs.total_spent DESC;
 
 -- Example 3: Materialized Views for Performance
@@ -158,33 +179,35 @@ ORDER BY cs.total_spent DESC;
 
 -- Create materialized view for customer analytics
 CREATE MATERIALIZED VIEW mv_customer_analytics AS
-SELECT 
+SELECT
     c.customer_id,
     c.customer_name,
     c.customer_segment,
     c.city,
     c.state,
-    COUNT(s.transaction_id) as total_transactions,
-    SUM(s.total_amount) as total_spent,
-    AVG(s.total_amount) as avg_transaction,
-    MIN(s.sale_date) as first_purchase,
-    MAX(s.sale_date) as last_purchase,
-    COUNT(DISTINCT s.product_id) as unique_products,
-    COUNT(DISTINCT DATE_TRUNC('month', s.sale_date)) as active_months
-FROM customers c
-LEFT JOIN sales_transactions s ON c.customer_id = s.customer_id
+    COUNT(s.transaction_id) AS total_transactions,
+    SUM(s.total_amount) AS total_spent,
+    AVG(s.total_amount) AS avg_transaction,
+    MIN(s.sale_date) AS first_purchase,
+    MAX(s.sale_date) AS last_purchase,
+    COUNT(DISTINCT s.product_id) AS unique_products,
+    COUNT(DISTINCT DATE_TRUNC('month', s.sale_date)) AS active_months
+FROM customers AS c
+LEFT JOIN sales_transactions AS s ON c.customer_id = s.customer_id
 GROUP BY c.customer_id, c.customer_name, c.customer_segment, c.city, c.state;
 
 -- Create index on materialized view
-CREATE INDEX idx_mv_customer_segment ON mv_customer_analytics(customer_segment);
-CREATE INDEX idx_mv_total_spent ON mv_customer_analytics(total_spent);
+CREATE INDEX idx_mv_customer_segment ON mv_customer_analytics (
+    customer_segment
+);
+CREATE INDEX idx_mv_total_spent ON mv_customer_analytics (total_spent);
 
 -- Query using materialized view (much faster)
-SELECT 
+SELECT
     customer_segment,
-    COUNT(*) as customer_count,
-    AVG(total_spent) as avg_total_spent,
-    SUM(total_spent) as segment_total
+    COUNT(*) AS customer_count,
+    AVG(total_spent) AS avg_total_spent,
+    SUM(total_spent) AS segment_total
 FROM mv_customer_analytics
 WHERE total_transactions > 5
 GROUP BY customer_segment
@@ -194,24 +217,29 @@ ORDER BY segment_total DESC;
 -- Demonstrate advanced indexing techniques
 
 -- Partial indexes for specific conditions
-CREATE INDEX idx_sales_premium_customers ON sales_transactions(customer_id, sale_date)
+CREATE INDEX idx_sales_premium_customers ON sales_transactions (
+    customer_id, sale_date
+)
 WHERE total_amount > 1000;
 
-CREATE INDEX idx_sales_recent ON sales_transactions(sale_date, customer_id)
+CREATE INDEX idx_sales_recent ON sales_transactions (sale_date, customer_id)
 WHERE sale_date >= '2024-01-01';
 
 -- Expression indexes
-CREATE INDEX idx_customers_email_domain ON customers(SUBSTRING(email FROM '@(.*)$'));
+CREATE INDEX idx_customers_email_domain ON customers (
+    SUBSTRING(email FROM '@(.*)$')
+);
 
 -- Query using partial index
-SELECT 
+SELECT
     c.customer_name,
-    COUNT(s.transaction_id) as high_value_transactions,
-    SUM(s.total_amount) as high_value_total
-FROM customers c
-JOIN sales_transactions s ON c.customer_id = s.customer_id
-WHERE s.total_amount > 1000
-  AND s.sale_date >= '2024-01-01'
+    COUNT(s.transaction_id) AS high_value_transactions,
+    SUM(s.total_amount) AS high_value_total
+FROM customers AS c
+INNER JOIN sales_transactions AS s ON c.customer_id = s.customer_id
+WHERE
+    s.total_amount > 1000
+    AND s.sale_date >= '2024-01-01'
 GROUP BY c.customer_id, c.customer_name
 ORDER BY high_value_total DESC;
 
@@ -221,9 +249,9 @@ ORDER BY high_value_total DESC;
 -- Force index usage
 SELECT /*+ INDEX(sales_transactions idx_sales_customer_date) */
     c.customer_name,
-    COUNT(s.transaction_id) as transaction_count
-FROM customers c
-JOIN sales_transactions s ON c.customer_id = s.customer_id
+    COUNT(s.transaction_id) AS transaction_count
+FROM customers AS c
+INNER JOIN sales_transactions AS s ON c.customer_id = s.customer_id
 WHERE s.sale_date >= '2024-06-01'
 GROUP BY c.customer_id, c.customer_name
 ORDER BY transaction_count DESC;
@@ -232,7 +260,7 @@ ORDER BY transaction_count DESC;
 -- Demonstrate monitoring query performance
 
 -- Check index usage
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
@@ -246,7 +274,7 @@ WHERE tablename IN ('sales_transactions', 'customers', 'products')
 ORDER BY idx_scan DESC;
 
 -- Check table statistics
-SELECT 
+SELECT
     schemaname,
     tablename,
     n_tup_ins,
@@ -263,4 +291,4 @@ WHERE tablename IN ('sales_transactions', 'customers', 'products');
 DROP MATERIALIZED VIEW IF EXISTS mv_customer_analytics CASCADE;
 DROP TABLE IF EXISTS sales_transactions CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
-DROP TABLE IF EXISTS products CASCADE; 
+DROP TABLE IF EXISTS products CASCADE;

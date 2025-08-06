@@ -36,36 +36,38 @@ INSERT INTO knows_relationship VALUES
 -- Find transitive closure: if A knows B and B knows C, then A knows C
 WITH RECURSIVE transitive_knows AS (
     -- Base case: direct relationships
-    SELECT 
+    SELECT
         person_id,
         knows_person_id,
         relationship_type,
-        1 as hop_count,
-        ARRAY[person_id, knows_person_id] as path
+        1 AS hop_count,
+        ARRAY[person_id, knows_person_id] AS path
     FROM knows_relationship
-    
+
     UNION ALL
-    
+
     -- Recursive case: transitive relationships
-    SELECT 
+    SELECT
         tk.person_id,
         kr.knows_person_id,
         kr.relationship_type,
         tk.hop_count + 1,
         tk.path || kr.knows_person_id
-    FROM knows_relationship kr
-    INNER JOIN transitive_knows tk ON kr.person_id = tk.knows_person_id
-    WHERE NOT (kr.knows_person_id = ANY(tk.path))  -- Avoid cycles
-    AND tk.hop_count < 5  -- Limit hops
+    FROM knows_relationship AS kr
+    INNER JOIN transitive_knows AS tk ON kr.person_id = tk.knows_person_id
+    WHERE
+        NOT (kr.knows_person_id = ANY(tk.path))  -- Avoid cycles
+        AND tk.hop_count < 5  -- Limit hops
 )
+
 SELECT DISTINCT
     person_id,
     knows_person_id,
-    MIN(hop_count) as shortest_path_length,
-    COUNT(*) as total_paths
+    MIN(hop_count) AS shortest_path_length,
+    COUNT(*) AS total_paths
 FROM transitive_knows
 GROUP BY person_id, knows_person_id
 ORDER BY person_id, knows_person_id;
 
 -- Clean up
-DROP TABLE IF EXISTS knows_relationship CASCADE; 
+DROP TABLE IF EXISTS knows_relationship CASCADE;

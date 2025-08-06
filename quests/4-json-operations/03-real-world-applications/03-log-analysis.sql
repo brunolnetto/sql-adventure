@@ -90,7 +90,7 @@ INSERT INTO application_logs VALUES
         "connection_pool": "main",
         "query_hash": "abc123def456"
     }
-}', NULL),
+}', null),
 (4, '2024-01-15 10:03:00', 'INFO', 'notification-service', '{
     "action": "email_sent",
     "recipient": "user@example.com",
@@ -189,192 +189,262 @@ INSERT INTO performance_logs VALUES
 
 -- Example 1: Log Entry Parsing and Analysis
 -- Parse and analyze different types of log entries
-SELECT 
+SELECT
     id,
     timestamp,
     level,
     service,
-    log_data->>'action' as action,
-    log_data->>'user_id' as user_id,
-    CASE 
+    log_data ->> 'action' AS action,
+    log_data ->> 'user_id' AS user_id,
+    CASE
         WHEN level = 'ERROR' THEN 'Critical'
         WHEN level = 'WARN' THEN 'Warning'
         WHEN level = 'INFO' THEN 'Information'
         WHEN level = 'DEBUG' THEN 'Debug'
         ELSE 'Unknown'
-    END as severity_category,
+    END AS severity_category,
     jsonb_build_object(
-        'has_metadata', CASE WHEN log_data ? 'metadata' THEN true ELSE false END,
-        'metadata_keys', CASE WHEN log_data ? 'metadata' 
-            THEN jsonb_build_array('login_method', 'two_factor', 'location')
-            ELSE '[]'::jsonb END,
-        'error_info', CASE WHEN log_data ? 'error' 
-            THEN jsonb_build_object(
-                'error_code', log_data->'error'->>'code',
-                'error_message', log_data->'error'->>'message'
-            )
-            ELSE null END
-    ) as log_analysis
+        'has_metadata',
+        coalesce(log_data ? 'metadata', FALSE),
+        'metadata_keys', CASE
+            WHEN log_data ? 'metadata'
+                THEN jsonb_build_array('login_method', 'two_factor', 'location')
+            ELSE '[]'::JSONB
+        END,
+        'error_info', CASE
+            WHEN log_data ? 'error'
+                THEN jsonb_build_object(
+                    'error_code', log_data -> 'error' ->> 'code',
+                    'error_message', log_data -> 'error' ->> 'message'
+                )
+        END
+    ) AS log_analysis
 FROM application_logs
 ORDER BY timestamp;
 
 -- Example 2: Error Pattern Recognition
 -- Identify patterns in error logs and categorize them
-SELECT 
+SELECT
     error_type,
     severity,
-    COUNT(*) as error_count,
-    COUNT(*) FILTER (WHERE resolved = true) as resolved_count,
-    COUNT(*) FILTER (WHERE resolved = false) as unresolved_count,
+    count(*) AS error_count,
+    count(*) FILTER (WHERE resolved = true) AS resolved_count,
+    count(*) FILTER (WHERE resolved = false) AS unresolved_count,
     jsonb_build_object(
-        'avg_occurrence_per_hour', ROUND(COUNT(*)::DECIMAL / 24, 2),
-        'resolution_rate', ROUND(
-            (COUNT(*) FILTER (WHERE resolved = true)::DECIMAL / COUNT(*)) * 100, 2
+        'avg_occurrence_per_hour', round(count(*)::DECIMAL / 24, 2),
+        'resolution_rate', round(
+            (count(*) FILTER (WHERE resolved = true)::DECIMAL / count(*)) * 100,
+            2
         ),
-        'common_contexts', jsonb_agg(DISTINCT error_data->>'service'),
+        'common_contexts', jsonb_agg(DISTINCT error_data ->> 'service'),
         'time_distribution', jsonb_build_object(
-            'hour_10', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 10),
-            'hour_11', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 11),
-            'hour_12', COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM timestamp) = 12)
+            'hour_10',
+            count(*) FILTER (WHERE extract(HOUR FROM timestamp) = 10),
+            'hour_11',
+            count(*) FILTER (WHERE extract(HOUR FROM timestamp) = 11),
+            'hour_12', count(*) FILTER (WHERE extract(HOUR FROM timestamp) = 12)
         )
-    ) as error_patterns,
+    ) AS error_patterns,
     jsonb_build_object(
-        'most_common_service', (SELECT error_data->>'service' 
-                               FROM error_logs el2 
-                               WHERE el2.error_type = error_logs.error_type 
-                               GROUP BY error_data->>'service' 
-                               ORDER BY COUNT(*) DESC 
-                               LIMIT 1),
-        'avg_resolution_time', AVG(EXTRACT(EPOCH FROM (
-            SELECT MAX(timestamp) FROM error_logs el3 
+        'most_common_service', (
+            SELECT error_data ->> 'service'
+            FROM error_logs AS el2
+            WHERE el2.error_type = error_logs.error_type
+            GROUP BY error_data ->> 'service'
+            ORDER BY count(*) DESC
+            LIMIT 1
+        ),
+        'avg_resolution_time', avg(extract(EPOCH FROM (
+            SELECT max(timestamp) FROM error_logs AS el3
             WHERE el3.error_type = error_logs.error_type AND el3.resolved = true
         ) - timestamp))
-    ) as error_metrics
+    ) AS error_metrics
 FROM error_logs
 GROUP BY error_type, severity
 ORDER BY error_count DESC;
 
 -- Example 3: Performance Analysis and Monitoring
 -- Analyze performance metrics from log data
-SELECT 
+SELECT
     endpoint,
-    COUNT(*) as request_count,
-    AVG(response_time_ms) as avg_response_time,
-    MAX(response_time_ms) as max_response_time,
-    MIN(response_time_ms) as min_response_time,
-    COUNT(*) FILTER (WHERE status_code >= 400) as error_count,
+    count(*) AS request_count,
+    avg(response_time_ms) AS avg_response_time,
+    max(response_time_ms) AS max_response_time,
+    min(response_time_ms) AS min_response_time,
+    count(*) FILTER (WHERE status_code >= 400) AS error_count,
     jsonb_build_object(
-        'performance_grade', CASE 
-            WHEN AVG(response_time_ms) < 100 THEN 'A'
-            WHEN AVG(response_time_ms) < 500 THEN 'B'
-            WHEN AVG(response_time_ms) < 1000 THEN 'C'
+        'performance_grade', CASE
+            WHEN avg(response_time_ms) < 100 THEN 'A'
+            WHEN avg(response_time_ms) < 500 THEN 'B'
+            WHEN avg(response_time_ms) < 1000 THEN 'C'
             ELSE 'D'
         END,
-        'cache_efficiency', ROUND(
-            (COUNT(*) FILTER (WHERE performance_data->>'cache_hit' = 'true')::DECIMAL / COUNT(*)) * 100, 2
+        'cache_efficiency', round(
+            (
+                count(*) FILTER (
+                    WHERE performance_data ->> 'cache_hit' = 'true'
+                )::DECIMAL
+                / count(*)
+            )
+            * 100,
+            2
         ),
-        'avg_database_queries', AVG((performance_data->>'database_queries')::INT),
-        'avg_external_calls', AVG((performance_data->>'external_calls')::INT),
+        'avg_database_queries',
+        avg((performance_data ->> 'database_queries')::INT),
+        'avg_external_calls', avg((performance_data ->> 'external_calls')::INT),
         'memory_usage_stats', jsonb_build_object(
-            'avg_memory_mb', ROUND(AVG((performance_data->>'memory_usage_mb')::DECIMAL), 2),
-            'max_memory_mb', MAX((performance_data->>'memory_usage_mb')::DECIMAL)
+            'avg_memory_mb',
+            round(avg((performance_data ->> 'memory_usage_mb')::DECIMAL), 2),
+            'max_memory_mb',
+            max((performance_data ->> 'memory_usage_mb')::DECIMAL)
         )
-    ) as performance_metrics
+    ) AS performance_metrics
 FROM performance_logs
 GROUP BY endpoint
 ORDER BY avg_response_time DESC;
 
 -- Example 4: User Activity Analysis
 -- Analyze user behavior patterns from log data
-SELECT 
+SELECT
     user_id,
-    COUNT(*) as activity_count,
-    COUNT(DISTINCT DATE(timestamp)) as active_days,
-    jsonb_agg(DISTINCT log_data->>'action') as actions_performed,
+    count(*) AS activity_count,
+    count(DISTINCT date(timestamp)) AS active_days,
+    jsonb_agg(DISTINCT log_data ->> 'action') AS actions_performed,
     jsonb_build_object(
-        'first_activity', MIN(timestamp),
-        'last_activity', MAX(timestamp),
-        'activity_frequency', ROUND(COUNT(*)::DECIMAL / 
-            GREATEST(EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))) / 3600, 1), 2),
+        'first_activity', min(timestamp),
+        'last_activity', max(timestamp),
+        'activity_frequency', round(
+            count(*)::DECIMAL
+            / greatest(extract(EPOCH FROM (max(timestamp) - min(timestamp))) / 3600, 1), 2
+        ),
         'service_usage', jsonb_build_object(
-            'user_service', COUNT(*) FILTER (WHERE service = 'user-service'),
-            'payment_service', COUNT(*) FILTER (WHERE service = 'payment-service'),
-            'database_service', COUNT(*) FILTER (WHERE service = 'database-service'),
-            'notification_service', COUNT(*) FILTER (WHERE service = 'notification-service'),
-            'cache_service', COUNT(*) FILTER (WHERE service = 'cache-service')
+            'user_service', count(*) FILTER (WHERE service = 'user-service'),
+            'payment_service',
+            count(*) FILTER (WHERE service = 'payment-service'),
+            'database_service',
+            count(*) FILTER (WHERE service = 'database-service'),
+            'notification_service',
+            count(*) FILTER (WHERE service = 'notification-service'),
+            'cache_service', count(*) FILTER (WHERE service = 'cache-service')
         ),
         'error_experience', jsonb_build_object(
-            'total_errors', COUNT(*) FILTER (WHERE level = 'ERROR'),
-            'error_rate', ROUND(
-                (COUNT(*) FILTER (WHERE level = 'ERROR')::DECIMAL / COUNT(*)) * 100, 2
+            'total_errors', count(*) FILTER (WHERE level = 'ERROR'),
+            'error_rate', round(
+                (count(*) FILTER (WHERE level = 'ERROR')::DECIMAL / count(*))
+                * 100,
+                2
             )
         )
-    ) as user_behavior
+    ) AS user_behavior
 FROM application_logs
-WHERE user_id IS NOT NULL
+WHERE user_id IS NOT null
 GROUP BY user_id
 ORDER BY activity_count DESC;
 
 -- Example 5: System Health Monitoring
 -- Create comprehensive system health monitoring from logs
-SELECT 
-    'system_health' as monitoring_type,
-    COUNT(*) as total_log_entries,
+SELECT
+    'system_health' AS monitoring_type,
+    count(*) AS total_log_entries,
     jsonb_build_object(
         'log_distribution', jsonb_build_object(
-            'INFO', COUNT(*) FILTER (WHERE level = 'INFO'),
-            'WARN', COUNT(*) FILTER (WHERE level = 'WARN'),
-            'ERROR', COUNT(*) FILTER (WHERE level = 'ERROR'),
-            'DEBUG', COUNT(*) FILTER (WHERE level = 'DEBUG')
+            'INFO', count(*) FILTER (WHERE level = 'INFO'),
+            'WARN', count(*) FILTER (WHERE level = 'WARN'),
+            'ERROR', count(*) FILTER (WHERE level = 'ERROR'),
+            'DEBUG', count(*) FILTER (WHERE level = 'DEBUG')
         ),
         'service_health', jsonb_build_object(
             'user_service', jsonb_build_object(
-                'total_logs', COUNT(*) FILTER (WHERE service = 'user-service'),
-                'error_count', COUNT(*) FILTER (WHERE service = 'user-service' AND level = 'ERROR'),
-                'warning_count', COUNT(*) FILTER (WHERE service = 'user-service' AND level = 'WARN'),
-                'health_score', ROUND(
-                    (COUNT(*) FILTER (WHERE service = 'user-service' AND level IN ('INFO', 'DEBUG'))::DECIMAL / 
-                     COUNT(*) FILTER (WHERE service = 'user-service')) * 100, 2
+                'total_logs', count(*) FILTER (WHERE service = 'user-service'),
+                'error_count',
+                count(*) FILTER (
+                    WHERE service = 'user-service' AND level = 'ERROR'
+                ),
+                'warning_count',
+                count(*) FILTER (
+                    WHERE service = 'user-service' AND level = 'WARN'
+                ),
+                'health_score', round(
+                    (
+                        count(*) FILTER (
+                            WHERE service = 'user-service'
+                            AND level IN ('INFO', 'DEBUG')
+                        )::DECIMAL
+                        / count(*) FILTER (WHERE service = 'user-service')
+                    ) * 100, 2
                 )
             ),
             'payment_service', jsonb_build_object(
-                'total_logs', COUNT(*) FILTER (WHERE service = 'payment-service'),
-                'error_count', COUNT(*) FILTER (WHERE service = 'payment-service' AND level = 'ERROR'),
-                'warning_count', COUNT(*) FILTER (WHERE service = 'payment-service' AND level = 'WARN'),
-                'health_score', ROUND(
-                    (COUNT(*) FILTER (WHERE service = 'payment-service' AND level IN ('INFO', 'DEBUG'))::DECIMAL / 
-                     COUNT(*) FILTER (WHERE service = 'payment-service')) * 100, 2
+                'total_logs',
+                count(*) FILTER (WHERE service = 'payment-service'),
+                'error_count',
+                count(*) FILTER (
+                    WHERE service = 'payment-service' AND level = 'ERROR'
+                ),
+                'warning_count',
+                count(*) FILTER (
+                    WHERE service = 'payment-service' AND level = 'WARN'
+                ),
+                'health_score', round(
+                    (
+                        count(*) FILTER (
+                            WHERE service = 'payment-service'
+                            AND level IN ('INFO', 'DEBUG')
+                        )::DECIMAL
+                        / count(*) FILTER (WHERE service = 'payment-service')
+                    ) * 100, 2
                 )
             )
         ),
         'performance_health', jsonb_build_object(
-            'avg_response_time', (SELECT AVG(response_time_ms) FROM performance_logs),
-            'error_rate', ROUND(
-                ((SELECT COUNT(*) FROM performance_logs WHERE status_code >= 400)::DECIMAL / 
-                 (SELECT COUNT(*) FROM performance_logs)) * 100, 2
+            'avg_response_time',
+            (SELECT avg(response_time_ms) FROM performance_logs),
+            'error_rate', round(
+                (
+                    (
+                        SELECT count(*) FROM performance_logs
+                        WHERE status_code >= 400
+                    )::DECIMAL
+                    / (SELECT count(*) FROM performance_logs)
+                ) * 100, 2
             ),
-            'slow_endpoints', jsonb_build_array('/api/payments/process', '/api/orders/create')
+            'slow_endpoints',
+            jsonb_build_array('/api/payments/process', '/api/orders/create')
         ),
         'error_health', jsonb_build_object(
-            'total_errors', (SELECT COUNT(*) FROM error_logs),
-            'unresolved_errors', (SELECT COUNT(*) FROM error_logs WHERE resolved = false),
-            'critical_errors', (SELECT COUNT(*) FROM error_logs WHERE severity = 'HIGH'),
+            'total_errors', (SELECT count(*) FROM error_logs),
+            'unresolved_errors',
+            (
+                SELECT count(*) FROM error_logs
+                WHERE resolved = false
+            ),
+            'critical_errors',
+            (
+                SELECT count(*) FROM error_logs
+                WHERE severity = 'HIGH'
+            ),
             'error_trend', jsonb_build_object(
-                'DatabaseTimeout', COUNT(*) FILTER (WHERE EXISTS (
-                    SELECT 1 FROM error_logs el WHERE el.error_type = 'DatabaseTimeout'
+                'DatabaseTimeout', count(*) FILTER (WHERE EXISTS (
+                    SELECT 1
+                    FROM error_logs AS el
+                    WHERE el.error_type = 'DatabaseTimeout'
                 )),
-                'ValidationError', COUNT(*) FILTER (WHERE EXISTS (
-                    SELECT 1 FROM error_logs el WHERE el.error_type = 'ValidationError'
+                'ValidationError', count(*) FILTER (WHERE EXISTS (
+                    SELECT 1
+                    FROM error_logs AS el
+                    WHERE el.error_type = 'ValidationError'
                 )),
-                'AuthenticationError', COUNT(*) FILTER (WHERE EXISTS (
-                    SELECT 1 FROM error_logs el WHERE el.error_type = 'AuthenticationError'
+                'AuthenticationError', count(*) FILTER (WHERE EXISTS (
+                    SELECT 1
+                    FROM error_logs AS el
+                    WHERE el.error_type = 'AuthenticationError'
                 ))
             )
         )
-    ) as health_metrics
+    ) AS health_metrics
 FROM application_logs;
 
 -- Clean up
 DROP TABLE IF EXISTS application_logs CASCADE;
 DROP TABLE IF EXISTS error_logs CASCADE;
-DROP TABLE IF EXISTS performance_logs CASCADE; 
+DROP TABLE IF EXISTS performance_logs CASCADE;

@@ -24,7 +24,7 @@ CREATE TABLE sales_data (
     sale_id INT PRIMARY KEY,
     product_name VARCHAR(100),
     category VARCHAR(50),
-    sale_amount DECIMAL(10,2),
+    sale_amount DECIMAL(10, 2),
     sale_date DATE
 );
 
@@ -41,11 +41,11 @@ INSERT INTO sales_data VALUES
 -- =====================================================
 
 -- Demonstrate basic ROW_NUMBER() for overall ranking
-SELECT 
+SELECT
     product_name,
     category,
     sale_amount,
-    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as overall_rank
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) AS overall_rank
 FROM sales_data
 ORDER BY sale_amount DESC;
 
@@ -54,27 +54,31 @@ ORDER BY sale_amount DESC;
 -- =====================================================
 
 -- Demonstrate ROW_NUMBER() with partitioning by category
-SELECT 
+SELECT
     product_name,
     category,
     sale_amount,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+    ROW_NUMBER()
+        OVER (PARTITION BY category ORDER BY sale_amount DESC)
+        AS category_rank
 FROM sales_data
-ORDER BY category, sale_amount DESC;
+ORDER BY category ASC, sale_amount DESC;
 
 -- =====================================================
 -- Example 3: Multiple ROW_NUMBER() Functions
 -- =====================================================
 
 -- Show both overall and category ranking together
-SELECT 
+SELECT
     product_name,
     category,
     sale_amount,
-    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) as overall_rank,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sale_amount DESC) as category_rank
+    ROW_NUMBER() OVER (ORDER BY sale_amount DESC) AS overall_rank,
+    ROW_NUMBER()
+        OVER (PARTITION BY category ORDER BY sale_amount DESC)
+        AS category_rank
 FROM sales_data
 ORDER BY sale_amount DESC;
 
 -- Clean up
-DROP TABLE IF EXISTS sales_data CASCADE; 
+DROP TABLE IF EXISTS sales_data CASCADE;

@@ -33,7 +33,7 @@ CREATE TABLE categories (
     category_id INT PRIMARY KEY,
     name VARCHAR(100),
     parent_id INT,
-    FOREIGN KEY (parent_id) REFERENCES categories(category_id)
+    FOREIGN KEY (parent_id) REFERENCES categories (category_id)
 );
 
 -- Insert sample data
@@ -52,28 +52,29 @@ INSERT INTO categories VALUES
 -- Find all categories with their full path
 WITH RECURSIVE category_tree AS (
     -- Base case: root categories
-    SELECT 
+    SELECT
         category_id,
         name,
         parent_id,
-        0 as level,
-        CAST(name AS VARCHAR(500)) as full_path
-    FROM categories 
+        0 AS level,
+        CAST(name AS VARCHAR(500)) AS full_path
+    FROM categories
     WHERE parent_id IS NULL
-    
+
     UNION ALL
-    
+
     -- Recursive case: child categories
-    SELECT 
+    SELECT
         c.category_id,
         c.name,
         c.parent_id,
         ct.level + 1,
         CAST(ct.full_path || ' > ' || c.name AS VARCHAR(500))
-    FROM categories c
-    INNER JOIN category_tree ct ON c.parent_id = ct.category_id
+    FROM categories AS c
+    INNER JOIN category_tree AS ct ON c.parent_id = ct.category_id
 )
-SELECT 
+
+SELECT
     level,
     name,
     full_path
@@ -81,4 +82,4 @@ FROM category_tree
 ORDER BY full_path;
 
 -- Clean up
-DROP TABLE IF EXISTS categories CASCADE; 
+DROP TABLE IF EXISTS categories CASCADE;

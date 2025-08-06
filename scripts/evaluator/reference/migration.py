@@ -16,14 +16,25 @@ import asyncio
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from .models import (
-    Base, Quest, Subcategory, SQLFile, SQLPattern, SQLFilePattern,
-    Evaluation, TechnicalAnalysis, EducationalAnalysis, ExecutionDetail,
-    EvaluationPattern, Recommendation, EvaluationSession
-)
-from .enhanced_database import EnhancedDatabaseManager
-from .config import get_config, ConfigManager
-from .validation import ValidationCoordinator
+try:
+    from ..core.models import (
+        Base, Quest, Subcategory, SQLFile, SQLPattern, SQLFilePattern,
+        Evaluation, TechnicalAnalysis, EducationalAnalysis, ExecutionDetail,
+        EvaluationPattern, Recommendation, EvaluationSession
+    )
+    from ..core.database_manager import DatabaseManager
+    from ..core.config import get_config, ConfigManager
+    from ..core.validation import ValidationCoordinator
+except ImportError:
+    # Fallback for direct execution
+    from core.models import (
+        Base, Quest, Subcategory, SQLFile, SQLPattern, SQLFilePattern,
+        Evaluation, TechnicalAnalysis, EducationalAnalysis, ExecutionDetail,
+        EvaluationPattern, Recommendation, EvaluationSession
+    )
+    from core.database_manager import DatabaseManager
+    from core.config import get_config, ConfigManager
+    from core.validation import ValidationCoordinator
 
 class MigrationError(Exception):
     """Custom exception for migration errors"""
@@ -37,7 +48,7 @@ class LegacyDataMigrator:
         self.logger = logging.getLogger(__name__)
         
         # Initialize database managers
-        self.new_db = EnhancedDatabaseManager(separate_db=True)
+        self.new_db = DatabaseManager()
         self.old_db = None
         
         # Initialize validation
@@ -557,7 +568,7 @@ async def main():
         
         # Validate database if possible
         try:
-            db_manager = EnhancedDatabaseManager()
+            db_manager = DatabaseManager()
             validator = ValidationCoordinator(db_manager)
             validation_results = validator.validate_complete_system()
             

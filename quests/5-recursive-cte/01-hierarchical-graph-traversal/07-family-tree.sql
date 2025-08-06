@@ -23,8 +23,8 @@ CREATE TABLE family_members (
     gender CHAR(1), -- 'M' for Male, 'F' for Female
     father_id INT,
     mother_id INT,
-    FOREIGN KEY (father_id) REFERENCES family_members(id),
-    FOREIGN KEY (mother_id) REFERENCES family_members(id)
+    FOREIGN KEY (father_id) REFERENCES family_members (id),
+    FOREIGN KEY (mother_id) REFERENCES family_members (id)
 );
 
 -- Insert sample family data
@@ -46,7 +46,7 @@ INSERT INTO family_members VALUES
 -- Find complete family tree with generations (simplified approach)
 WITH RECURSIVE family_tree AS (
     -- Base case: root ancestors (no parents)
-    SELECT 
+    SELECT
         id,
         name,
         birth_date,
@@ -54,15 +54,15 @@ WITH RECURSIVE family_tree AS (
         gender,
         father_id,
         mother_id,
-        0 as generation,
-        CAST(name AS VARCHAR(500)) as lineage_path
-    FROM family_members 
+        0 AS generation,
+        CAST(name AS VARCHAR(500)) AS lineage_path
+    FROM family_members
     WHERE father_id IS NULL AND mother_id IS NULL
-    
+
     UNION ALL
-    
+
     -- Recursive case: children (simplified)
-    SELECT 
+    SELECT
         fm.id,
         fm.name,
         fm.birth_date,
@@ -72,10 +72,13 @@ WITH RECURSIVE family_tree AS (
         fm.mother_id,
         ft.generation + 1,
         CAST(ft.lineage_path || ' → ' || fm.name AS VARCHAR(500))
-    FROM family_members fm
-    INNER JOIN family_tree ft ON (fm.father_id = ft.id OR fm.mother_id = ft.id)
+    FROM family_members AS fm
+    INNER JOIN
+        family_tree AS ft
+        ON (fm.father_id = ft.id OR fm.mother_id = ft.id)
     WHERE ft.generation < 3  -- Limit to 3 generations for safety
 ),
+
 unique_family_tree AS (
     -- Get unique entries for each person (take the shortest lineage path)
     SELECT DISTINCT ON (id)
@@ -89,51 +92,58 @@ unique_family_tree AS (
     FROM family_tree
     ORDER BY id, LENGTH(lineage_path)
 )
-SELECT 
+
+SELECT
     generation,
     name,
     gender,
     birth_date,
     death_date,
-    CASE 
-        WHEN death_date IS NULL THEN 
-            EXTRACT(YEAR FROM AGE(CURRENT_DATE, birth_date))::VARCHAR || ' years'
-        ELSE 
-            EXTRACT(YEAR FROM AGE(death_date, birth_date))::VARCHAR || ' years (deceased)'
-    END as age,
-    lineage_path
+    lineage_path,
+    CASE
+        WHEN death_date IS NULL
+            THEN
+                CAST (EXTRACT(
+                    YEAR FROM AGE(CURRENT_DATE, birth_date)
+                ) AS VARCHAR)
+                || ' years'
+        ELSE
+            CAST (EXTRACT(YEAR FROM AGE(death_date, birth_date)) AS VARCHAR)
+            || ' years (deceased)'
+    END AS age
 FROM unique_family_tree
 ORDER BY generation, name;
 
 -- Find all descendants of a specific person (simplified)
 WITH RECURSIVE descendants AS (
     -- Base case: start person
-    SELECT 
+    SELECT
         id,
         name,
         gender,
         birth_date,
-        0 as descendant_level,
-        CAST(name AS VARCHAR(500)) as descendant_path
-    FROM family_members 
+        0 AS descendant_level,
+        CAST(name AS VARCHAR(500)) AS descendant_path
+    FROM family_members
     WHERE name = 'John Smith'  -- Start with John Smith
-    
+
     UNION ALL
-    
+
     -- Recursive case: find children (simplified)
-    SELECT 
+    SELECT
         fm.id,
         fm.name,
         fm.gender,
         fm.birth_date,
         d.descendant_level + 1,
         CAST(d.descendant_path || ' → ' || fm.name AS VARCHAR(500))
-    FROM family_members fm
-    INNER JOIN descendants d ON (fm.father_id = d.id OR fm.mother_id = d.id)
+    FROM family_members AS fm
+    INNER JOIN descendants AS d ON (fm.father_id = d.id OR fm.mother_id = d.id)
     WHERE d.descendant_level < 3  -- Limit to 3 generations for safety
 )
-SELECT 
-    descendant_level as generation,
+
+SELECT
+    descendant_level AS generation,
     name,
     gender,
     birth_date,
@@ -144,39 +154,43 @@ ORDER BY descendant_level, name;
 -- Find common ancestors between two people (simplified)
 WITH direct_ancestors AS (
     -- Get direct ancestors for both people
-    SELECT 
-        fm1.id as person1_id,
-        fm1.name as person1_name,
-        fm2.id as person2_id,
-        fm2.name as person2_name,
+    SELECT
+        fm1.id AS person1_id,
+        fm1.name AS person1_name,
+        fm2.id AS person2_id,
+        fm2.name AS person2_name,
         fm1.father_id,
         fm1.mother_id
-    FROM family_members fm1
-    CROSS JOIN family_members fm2
+    FROM family_members AS fm1
+    CROSS JOIN family_members AS fm2
     WHERE fm1.name = 'Michael Smith' AND fm2.name = 'Amanda Wilson'
 ),
+
 common_ancestors AS (
-    SELECT 
+    SELECT
         da.person1_name,
         da.person2_name,
-        fm.name as common_ancestor_name,
-        CASE 
+        fm.name AS common_ancestor_name,
+        CASE
             WHEN fm.id = da.father_id THEN 'Father'
             WHEN fm.id = da.mother_id THEN 'Mother'
             ELSE 'Unknown'
-        END as relationship
-    FROM direct_ancestors da
-    INNER JOIN family_members fm ON (fm.id = da.father_id OR fm.id = da.mother_id)
+        END AS relationship
+    FROM direct_ancestors AS da
+    INNER JOIN
+        family_members AS fm
+        ON (da.father_id = fm.id OR da.mother_id = fm.id)
     WHERE fm.id IS NOT NULL
 )
-SELECT 
+
+SELECT
     person1_name,
     person2_name,
     common_ancestor_name,
     relationship,
-    'Direct ancestor relationship found' as note
+    'Direct ancestor relationship found' AS note
 FROM common_ancestors
 ORDER BY relationship;
 
 -- Clean up
-DROP TABLE IF EXISTS family_members CASCADE; 
+DROP TABLE IF EXISTS family_members CASCADE;

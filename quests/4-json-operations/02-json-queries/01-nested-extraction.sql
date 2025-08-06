@@ -131,72 +131,99 @@ INSERT INTO ecommerce_data VALUES
 
 -- Example 1: Deep Nested Object Extraction
 -- Extract customer information from deeply nested structures
-SELECT 
+SELECT
     id,
-    order_data->>'order_id' as order_id,
-    order_data->'customer'->>'name' as customer_name,
-    order_data->'customer'->'contact'->>'email' as customer_email,
-    order_data->'customer'->'contact'->'address'->>'city' as customer_city,
-    order_data->'customer'->'preferences'->>'currency' as preferred_currency
+    order_data ->> 'order_id' AS order_id,
+    order_data -> 'customer' ->> 'name' AS customer_name,
+    order_data -> 'customer' -> 'contact' ->> 'email' AS customer_email,
+    order_data
+    -> 'customer'
+    -> 'contact'
+    -> 'address'
+    ->> 'city' AS customer_city,
+    order_data
+    -> 'customer'
+    -> 'preferences'
+    ->> 'currency' AS preferred_currency
 FROM ecommerce_data
 ORDER BY id;
 
 -- Example 2: Path-based JSON Querying
 -- Use path expressions to extract data at specific paths
-SELECT 
+SELECT
     id,
-    order_data->>'order_id' as order_id,
-    order_data #>> '{customer,contact,phone}' as customer_phone,
-    order_data #>> '{customer,contact,address,state}' as customer_state,
-    order_data #>> '{shipping,method}' as shipping_method,
-    order_data #>> '{shipping,address,city}' as shipping_city
+    order_data ->> 'order_id' AS order_id,
+    order_data #>> '{customer,contact,phone}' AS customer_phone,
+    order_data #>> '{customer,contact,address,state}' AS customer_state,
+    order_data #>> '{shipping,method}' AS shipping_method,
+    order_data #>> '{shipping,address,city}' AS shipping_city
 FROM ecommerce_data
 ORDER BY id;
 
 -- Example 3: Conditional Nested Extraction
 -- Extract data conditionally based on nested structure
-SELECT 
+SELECT
     id,
-    order_data->>'order_id' as order_id,
-    order_data->'customer'->>'name' as customer_name,
-    CASE 
-        WHEN order_data->'customer'->'preferences'->'notifications'->>'email' = 'true' 
-        THEN 'Email notifications enabled'
+    order_data ->> 'order_id' AS order_id,
+    order_data -> 'customer' ->> 'name' AS customer_name,
+    CASE
+        WHEN
+            order_data
+            -> 'customer'
+            -> 'preferences'
+            -> 'notifications'
+            ->> 'email'
+            = 'true'
+            THEN 'Email notifications enabled'
         ELSE 'Email notifications disabled'
-    END as email_status,
-    CASE 
-        WHEN order_data->'customer'->'preferences'->'notifications'->>'sms' = 'true' 
-        THEN 'SMS notifications enabled'
+    END AS email_status,
+    CASE
+        WHEN
+            order_data
+            -> 'customer'
+            -> 'preferences'
+            -> 'notifications'
+            ->> 'sms'
+            = 'true'
+            THEN 'SMS notifications enabled'
         ELSE 'SMS notifications disabled'
-    END as sms_status
+    END AS sms_status
 FROM ecommerce_data
 ORDER BY id;
 
 -- Example 4: Array Element Filtering and Extraction
 -- Extract specific elements from nested arrays
-SELECT 
+SELECT
     id,
-    order_data->>'order_id' as order_id,
-    jsonb_array_length(order_data->'items') as item_count,
-    order_data->'items'->0->>'name' as first_item_name,
-    order_data->'items'->0->'category'->>'name' as first_item_category,
-    order_data->'items'->0->'pricing'->>'final_price' as first_item_price
+    order_data ->> 'order_id' AS order_id,
+    jsonb_array_length(order_data -> 'items') AS item_count,
+    order_data -> 'items' -> 0 ->> 'name' AS first_item_name,
+    order_data -> 'items' -> 0 -> 'category' ->> 'name' AS first_item_category,
+    order_data
+    -> 'items'
+    -> 0
+    -> 'pricing'
+    ->> 'final_price' AS first_item_price
 FROM ecommerce_data
 ORDER BY id;
 
 -- Example 5: Complex Nested Structure Analysis
 -- Analyze relationships within nested structures
-SELECT 
+SELECT
     id,
-    order_data->>'order_id' as order_id,
-    order_data->'customer'->>'name' as customer_name,
-    jsonb_array_length(order_data->'items') as total_items,
-    (SELECT jsonb_agg(item->>'name') 
-     FROM jsonb_array_elements(order_data->'items') as item) as all_item_names,
-    (SELECT jsonb_agg((item->'pricing'->>'final_price')::DECIMAL(10,2)) 
-     FROM jsonb_array_elements(order_data->'items') as item) as all_prices
+    order_data ->> 'order_id' AS order_id,
+    order_data -> 'customer' ->> 'name' AS customer_name,
+    jsonb_array_length(order_data -> 'items') AS total_items,
+    (
+        SELECT jsonb_agg(item ->> 'name')
+        FROM jsonb_array_elements(order_data -> 'items') AS item
+    ) AS all_item_names,
+    (
+        SELECT jsonb_agg((item -> 'pricing' ->> 'final_price')::DECIMAL(10, 2))
+        FROM jsonb_array_elements(order_data -> 'items') AS item
+    ) AS all_prices
 FROM ecommerce_data
 ORDER BY id;
 
 -- Clean up
-DROP TABLE IF EXISTS ecommerce_data CASCADE; 
+DROP TABLE IF EXISTS ecommerce_data CASCADE;

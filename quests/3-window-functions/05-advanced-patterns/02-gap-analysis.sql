@@ -47,20 +47,22 @@ INSERT INTO sequence_data VALUES
 -- Example 1: Basic Gap Detection in Sequences
 -- Find gaps in sequence numbers
 WITH sequence_gaps AS (
-    SELECT 
+    SELECT
         sequence_number,
-        LAG(sequence_number) OVER (ORDER BY sequence_number) as prev_sequence,
-        sequence_number - LAG(sequence_number) OVER (ORDER BY sequence_number) as gap_size
+        LAG(sequence_number) OVER (ORDER BY sequence_number) AS prev_sequence,
+        sequence_number
+        - LAG(sequence_number) OVER (ORDER BY sequence_number) AS gap_size
     FROM sequence_data
 )
-SELECT 
+
+SELECT
     prev_sequence,
     sequence_number,
     gap_size,
-    CASE 
+    CASE
         WHEN gap_size > 1 THEN 'Gap detected'
         ELSE 'No gap'
-    END as gap_status
+    END AS gap_status
 FROM sequence_gaps
 WHERE gap_size > 1 OR gap_size IS NULL
 ORDER BY sequence_number;
@@ -69,7 +71,7 @@ ORDER BY sequence_number;
 CREATE TABLE time_series_data (
     id INT PRIMARY KEY,
     timestamp TIMESTAMP,
-    value DECIMAL(10,2),
+    value DECIMAL(10, 2),
     expected_interval_minutes INT
 );
 
@@ -86,23 +88,27 @@ INSERT INTO time_series_data VALUES
 -- Example 2: Time Series Gap Detection
 -- Find missing time intervals in time series data
 WITH time_gaps AS (
-    SELECT 
+    SELECT
         timestamp,
         value,
-        LAG(timestamp) OVER (ORDER BY timestamp) as prev_timestamp,
-        EXTRACT(EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp)))/60 as minutes_diff
+        LAG(timestamp) OVER (ORDER BY timestamp) AS prev_timestamp,
+        EXTRACT(
+            EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp))
+        )
+        / 60 AS minutes_diff
     FROM time_series_data
 )
-SELECT 
+
+SELECT
     prev_timestamp,
     timestamp,
     minutes_diff,
-    CASE 
+    CASE
         WHEN minutes_diff > 15 THEN 'Large gap detected'
         WHEN minutes_diff > 15 THEN 'Small gap detected'
         ELSE 'Normal interval'
-    END as gap_type,
-    ROUND(minutes_diff / 15, 1) as expected_intervals_missing
+    END AS gap_type,
+    ROUND(minutes_diff / 15, 1) AS expected_intervals_missing
 FROM time_gaps
 WHERE minutes_diff > 15
 ORDER BY timestamp;
@@ -112,9 +118,9 @@ CREATE TABLE sensor_readings (
     id INT PRIMARY KEY,
     sensor_id INT,
     reading_time TIMESTAMP,
-    temperature DECIMAL(5,2),
-    humidity DECIMAL(5,2),
-    pressure DECIMAL(8,2)
+    temperature DECIMAL(5, 2),
+    humidity DECIMAL(5, 2),
+    pressure DECIMAL(8, 2)
 );
 
 -- Insert sample data with quality issues
@@ -129,24 +135,28 @@ INSERT INTO sensor_readings VALUES
 
 -- Example 3: Data Quality Gap Analysis
 -- Detect missing values and data quality issues
-SELECT 
+SELECT
     id,
     sensor_id,
     reading_time,
     temperature,
     humidity,
     pressure,
-    CASE 
-        WHEN temperature IS NULL AND humidity IS NULL AND pressure IS NULL THEN 'Complete data loss'
-        WHEN temperature IS NULL OR humidity IS NULL OR pressure IS NULL THEN 'Partial data loss'
+    CASE
+        WHEN
+            temperature IS NULL AND humidity IS NULL AND pressure IS NULL
+            THEN 'Complete data loss'
+        WHEN
+            temperature IS NULL OR humidity IS NULL OR pressure IS NULL
+            THEN 'Partial data loss'
         ELSE 'Data complete'
-    END as data_quality_status,
-    CASE 
+    END AS data_quality_status,
+    CASE
         WHEN temperature IS NULL THEN 'Temperature missing'
         WHEN humidity IS NULL THEN 'Humidity missing'
         WHEN pressure IS NULL THEN 'Pressure missing'
         ELSE 'All values present'
-    END as missing_values
+    END AS missing_values
 FROM sensor_readings
 WHERE temperature IS NULL OR humidity IS NULL OR pressure IS NULL
 ORDER BY reading_time;
@@ -156,7 +166,7 @@ CREATE TABLE financial_transactions (
     id INT PRIMARY KEY,
     transaction_date DATE,
     account_id INT,
-    amount DECIMAL(10,2),
+    amount DECIMAL(10, 2),
     transaction_type VARCHAR(20)
 );
 
@@ -173,22 +183,24 @@ INSERT INTO financial_transactions VALUES
 -- Example 4: Financial Data Gap Detection
 -- Find missing transaction dates
 WITH date_sequence AS (
-    SELECT 
+    SELECT
         transaction_date,
-        LAG(transaction_date) OVER (ORDER BY transaction_date) as prev_date,
-        transaction_date - LAG(transaction_date) OVER (ORDER BY transaction_date) as days_diff
+        LAG(transaction_date) OVER (ORDER BY transaction_date) AS prev_date,
+        transaction_date
+        - LAG(transaction_date) OVER (ORDER BY transaction_date) AS days_diff
     FROM financial_transactions
     WHERE account_id = 1001
 )
-SELECT 
+
+SELECT
     prev_date,
     transaction_date,
     days_diff,
-    CASE 
+    CASE
         WHEN days_diff > 1 THEN 'Missing days detected'
         ELSE 'Consecutive days'
-    END as gap_status,
-    days_diff - 1 as missing_days_count
+    END AS gap_status,
+    days_diff - 1 AS missing_days_count
 FROM date_sequence
 WHERE days_diff > 1
 ORDER BY transaction_date;
@@ -198,7 +210,7 @@ CREATE TABLE employee_attendance (
     id INT PRIMARY KEY,
     employee_id INT,
     work_date DATE,
-    hours_worked DECIMAL(4,2)
+    hours_worked DECIMAL(4, 2)
 );
 
 -- Insert sample data with attendance gaps
@@ -218,28 +230,29 @@ INSERT INTO employee_attendance VALUES
 -- Example 5: Attendance Gap Analysis
 -- Detect attendance patterns and gaps
 WITH attendance_gaps AS (
-    SELECT 
+    SELECT
         work_date,
         hours_worked,
-        LAG(work_date) OVER (ORDER BY work_date) as prev_work_date,
-        work_date - LAG(work_date) OVER (ORDER BY work_date) as days_diff
+        LAG(work_date) OVER (ORDER BY work_date) AS prev_work_date,
+        work_date - LAG(work_date) OVER (ORDER BY work_date) AS days_diff
     FROM employee_attendance
     WHERE employee_id = 1001
 )
-SELECT 
+
+SELECT
     prev_work_date,
     work_date,
     days_diff,
-    CASE 
+    CASE
         WHEN days_diff = 1 THEN 'Consecutive days'
         WHEN days_diff = 2 THEN 'Weekend gap'
         WHEN days_diff = 3 THEN 'Extended gap'
         ELSE 'Large gap'
-    END as gap_type,
-    CASE 
+    END AS gap_type,
+    CASE
         WHEN days_diff > 1 THEN 'Gap detected'
         ELSE 'No gap'
-    END as gap_status
+    END AS gap_status
 FROM attendance_gaps
 WHERE days_diff > 1
 ORDER BY work_date;
@@ -268,26 +281,27 @@ INSERT INTO inventory_log VALUES
 -- Example 6: Inventory Gap Detection
 -- Find missing inventory log entries
 WITH inventory_gaps AS (
-    SELECT 
+    SELECT
         log_date,
         current_stock,
-        LAG(log_date) OVER (ORDER BY log_date) as prev_log_date,
-        LAG(current_stock) OVER (ORDER BY log_date) as prev_stock,
-        log_date - LAG(log_date) OVER (ORDER BY log_date) as days_diff
+        LAG(log_date) OVER (ORDER BY log_date) AS prev_log_date,
+        LAG(current_stock) OVER (ORDER BY log_date) AS prev_stock,
+        log_date - LAG(log_date) OVER (ORDER BY log_date) AS days_diff
     FROM inventory_log
     WHERE product_id = 2001
 )
-SELECT 
+
+SELECT
     prev_log_date,
     log_date,
     days_diff,
     prev_stock,
     current_stock,
-    CASE 
+    CASE
         WHEN days_diff > 1 THEN 'Missing log entries'
         ELSE 'Consecutive logging'
-    END as logging_status,
-    days_diff - 1 as missing_days
+    END AS logging_status,
+    days_diff - 1 AS missing_days
 FROM inventory_gaps
 WHERE days_diff > 1
 ORDER BY log_date;
@@ -315,31 +329,39 @@ INSERT INTO network_connectivity VALUES
 -- Example 7: Network Connectivity Gap Analysis
 -- Detect connectivity issues and downtime periods
 WITH connectivity_gaps AS (
-    SELECT 
+    SELECT
         check_time,
         status,
         response_time_ms,
-        LAG(check_time) OVER (ORDER BY check_time) as prev_check,
-        LAG(status) OVER (ORDER BY check_time) as prev_status,
-        EXTRACT(EPOCH FROM (check_time - LAG(check_time) OVER (ORDER BY check_time)))/60 as minutes_diff
+        LAG(check_time) OVER (ORDER BY check_time) AS prev_check,
+        LAG(status) OVER (ORDER BY check_time) AS prev_status,
+        EXTRACT(
+            EPOCH FROM (check_time - LAG(check_time) OVER (ORDER BY check_time))
+        )
+        / 60 AS minutes_diff
     FROM network_connectivity
     WHERE server_id = 3001
 )
-SELECT 
+
+SELECT
     prev_check,
     check_time,
     minutes_diff,
     prev_status,
     status,
-    CASE 
-        WHEN prev_status = 'Online' AND status = 'Offline' THEN 'Connection lost'
-        WHEN prev_status = 'Offline' AND status = 'Online' THEN 'Connection restored'
+    CASE
+        WHEN
+            prev_status = 'Online' AND status = 'Offline'
+            THEN 'Connection lost'
+        WHEN
+            prev_status = 'Offline' AND status = 'Online'
+            THEN 'Connection restored'
         ELSE 'Status unchanged'
-    END as connectivity_event,
-    CASE 
+    END AS connectivity_event,
+    CASE
         WHEN status = 'Offline' THEN 'Downtime period'
         ELSE 'Uptime period'
-    END as period_type
+    END AS period_type
 FROM connectivity_gaps
 WHERE (prev_status != status) OR status = 'Offline'
 ORDER BY check_time;
@@ -347,44 +369,56 @@ ORDER BY check_time;
 -- Example 8: Comprehensive Gap Analysis
 -- Combine multiple gap detection techniques
 WITH comprehensive_gaps AS (
-    SELECT 
-        'sequence' as data_type,
-        sequence_number as identifier,
-        sequence_number - LAG(sequence_number) OVER (ORDER BY sequence_number) as gap_size,
-        'Sequence gap' as gap_description
+    SELECT
+        'sequence' AS data_type,
+        sequence_number AS identifier,
+        sequence_number
+        - LAG(sequence_number) OVER (ORDER BY sequence_number) AS gap_size,
+        'Sequence gap' AS gap_description
     FROM sequence_data
-    
+
     UNION ALL
-    
-    SELECT 
-        'time_series' as data_type,
-        EXTRACT(EPOCH FROM timestamp)::INT as identifier,
-        EXTRACT(EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp))) as gap_size,
-        'Time series gap' as gap_description
+
+    SELECT
+        'time_series' AS data_type,
+        EXTRACT(EPOCH FROM timestamp)::INT AS identifier,
+        EXTRACT(
+            EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp))
+        ) AS gap_size,
+        'Time series gap' AS gap_description
     FROM time_series_data
-    WHERE timestamp - LAG(timestamp) OVER (ORDER BY timestamp) > INTERVAL '15 minutes'
-    
+    WHERE
+        timestamp - LAG(timestamp) OVER (ORDER BY timestamp)
+        > INTERVAL '15 minutes'
+
     UNION ALL
-    
-    SELECT 
-        'financial' as data_type,
-        EXTRACT(EPOCH FROM transaction_date)::INT as identifier,
-        (transaction_date - LAG(transaction_date) OVER (ORDER BY transaction_date))::INT as gap_size,
-        'Financial data gap' as gap_description
+
+    SELECT
+        'financial' AS data_type,
+        EXTRACT(EPOCH FROM transaction_date)::INT AS identifier,
+        (
+            transaction_date
+            - LAG(transaction_date) OVER (ORDER BY transaction_date)
+        )::INT AS gap_size,
+        'Financial data gap' AS gap_description
     FROM financial_transactions
-    WHERE transaction_date - LAG(transaction_date) OVER (ORDER BY transaction_date) > 1
+    WHERE
+        transaction_date
+        - LAG(transaction_date) OVER (ORDER BY transaction_date)
+        > 1
 )
-SELECT 
+
+SELECT
     data_type,
     identifier,
     gap_size,
     gap_description,
-    CASE 
+    CASE
         WHEN gap_size <= 1 THEN 'Minor gap'
         WHEN gap_size <= 3 THEN 'Moderate gap'
         WHEN gap_size <= 7 THEN 'Significant gap'
         ELSE 'Critical gap'
-    END as gap_severity
+    END AS gap_severity
 FROM comprehensive_gaps
 ORDER BY data_type, identifier;
 
@@ -395,4 +429,4 @@ DROP TABLE IF EXISTS sensor_readings CASCADE;
 DROP TABLE IF EXISTS financial_transactions CASCADE;
 DROP TABLE IF EXISTS employee_attendance CASCADE;
 DROP TABLE IF EXISTS inventory_log CASCADE;
-DROP TABLE IF EXISTS network_connectivity CASCADE; 
+DROP TABLE IF EXISTS network_connectivity CASCADE;

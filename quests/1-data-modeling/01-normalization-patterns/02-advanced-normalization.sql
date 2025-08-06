@@ -32,7 +32,7 @@ CREATE TABLE instructors (
 CREATE TABLE enrollments (
     student_id INT,
     course_id INT,
-    instructor_id INT REFERENCES instructors(instructor_id),
+    instructor_id INT REFERENCES instructors (instructor_id),
     semester VARCHAR(20),
     grade CHAR(2),
     PRIMARY KEY (student_id, course_id, semester)
@@ -142,15 +142,16 @@ INSERT INTO part_projects VALUES
 (102, 201, 75);
 
 -- Query to reconstruct original data
-SELECT 
+SELECT
     sp.supplier_id,
     pp.part_id,
     spr.project_id,
     pp.quantity
-FROM supplier_parts sp
-JOIN part_projects pp ON sp.part_id = pp.part_id
-JOIN supplier_projects spr ON sp.supplier_id = spr.supplier_id 
-    AND pp.project_id = spr.project_id;
+FROM supplier_parts AS sp
+INNER JOIN part_projects AS pp ON sp.part_id = pp.part_id
+INNER JOIN supplier_projects
+    AS spr ON sp.supplier_id = spr.supplier_id
+AND pp.project_id = spr.project_id;
 
 -- Clean up
 DROP TABLE IF EXISTS course_enrollments CASCADE;
@@ -162,4 +163,4 @@ DROP TABLE IF EXISTS employee_locations CASCADE;
 DROP TABLE IF EXISTS supplier_parts_projects CASCADE;
 DROP TABLE IF EXISTS supplier_parts CASCADE;
 DROP TABLE IF EXISTS supplier_projects CASCADE;
-DROP TABLE IF EXISTS part_projects CASCADE; 
+DROP TABLE IF EXISTS part_projects CASCADE;

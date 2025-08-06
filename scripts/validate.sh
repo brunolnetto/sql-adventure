@@ -16,7 +16,7 @@ load_env() {
     if [ -f "$env_file" ]; then
         print_status "Loading configuration from $env_file"
         set -a
-        source "$env_file" 2>/dev/null || true
+        source .env
         set +a
     else
         print_warning "No .env file found, using defaults"

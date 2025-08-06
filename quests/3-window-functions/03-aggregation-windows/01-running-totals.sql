@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS customer_transactions CASCADE;
 -- Create sample daily sales table
 CREATE TABLE daily_sales (
     sale_date DATE PRIMARY KEY,
-    sales_amount DECIMAL(10,2),
+    sales_amount DECIMAL(10, 2),
     product_category VARCHAR(50)
 );
 
@@ -45,11 +45,13 @@ INSERT INTO daily_sales VALUES
 -- =====================================================
 
 -- Calculate running total of daily sales
-SELECT 
+SELECT
     sale_date,
     sales_amount,
-    SUM(sales_amount) OVER (ORDER BY sale_date) as running_total,
-    SUM(sales_amount) OVER (ORDER BY sale_date ROWS UNBOUNDED PRECEDING) as explicit_running_total
+    SUM(sales_amount) OVER (ORDER BY sale_date) AS running_total,
+    SUM(sales_amount)
+        OVER (ORDER BY sale_date ROWS UNBOUNDED PRECEDING)
+        AS explicit_running_total
 FROM daily_sales
 ORDER BY sale_date;
 
@@ -69,19 +71,19 @@ INSERT INTO daily_sales VALUES
 ('2024-01-08', 1050.00, 'Clothing'),
 ('2024-01-09', 980.50, 'Clothing'),
 ('2024-01-10', 1150.00, 'Clothing')
-ON CONFLICT (sale_date) DO UPDATE SET 
-    sales_amount = EXCLUDED.sales_amount,
-    product_category = EXCLUDED.product_category;
+ON CONFLICT (sale_date) DO UPDATE SET
+    sales_amount = excluded.sales_amount,
+    product_category = excluded.product_category;
 
 -- Calculate running totals by product category
-SELECT 
+SELECT
     sale_date,
     product_category,
     sales_amount,
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
-    ) as category_running_total
+    ) AS category_running_total
 FROM daily_sales
 ORDER BY product_category, sale_date;
 
@@ -90,20 +92,20 @@ ORDER BY product_category, sale_date;
 -- =====================================================
 
 -- Calculate running average of daily sales
-SELECT 
+SELECT
     sale_date,
     product_category,
     sales_amount,
     ROUND(AVG(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ), 2) as moving_avg_3d,
+    ), 2) AS moving_avg_3d,
     ROUND(AVG(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS UNBOUNDED PRECEDING
-    ), 2) as running_avg
+    ), 2) AS running_avg
 FROM daily_sales
 ORDER BY product_category, sale_date;
 
@@ -112,20 +114,20 @@ ORDER BY product_category, sale_date;
 -- =====================================================
 
 -- Calculate running counts and percentages
-SELECT 
+SELECT
     sale_date,
     product_category,
     sales_amount,
     COUNT(*) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
-    ) as days_count,
+    ) AS days_count,
     ROUND(
         sales_amount * 100.0 / SUM(sales_amount) OVER (
-            PARTITION BY product_category 
+            PARTITION BY product_category
             ORDER BY sale_date
         ), 2
-    ) as running_percentage
+    ) AS running_percentage
 FROM daily_sales
 ORDER BY product_category, sale_date;
 
@@ -136,8 +138,8 @@ ORDER BY product_category, sale_date;
 -- Create monthly revenue table for financial analysis
 CREATE TABLE monthly_revenue (
     month_year VARCHAR(7),
-    revenue DECIMAL(12,2),
-    expenses DECIMAL(12,2)
+    revenue DECIMAL(12, 2),
+    expenses DECIMAL(12, 2)
 );
 
 INSERT INTO monthly_revenue VALUES
@@ -155,21 +157,21 @@ INSERT INTO monthly_revenue VALUES
 ('2024-12', 80000.00, 55000.00);
 
 -- Calculate running financial metrics
-SELECT 
+SELECT
     month_year,
     revenue,
     expenses,
-    revenue - expenses as net_income,
-    SUM(revenue) OVER (ORDER BY month_year) as cumulative_revenue,
-    SUM(expenses) OVER (ORDER BY month_year) as cumulative_expenses,
-    SUM(revenue - expenses) OVER (ORDER BY month_year) as cumulative_net_income,
+    revenue - expenses AS net_income,
+    SUM(revenue) OVER (ORDER BY month_year) AS cumulative_revenue,
+    SUM(expenses) OVER (ORDER BY month_year) AS cumulative_expenses,
+    SUM(revenue - expenses) OVER (ORDER BY month_year) AS cumulative_net_income,
     ROUND(
         (revenue - expenses) * 100.0 / revenue, 2
-    ) as profit_margin,
+    ) AS profit_margin,
     ROUND(
-        SUM(revenue - expenses) OVER (ORDER BY month_year) * 100.0 / 
-        SUM(revenue) OVER (ORDER BY month_year), 2
-    ) as cumulative_profit_margin
+        SUM(revenue - expenses) OVER (ORDER BY month_year) * 100.0
+        / SUM(revenue) OVER (ORDER BY month_year), 2
+    ) AS cumulative_profit_margin
 FROM monthly_revenue
 ORDER BY month_year;
 
@@ -182,7 +184,7 @@ CREATE TABLE customer_transactions (
     transaction_id INT PRIMARY KEY,
     customer_id INT,
     transaction_date DATE,
-    amount DECIMAL(10,2),
+    amount DECIMAL(10, 2),
     transaction_type VARCHAR(20)
 );
 
@@ -204,26 +206,26 @@ INSERT INTO customer_transactions VALUES
 (15, 103, '2024-01-28', 600.00, 'Purchase');
 
 -- Analyze customer spending patterns
-SELECT 
+SELECT
     customer_id,
     transaction_date,
     amount,
     transaction_type,
     SUM(amount) OVER (
-        PARTITION BY customer_id 
+        PARTITION BY customer_id
         ORDER BY transaction_date
-    ) as running_balance,
+    ) AS running_balance,
     COUNT(*) OVER (
-        PARTITION BY customer_id 
+        PARTITION BY customer_id
         ORDER BY transaction_date
-    ) as transaction_count,
+    ) AS transaction_count,
     ROUND(
         AVG(amount) OVER (
-            PARTITION BY customer_id 
+            PARTITION BY customer_id
             ORDER BY transaction_date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
         ), 2
-    ) as moving_avg_amount
+    ) AS moving_avg_amount
 FROM customer_transactions
 ORDER BY customer_id, transaction_date;
 
@@ -232,25 +234,25 @@ ORDER BY customer_id, transaction_date;
 -- =====================================================
 
 -- Calculate year-to-date metrics
-SELECT 
+SELECT
     month_year,
     revenue,
     SUM(revenue) OVER (
-        ORDER BY month_year 
+        ORDER BY month_year
         ROWS UNBOUNDED PRECEDING
-    ) as ytd_revenue,
+    ) AS ytd_revenue,
     ROUND(
         revenue * 100.0 / SUM(revenue) OVER (
-            ORDER BY month_year 
+            ORDER BY month_year
             ROWS UNBOUNDED PRECEDING
         ), 2
-    ) as revenue_contribution_pct,
+    ) AS revenue_contribution_pct,
     ROUND(
         AVG(revenue) OVER (
-            ORDER BY month_year 
+            ORDER BY month_year
             ROWS UNBOUNDED PRECEDING
         ), 2
-    ) as ytd_avg_revenue
+    ) AS ytd_avg_revenue
 FROM monthly_revenue
 ORDER BY month_year;
 
@@ -260,22 +262,23 @@ ORDER BY month_year;
 
 -- Calculate month-over-month growth rates
 WITH growth_analysis AS (
-    SELECT 
+    SELECT
         month_year,
         revenue,
-        LAG(revenue) OVER (ORDER BY month_year) as prev_month_revenue
+        LAG(revenue) OVER (ORDER BY month_year) AS prev_month_revenue
     FROM monthly_revenue
 )
-SELECT 
+
+SELECT
     month_year,
     revenue,
     prev_month_revenue,
     ROUND(
         (revenue - prev_month_revenue) * 100.0 / prev_month_revenue, 2
-    ) as mom_growth_pct,
+    ) AS mom_growth_pct,
     ROUND(
         revenue * 100.0 / FIRST_VALUE(revenue) OVER (ORDER BY month_year), 2
-    ) as growth_vs_january
+    ) AS growth_vs_january
 FROM growth_analysis
 ORDER BY month_year;
 
@@ -284,34 +287,34 @@ ORDER BY month_year;
 -- =====================================================
 
 -- Demonstrate different window frame specifications
-SELECT 
+SELECT
     sale_date,
     product_category,
     sales_amount,
     -- Current row only
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS CURRENT ROW
-    ) as current_day_only,
+    ) AS current_day_only,
     -- Current row and 1 preceding
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS BETWEEN 1 PRECEDING AND CURRENT ROW
-    ) as current_and_prev,
+    ) AS current_and_prev,
     -- Current row and 1 following
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING
-    ) as current_and_next,
+    ) AS current_and_next,
     -- 2 preceding to 1 following
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
+        PARTITION BY product_category
         ORDER BY sale_date
         ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING
-    ) as rolling_5_day
+    ) AS rolling_5_day
 FROM daily_sales
 ORDER BY product_category, sale_date;
 
@@ -320,31 +323,31 @@ ORDER BY product_category, sale_date;
 -- =====================================================
 
 -- Complex financial analysis with multiple running calculations
-SELECT 
+SELECT
     month_year,
     revenue,
     expenses,
-    revenue - expenses as net_income,
+    revenue - expenses AS net_income,
     -- Running totals
-    SUM(revenue) OVER (ORDER BY month_year) as cumulative_revenue,
-    SUM(expenses) OVER (ORDER BY month_year) as cumulative_expenses,
-    SUM(revenue - expenses) OVER (ORDER BY month_year) as cumulative_net_income,
+    SUM(revenue) OVER (ORDER BY month_year) AS cumulative_revenue,
+    SUM(expenses) OVER (ORDER BY month_year) AS cumulative_expenses,
+    SUM(revenue - expenses) OVER (ORDER BY month_year) AS cumulative_net_income,
     -- Running averages
-    ROUND(AVG(revenue) OVER (ORDER BY month_year), 2) as avg_revenue_ytd,
-    ROUND(AVG(expenses) OVER (ORDER BY month_year), 2) as avg_expenses_ytd,
+    ROUND(AVG(revenue) OVER (ORDER BY month_year), 2) AS avg_revenue_ytd,
+    ROUND(AVG(expenses) OVER (ORDER BY month_year), 2) AS avg_expenses_ytd,
     -- Running ratios
     ROUND(
-        SUM(revenue - expenses) OVER (ORDER BY month_year) * 100.0 / 
-        SUM(revenue) OVER (ORDER BY month_year), 2
-    ) as cumulative_profit_margin,
+        SUM(revenue - expenses) OVER (ORDER BY month_year) * 100.0
+        / SUM(revenue) OVER (ORDER BY month_year), 2
+    ) AS cumulative_profit_margin,
     -- Growth metrics
     ROUND(
         revenue * 100.0 / FIRST_VALUE(revenue) OVER (ORDER BY month_year), 2
-    ) as revenue_growth_vs_january
+    ) AS revenue_growth_vs_january
 FROM monthly_revenue
 ORDER BY month_year;
 
 -- Clean up
 DROP TABLE IF EXISTS daily_sales CASCADE;
 DROP TABLE IF EXISTS monthly_revenue CASCADE;
-DROP TABLE IF EXISTS customer_transactions CASCADE; 
+DROP TABLE IF EXISTS customer_transactions CASCADE;

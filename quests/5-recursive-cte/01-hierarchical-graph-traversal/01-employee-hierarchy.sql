@@ -34,7 +34,7 @@ CREATE TABLE employees (
     name VARCHAR(100),
     manager_id INT,
     department VARCHAR(50),
-    salary DECIMAL(10,2)
+    salary DECIMAL(10, 2)
 );
 
 -- Insert sample data
@@ -51,21 +51,21 @@ INSERT INTO employees VALUES
 -- Find complete hierarchy for each employee
 WITH RECURSIVE employee_hierarchy AS (
     -- Base case: employees with no manager (CEO)
-    SELECT 
+    SELECT
         employee_id,
         name,
         manager_id,
         department,
         salary,
-        0 as level,
-        CAST(name AS VARCHAR(500)) as hierarchy_path
-    FROM employees 
+        0 AS level,
+        CAST(name AS VARCHAR(500)) AS hierarchy_path
+    FROM employees
     WHERE manager_id IS NULL
-    
+
     UNION ALL
-    
+
     -- Recursive case: employees with managers
-    SELECT 
+    SELECT
         e.employee_id,
         e.name,
         e.manager_id,
@@ -73,10 +73,11 @@ WITH RECURSIVE employee_hierarchy AS (
         e.salary,
         eh.level + 1,
         CAST(eh.hierarchy_path || ' → ' || e.name AS VARCHAR(500))
-    FROM employees e
-    INNER JOIN employee_hierarchy eh ON e.manager_id = eh.employee_id
+    FROM employees AS e
+    INNER JOIN employee_hierarchy AS eh ON e.manager_id = eh.employee_id
 )
-SELECT 
+
+SELECT
     level,
     name,
     department,
@@ -86,4 +87,4 @@ FROM employee_hierarchy
 ORDER BY level, name;
 
 -- Clean up
-DROP TABLE IF EXISTS employees CASCADE; 
+DROP TABLE IF EXISTS employees CASCADE;

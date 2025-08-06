@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS sensor_readings CASCADE;
 CREATE TABLE stock_prices (
     date DATE PRIMARY KEY,
     symbol VARCHAR(10),
-    close_price DECIMAL(10,2),
+    close_price DECIMAL(10, 2),
     volume BIGINT
 );
 
@@ -49,30 +49,30 @@ INSERT INTO stock_prices VALUES
 ('2024-01-19', 'AAPL', 162.75, 62000000);
 
 -- Demonstrate different moving averages
-SELECT 
+SELECT
     date,
     symbol,
     close_price,
     -- 3-day simple moving average
     AVG(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as sma_3day,
+    ) AS sma_3day,
     -- 5-day simple moving average
     AVG(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as sma_5day,
+    ) AS sma_5day,
     -- 7-day simple moving average
     AVG(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-    ) as sma_7day,
+    ) AS sma_7day,
     -- Volume moving average
     AVG(volume) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as volume_ma_5day
+    ) AS volume_ma_5day
 FROM stock_prices
 ORDER BY date;
 
@@ -86,7 +86,7 @@ CREATE TABLE website_traffic (
     page_url VARCHAR(200),
     visitors INT,
     page_views INT,
-    bounce_rate DECIMAL(5,2),
+    bounce_rate DECIMAL(5, 2),
     PRIMARY KEY (date, page_url)
 );
 
@@ -114,7 +114,7 @@ INSERT INTO website_traffic VALUES
 ('2024-01-10', '/products', 1350, 2050, 33.8);
 
 -- Analyze traffic trends with moving averages
-SELECT 
+SELECT
     date,
     page_url,
     visitors,
@@ -122,31 +122,31 @@ SELECT
     bounce_rate,
     -- 3-day moving average for visitors
     AVG(visitors) OVER (
-        PARTITION BY page_url 
-        ORDER BY date 
+        PARTITION BY page_url
+        ORDER BY date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as visitors_ma_3day,
+    ) AS visitors_ma_3day,
     -- 5-day moving average for page views
     AVG(page_views) OVER (
-        PARTITION BY page_url 
-        ORDER BY date 
+        PARTITION BY page_url
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as pageviews_ma_5day,
+    ) AS pageviews_ma_5day,
     -- 7-day moving average for bounce rate
     AVG(bounce_rate) OVER (
-        PARTITION BY page_url 
-        ORDER BY date 
+        PARTITION BY page_url
+        ORDER BY date
         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-    ) as bounce_rate_ma_7day,
+    ) AS bounce_rate_ma_7day,
     -- Trend indicator (current vs 3-day average)
-    CASE 
+    CASE
         WHEN visitors > AVG(visitors) OVER (
-            PARTITION BY page_url 
-            ORDER BY date 
+            PARTITION BY page_url
+            ORDER BY date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
         ) THEN 'Increasing'
         ELSE 'Decreasing'
-    END as visitor_trend
+    END AS visitor_trend
 FROM website_traffic
 ORDER BY page_url, date;
 
@@ -158,9 +158,9 @@ ORDER BY page_url, date;
 CREATE TABLE sensor_readings (
     timestamp TIMESTAMP,
     sensor_id VARCHAR(20),
-    temperature DECIMAL(5,2),
-    humidity DECIMAL(5,2),
-    pressure DECIMAL(8,2),
+    temperature DECIMAL(5, 2),
+    humidity DECIMAL(5, 2),
+    pressure DECIMAL(8, 2),
     PRIMARY KEY (timestamp, sensor_id)
 );
 
@@ -192,7 +192,7 @@ INSERT INTO sensor_readings VALUES
 ('2024-01-01 23:00:00', 'SENSOR_001', 23.2, 46.0, 1013.25);
 
 -- Analyze sensor data with multiple moving averages
-SELECT 
+SELECT
     timestamp,
     sensor_id,
     temperature,
@@ -200,41 +200,41 @@ SELECT
     pressure,
     -- 3-hour moving average for temperature
     AVG(temperature) OVER (
-        PARTITION BY sensor_id 
-        ORDER BY timestamp 
+        PARTITION BY sensor_id
+        ORDER BY timestamp
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as temp_ma_3hour,
+    ) AS temp_ma_3hour,
     -- 6-hour moving average for humidity
     AVG(humidity) OVER (
-        PARTITION BY sensor_id 
-        ORDER BY timestamp 
+        PARTITION BY sensor_id
+        ORDER BY timestamp
         ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
-    ) as humidity_ma_6hour,
+    ) AS humidity_ma_6hour,
     -- 12-hour moving average for pressure
     AVG(pressure) OVER (
-        PARTITION BY sensor_id 
-        ORDER BY timestamp 
+        PARTITION BY sensor_id
+        ORDER BY timestamp
         ROWS BETWEEN 11 PRECEDING AND CURRENT ROW
-    ) as pressure_ma_12hour,
+    ) AS pressure_ma_12hour,
     -- Temperature trend (current vs 3-hour average)
     temperature - AVG(temperature) OVER (
-        PARTITION BY sensor_id 
-        ORDER BY timestamp 
+        PARTITION BY sensor_id
+        ORDER BY timestamp
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as temp_deviation,
+    ) AS temp_deviation,
     -- Anomaly detection (temperature > 2 std dev from 6-hour average)
-    CASE 
+    CASE
         WHEN ABS(temperature - AVG(temperature) OVER (
-            PARTITION BY sensor_id 
-            ORDER BY timestamp 
+            PARTITION BY sensor_id
+            ORDER BY timestamp
             ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
         )) > 2 * STDDEV(temperature) OVER (
-            PARTITION BY sensor_id 
-            ORDER BY timestamp 
+            PARTITION BY sensor_id
+            ORDER BY timestamp
             ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
         ) THEN 'ANOMALY'
         ELSE 'NORMAL'
-    END as anomaly_flag
+    END AS anomaly_flag
 FROM sensor_readings
 ORDER BY timestamp;
 
@@ -245,43 +245,48 @@ ORDER BY timestamp;
 -- Demonstrate exponential moving average simulation
 -- (PostgreSQL doesn't have built-in EMA, so we simulate it)
 WITH stock_data AS (
-    SELECT 
+    SELECT
         date,
         close_price,
         -- Simple moving average
         AVG(close_price) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-        ) as sma_5day,
+        ) AS sma_5day,
         -- Weighted moving average (more recent data has higher weight)
         (
-            close_price * 5 + 
-            LAG(close_price, 1) OVER (ORDER BY date) * 4 +
-            LAG(close_price, 2) OVER (ORDER BY date) * 3 +
-            LAG(close_price, 3) OVER (ORDER BY date) * 2 +
-            LAG(close_price, 4) OVER (ORDER BY date) * 1
-        ) / 15.0 as wma_5day
+            close_price * 5
+            + LAG(close_price, 1) OVER (ORDER BY date) * 4
+            + LAG(close_price, 2) OVER (ORDER BY date) * 3
+            + LAG(close_price, 3) OVER (ORDER BY date) * 2
+            + LAG(close_price, 4) OVER (ORDER BY date) * 1
+        ) / 15.0 AS wma_5day
     FROM stock_prices
 )
-SELECT 
+
+SELECT
     date,
     close_price,
     sma_5day,
     wma_5day,
     -- Compare SMA vs WMA
-    CASE 
+    CASE
         WHEN wma_5day > sma_5day THEN 'WMA > SMA (Bullish)'
         WHEN wma_5day < sma_5day THEN 'WMA < SMA (Bearish)'
         ELSE 'WMA = SMA (Neutral)'
-    END as trend_signal,
+    END AS trend_signal,
     -- Price position relative to moving averages
-    CASE 
-        WHEN close_price > wma_5day AND wma_5day > sma_5day THEN 'Strong Bullish'
+    CASE
+        WHEN
+            close_price > wma_5day AND wma_5day > sma_5day
+            THEN 'Strong Bullish'
         WHEN close_price > wma_5day THEN 'Moderate Bullish'
-        WHEN close_price < wma_5day AND wma_5day < sma_5day THEN 'Strong Bearish'
+        WHEN
+            close_price < wma_5day AND wma_5day < sma_5day
+            THEN 'Strong Bearish'
         WHEN close_price < wma_5day THEN 'Moderate Bearish'
         ELSE 'Neutral'
-    END as position_signal
+    END AS position_signal
 FROM stock_data
 WHERE date >= '2024-01-05'  -- Only show dates with enough history
 ORDER BY date;
@@ -291,54 +296,55 @@ ORDER BY date;
 -- =====================================================
 
 -- Calculate rolling statistics for stock prices
-SELECT 
+SELECT
     date,
     close_price,
     -- 5-day moving average
     AVG(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as ma_5day,
+    ) AS ma_5day,
     -- 5-day standard deviation (volatility)
     STDDEV(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as volatility_5day,
+    ) AS volatility_5day,
     -- 5-day coefficient of variation (volatility relative to mean)
-    CASE 
-        WHEN AVG(close_price) OVER (
-            ORDER BY date 
-            ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-        ) > 0 THEN 
-            STDDEV(close_price) OVER (
-                ORDER BY date 
+    CASE
+        WHEN
+            AVG(close_price) OVER (
+                ORDER BY date
                 ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-            ) / AVG(close_price) OVER (
-                ORDER BY date 
-                ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-            ) * 100
-        ELSE NULL
-    END as cv_5day_percent,
+            ) > 0
+            THEN
+                STDDEV(close_price) OVER (
+                    ORDER BY date
+                    ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+                ) / AVG(close_price) OVER (
+                    ORDER BY date
+                    ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
+                ) * 100
+    END AS cv_5day_percent,
     -- Price range (high-low) over 5 days
     MAX(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
     ) - MIN(close_price) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    ) as price_range_5day,
+    ) AS price_range_5day,
     -- Volatility classification
-    CASE 
+    CASE
         WHEN STDDEV(close_price) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
         ) > 3.0 THEN 'High Volatility'
         WHEN STDDEV(close_price) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
         ) > 1.5 THEN 'Medium Volatility'
         ELSE 'Low Volatility'
-    END as volatility_level
+    END AS volatility_level
 FROM stock_prices
 WHERE date >= '2024-01-05'  -- Only show dates with enough history
 ORDER BY date;
@@ -346,4 +352,4 @@ ORDER BY date;
 -- Clean up
 DROP TABLE IF EXISTS stock_prices CASCADE;
 DROP TABLE IF EXISTS website_traffic CASCADE;
-DROP TABLE IF EXISTS sensor_readings CASCADE; 
+DROP TABLE IF EXISTS sensor_readings CASCADE;

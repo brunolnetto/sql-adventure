@@ -25,7 +25,7 @@ CREATE TABLE student_scores (
     student_id INT PRIMARY KEY,
     student_name VARCHAR(100),
     subject VARCHAR(50),
-    score DECIMAL(5,2),
+    score DECIMAL(5, 2),
     exam_date DATE
 );
 
@@ -45,12 +45,12 @@ INSERT INTO student_scores VALUES
 -- =====================================================
 
 -- Compare RANK and DENSE_RANK for handling ties
-SELECT 
+SELECT
     student_name,
     score,
-    ROW_NUMBER() OVER (ORDER BY score DESC) as row_number,
-    RANK() OVER (ORDER BY score DESC) as rank_with_gaps,
-    DENSE_RANK() OVER (ORDER BY score DESC) as dense_rank_no_gaps
+    ROW_NUMBER() OVER (ORDER BY score DESC) AS row_number,
+    RANK() OVER (ORDER BY score DESC) AS rank_with_gaps,
+    DENSE_RANK() OVER (ORDER BY score DESC) AS dense_rank_no_gaps
 FROM student_scores
 ORDER BY score DESC;
 
@@ -70,30 +70,32 @@ INSERT INTO student_scores VALUES
 (16, 'Henry Taylor', 'Physics', 88.00, '2024-01-16');
 
 -- Rank students within each subject
-SELECT 
+SELECT
     student_name,
     subject,
     score,
-    RANK() OVER (PARTITION BY subject ORDER BY score DESC) as subject_rank,
-    DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) as subject_dense_rank
+    RANK() OVER (PARTITION BY subject ORDER BY score DESC) AS subject_rank,
+    DENSE_RANK()
+        OVER (PARTITION BY subject ORDER BY score DESC)
+        AS subject_dense_rank
 FROM student_scores
-ORDER BY subject, score DESC;
+ORDER BY subject ASC, score DESC;
 
 -- =====================================================
 -- Example 3: Multiple Ranking Functions
 -- =====================================================
 
 -- Show all ranking functions together
-SELECT 
+SELECT
     student_name,
     subject,
     score,
-    ROW_NUMBER() OVER (PARTITION BY subject ORDER BY score DESC) as row_num,
-    RANK() OVER (PARTITION BY subject ORDER BY score DESC) as rank_with_gaps,
-    DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) as dense_rank,
-    NTILE(3) OVER (PARTITION BY subject ORDER BY score DESC) as performance_tier
+    ROW_NUMBER() OVER (PARTITION BY subject ORDER BY score DESC) AS row_num,
+    RANK() OVER (PARTITION BY subject ORDER BY score DESC) AS rank_with_gaps,
+    DENSE_RANK() OVER (PARTITION BY subject ORDER BY score DESC) AS dense_rank,
+    NTILE(3) OVER (PARTITION BY subject ORDER BY score DESC) AS performance_tier
 FROM student_scores
-ORDER BY subject, score DESC;
+ORDER BY subject ASC, score DESC;
 
 -- Clean up
-DROP TABLE IF EXISTS student_scores CASCADE; 
+DROP TABLE IF EXISTS student_scores CASCADE;

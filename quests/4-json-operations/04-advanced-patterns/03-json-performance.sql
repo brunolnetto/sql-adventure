@@ -40,7 +40,7 @@ CREATE TABLE json_indexes (
 CREATE TABLE performance_metrics (
     id INT PRIMARY KEY,
     query_name VARCHAR(100),
-    execution_time_ms DECIMAL(10,3),
+    execution_time_ms DECIMAL(10, 3),
     rows_processed INT,
     index_used VARCHAR(100),
     performance_data JSONB,
@@ -223,177 +223,229 @@ INSERT INTO performance_metrics VALUES
 
 -- Example 1: Index Performance Analysis
 -- Analyze the effectiveness of different JSON indexes
-SELECT 
+SELECT
     ji.index_name,
     ji.index_type,
-    ji.index_definition->>'use_case' as use_case,
-    COUNT(pm.id) as usage_count,
-    AVG(pm.execution_time_ms) as avg_execution_time,
-    jsonb_build_object(
-        'performance_grade', CASE 
+    ji.index_definition ->> 'use_case' AS use_case,
+    COUNT(pm.id) AS usage_count,
+    AVG(pm.execution_time_ms) AS avg_execution_time,
+    JSONB_BUILD_OBJECT(
+        'performance_grade', CASE
             WHEN AVG(pm.execution_time_ms) < 5 THEN 'A'
             WHEN AVG(pm.execution_time_ms) < 20 THEN 'B'
             WHEN AVG(pm.execution_time_ms) < 50 THEN 'C'
             ELSE 'D'
         END,
-        'index_effectiveness', jsonb_agg(DISTINCT pm.performance_data->>'index_effectiveness'),
-        'query_types', jsonb_agg(DISTINCT pm.performance_data->>'query_type'),
-        'avg_rows_examined', ROUND(AVG((pm.performance_data->>'rows_examined')::INT), 2),
-        'avg_rows_returned', ROUND(AVG((pm.performance_data->>'rows_returned')::INT), 2)
-    ) as performance_metrics
-FROM json_indexes ji
-LEFT JOIN performance_metrics pm ON ji.index_name = pm.index_used
+        'index_effectiveness',
+        JSONB_AGG(DISTINCT pm.performance_data ->> 'index_effectiveness'),
+        'query_types', JSONB_AGG(DISTINCT pm.performance_data ->> 'query_type'),
+        'avg_rows_examined',
+        ROUND(AVG((pm.performance_data ->> 'rows_examined')::INT), 2),
+        'avg_rows_returned',
+        ROUND(AVG((pm.performance_data ->> 'rows_returned')::INT), 2)
+    ) AS performance_metrics
+FROM json_indexes AS ji
+LEFT JOIN performance_metrics AS pm ON ji.index_name = pm.index_used
 WHERE ji.is_active = true
 GROUP BY ji.id, ji.index_name, ji.index_type, ji.index_definition
 ORDER BY avg_execution_time;
 
 -- Example 2: Query Performance Optimization
 -- Compare query performance with and without indexes
-SELECT 
+SELECT
     pm.query_name,
     pm.index_used,
     pm.execution_time_ms,
     pm.rows_processed,
-    CASE 
+    CASE
         WHEN pm.index_used = 'none' THEN 'No Index'
         ELSE 'Indexed'
-    END as indexing_status,
-    jsonb_build_object(
-        'performance_impact', CASE 
+    END AS indexing_status,
+    JSONB_BUILD_OBJECT(
+        'performance_impact', CASE
             WHEN pm.index_used = 'none' THEN 'High Impact'
             WHEN pm.execution_time_ms < 10 THEN 'Low Impact'
             WHEN pm.execution_time_ms < 50 THEN 'Medium Impact'
             ELSE 'High Impact'
         END,
-        'optimization_potential', CASE 
+        'optimization_potential', CASE
             WHEN pm.index_used = 'none' THEN 'Add appropriate index'
-            WHEN pm.execution_time_ms > 50 THEN 'Optimize query or add composite index'
+            WHEN
+                pm.execution_time_ms > 50
+                THEN 'Optimize query or add composite index'
             ELSE 'Well optimized'
         END,
-        'query_complexity', CASE 
-            WHEN pm.performance_data->>'query_type' = 'exact_match' THEN 'Simple'
-            WHEN pm.performance_data->>'query_type' = 'pattern_match' THEN 'Medium'
-            WHEN pm.performance_data->>'query_type' = 'complex_filter' THEN 'Complex'
+        'query_complexity', CASE
+            WHEN
+                pm.performance_data ->> 'query_type' = 'exact_match'
+                THEN 'Simple'
+            WHEN
+                pm.performance_data ->> 'query_type' = 'pattern_match'
+                THEN 'Medium'
+            WHEN
+                pm.performance_data ->> 'query_type' = 'complex_filter'
+                THEN 'Complex'
             ELSE 'Unknown'
         END
-    ) as optimization_analysis
-FROM performance_metrics pm
+    ) AS optimization_analysis
+FROM performance_metrics AS pm
 ORDER BY pm.execution_time_ms DESC;
 
 -- Example 3: JSON Storage Optimization
 -- Analyze JSON storage patterns and optimization opportunities
-SELECT 
-    'storage_optimization' as analysis_type,
-    COUNT(*) as total_records,
-    jsonb_build_object(
-        'storage_metrics', jsonb_build_object(
-            'avg_data_size_bytes', ROUND(AVG((ptd.metadata->>'data_size_bytes')::INT), 2),
-            'total_storage_bytes', SUM((ptd.metadata->>'data_size_bytes')::INT),
-            'complexity_distribution', jsonb_build_object(
-                'Low', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT <= 5),
-                'Medium', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT BETWEEN 6 AND 8),
-                'High', COUNT(*) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT > 8)
+SELECT
+    'storage_optimization' AS analysis_type,
+    COUNT(*) AS total_records,
+    JSONB_BUILD_OBJECT(
+        'storage_metrics', JSONB_BUILD_OBJECT(
+            'avg_data_size_bytes',
+            ROUND(AVG((ptd.metadata ->> 'data_size_bytes')::INT), 2),
+            'total_storage_bytes',
+            SUM((ptd.metadata ->> 'data_size_bytes')::INT),
+            'complexity_distribution', JSONB_BUILD_OBJECT(
+                'Low',
+                COUNT(*) FILTER (
+                    WHERE (ptd.metadata ->> 'complexity_score')::INT <= 5
+                ),
+                'Medium',
+                COUNT(*) FILTER (
+                    WHERE (
+                        ptd.metadata ->> 'complexity_score'
+                    )::INT BETWEEN 6 AND 8
+                ),
+                'High',
+                COUNT(*) FILTER (
+                    WHERE (ptd.metadata ->> 'complexity_score')::INT > 8
+                )
             )
         ),
-        'access_pattern_analysis', jsonb_build_object(
-            'frequent_access', COUNT(*) FILTER (WHERE ptd.metadata->>'access_pattern' = 'frequent'),
-            'moderate_access', COUNT(*) FILTER (WHERE ptd.metadata->>'access_pattern' = 'moderate'),
-            'rare_access', COUNT(*) FILTER (WHERE ptd.metadata->>'access_pattern' = 'rare')
+        'access_pattern_analysis', JSONB_BUILD_OBJECT(
+            'frequent_access',
+            COUNT(*) FILTER (
+                WHERE ptd.metadata ->> 'access_pattern' = 'frequent'
+            ),
+            'moderate_access',
+            COUNT(*) FILTER (
+                WHERE ptd.metadata ->> 'access_pattern' = 'moderate'
+            ),
+            'rare_access',
+            COUNT(*) FILTER (WHERE ptd.metadata ->> 'access_pattern' = 'rare')
         ),
-        'optimization_recommendations', jsonb_build_object(
-            'large_objects', jsonb_agg(ptd.id) FILTER (WHERE (ptd.metadata->>'data_size_bytes')::INT > 600),
-            'high_complexity', jsonb_agg(ptd.id) FILTER (WHERE (ptd.metadata->>'complexity_score')::INT > 8),
-            'frequent_access_large', jsonb_agg(ptd.id) FILTER (
-                WHERE ptd.metadata->>'access_pattern' = 'frequent' 
-                AND (ptd.metadata->>'data_size_bytes')::INT > 500
+        'optimization_recommendations', JSONB_BUILD_OBJECT(
+            'large_objects',
+            JSONB_AGG(ptd.id) FILTER (
+                WHERE (ptd.metadata ->> 'data_size_bytes')::INT > 600
+            ),
+            'high_complexity',
+            JSONB_AGG(ptd.id) FILTER (
+                WHERE (ptd.metadata ->> 'complexity_score')::INT > 8
+            ),
+            'frequent_access_large', JSONB_AGG(ptd.id) FILTER (
+                WHERE ptd.metadata ->> 'access_pattern' = 'frequent'
+                AND (ptd.metadata ->> 'data_size_bytes')::INT > 500
             )
         )
-    ) as storage_analysis
-FROM performance_test_data ptd;
+    ) AS storage_analysis
+FROM performance_test_data AS ptd;
 
 -- Example 4: Performance Monitoring and Alerting
 -- Create performance monitoring system for JSON operations
-SELECT 
-    'performance_monitoring' as monitoring_type,
-    COUNT(*) as total_queries,
-    jsonb_build_object(
-        'performance_thresholds', jsonb_build_object(
+SELECT
+    'performance_monitoring' AS monitoring_type,
+    COUNT(*) AS total_queries,
+    JSONB_BUILD_OBJECT(
+        'performance_thresholds', JSONB_BUILD_OBJECT(
             'fast_queries', COUNT(*) FILTER (WHERE execution_time_ms < 10),
-            'medium_queries', COUNT(*) FILTER (WHERE execution_time_ms BETWEEN 10 AND 50),
+            'medium_queries',
+            COUNT(*) FILTER (WHERE execution_time_ms BETWEEN 10 AND 50),
             'slow_queries', COUNT(*) FILTER (WHERE execution_time_ms > 50),
             'critical_queries', COUNT(*) FILTER (WHERE execution_time_ms > 100)
         ),
-        'performance_alerts', jsonb_build_object(
-            'slow_query_alert', CASE 
-                WHEN COUNT(*) FILTER (WHERE execution_time_ms > 50) > 0 THEN true
-                ELSE false
-            END,
-            'critical_query_alert', CASE 
-                WHEN COUNT(*) FILTER (WHERE execution_time_ms > 100) > 0 THEN true
-                ELSE false
-            END,
-            'index_missing_alert', CASE 
-                WHEN COUNT(*) FILTER (WHERE index_used = 'none') > 0 THEN true
-                ELSE false
-            END
+        'performance_alerts', JSONB_BUILD_OBJECT(
+            'slow_query_alert', COALESCE(COUNT(*) FILTER (WHERE execution_time_ms > 50) > 0, FALSE),
+            'critical_query_alert', COALESCE(COUNT(*) FILTER (WHERE execution_time_ms > 100) > 0, FALSE),
+            'index_missing_alert', COALESCE(COUNT(*) FILTER (WHERE index_used = 'none') > 0, FALSE)
         ),
-        'performance_trends', jsonb_build_object(
+        'performance_trends', JSONB_BUILD_OBJECT(
             'avg_execution_time', ROUND(AVG(execution_time_ms), 2),
             'max_execution_time', MAX(execution_time_ms),
             'min_execution_time', MIN(execution_time_ms),
             'execution_time_variance', ROUND(VARIANCE(execution_time_ms), 2)
         ),
-        'query_distribution', jsonb_build_object(
-            'simple_extraction', COUNT(*) FILTER (WHERE query_name = 'simple_extraction'),
-            'nested_extraction', COUNT(*) FILTER (WHERE query_name = 'nested_extraction'),
-            'array_operations', COUNT(*) FILTER (WHERE query_name = 'array_operations'),
-            'complex_aggregation', COUNT(*) FILTER (WHERE query_name = 'complex_aggregation')
+        'query_distribution', JSONB_BUILD_OBJECT(
+            'simple_extraction',
+            COUNT(*) FILTER (WHERE query_name = 'simple_extraction'),
+            'nested_extraction',
+            COUNT(*) FILTER (WHERE query_name = 'nested_extraction'),
+            'array_operations',
+            COUNT(*) FILTER (WHERE query_name = 'array_operations'),
+            'complex_aggregation',
+            COUNT(*) FILTER (WHERE query_name = 'complex_aggregation')
         )
-    ) as monitoring_metrics
+    ) AS monitoring_metrics
 FROM performance_metrics;
 
 -- Example 5: Best Practices Implementation
 -- Implement and validate JSON performance best practices
-SELECT 
-    'best_practices_validation' as validation_type,
-    jsonb_build_object(
-        'indexing_best_practices', jsonb_build_object(
+SELECT
+    'best_practices_validation' AS validation_type,
+    JSONB_BUILD_OBJECT(
+        'indexing_best_practices', JSONB_BUILD_OBJECT(
             'appropriate_indexes', COUNT(*) FILTER (WHERE index_used != 'none'),
             'missing_indexes', COUNT(*) FILTER (WHERE index_used = 'none'),
             'index_coverage', ROUND(
-                (COUNT(*) FILTER (WHERE index_used != 'none')::DECIMAL / COUNT(*)) * 100, 2
+                (
+                    COUNT(*) FILTER (WHERE index_used != 'none')::DECIMAL
+                    / COUNT(*)
+                )
+                * 100,
+                2
             )
         ),
-        'query_optimization_best_practices', jsonb_build_object(
+        'query_optimization_best_practices', JSONB_BUILD_OBJECT(
             'fast_queries_percentage', ROUND(
-                (COUNT(*) FILTER (WHERE execution_time_ms < 10)::DECIMAL / COUNT(*)) * 100, 2
+                (
+                    COUNT(*) FILTER (WHERE execution_time_ms < 10)::DECIMAL
+                    / COUNT(*)
+                )
+                * 100,
+                2
             ),
             'slow_queries_percentage', ROUND(
-                (COUNT(*) FILTER (WHERE execution_time_ms > 50)::DECIMAL / COUNT(*)) * 100, 2
+                (
+                    COUNT(*) FILTER (WHERE execution_time_ms > 50)::DECIMAL
+                    / COUNT(*)
+                )
+                * 100,
+                2
             ),
             'efficient_queries', COUNT(*) FILTER (WHERE execution_time_ms < 20)
         ),
-        'storage_best_practices', jsonb_build_object(
-            'avg_object_size_optimal', CASE 
-                WHEN AVG((ptd.metadata->>'data_size_bytes')::INT) < 1000 THEN true
-                ELSE false
-            END,
-            'large_objects_count', COUNT(*) FILTER (WHERE (ptd.metadata->>'data_size_bytes')::INT > 1000),
-            'complexity_distribution_healthy', CASE 
-                WHEN AVG((ptd.metadata->>'complexity_score')::INT) < 8 THEN true
-                ELSE false
-            END
+        'storage_best_practices', JSONB_BUILD_OBJECT(
+            'avg_object_size_optimal', COALESCE(AVG((ptd.metadata ->> 'data_size_bytes')::INT) < 1000, FALSE),
+            'large_objects_count',
+            COUNT(*) FILTER (
+                WHERE (ptd.metadata ->> 'data_size_bytes')::INT > 1000
+            ),
+            'complexity_distribution_healthy', COALESCE(AVG((ptd.metadata ->> 'complexity_score')::INT) < 8, FALSE)
         ),
-        'recommendations', jsonb_build_object(
-            'add_indexes_for', jsonb_agg(DISTINCT query_name) FILTER (WHERE index_used = 'none'),
-            'optimize_queries', jsonb_agg(DISTINCT query_name) FILTER (WHERE execution_time_ms > 50),
-            'consider_partitioning', jsonb_agg(ptd.id) FILTER (WHERE (ptd.metadata->>'data_size_bytes')::INT > 1000)
+        'recommendations', JSONB_BUILD_OBJECT(
+            'add_indexes_for',
+            JSONB_AGG(DISTINCT query_name) FILTER (WHERE index_used = 'none'),
+            'optimize_queries',
+            JSONB_AGG(DISTINCT query_name) FILTER (
+                WHERE execution_time_ms > 50
+            ),
+            'consider_partitioning',
+            JSONB_AGG(ptd.id) FILTER (
+                WHERE (ptd.metadata ->> 'data_size_bytes')::INT > 1000
+            )
         )
-    ) as best_practices_analysis
-FROM performance_metrics pm
-CROSS JOIN performance_test_data ptd;
+    ) AS best_practices_analysis
+FROM performance_metrics
+CROSS JOIN performance_test_data AS ptd;
 
 -- Clean up
 DROP TABLE IF EXISTS performance_test_data CASCADE;
 DROP TABLE IF EXISTS json_indexes CASCADE;
-DROP TABLE IF EXISTS performance_metrics CASCADE; 
+DROP TABLE IF EXISTS performance_metrics CASCADE;

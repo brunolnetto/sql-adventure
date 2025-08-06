@@ -10,12 +10,12 @@
 CREATE TABLE performance_logs (
     log_id BIGSERIAL PRIMARY KEY,
     query_text TEXT,
-    execution_time_ms DECIMAL(10,2),
+    execution_time_ms DECIMAL(10, 2),
     rows_returned INT,
     rows_scanned INT,
-    cpu_time_ms DECIMAL(10,2),
-    io_time_ms DECIMAL(10,2),
-    memory_usage_mb DECIMAL(10,2),
+    cpu_time_ms DECIMAL(10, 2),
+    io_time_ms DECIMAL(10, 2),
+    memory_usage_mb DECIMAL(10, 2),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     session_id VARCHAR(50),
     user_name VARCHAR(50)
@@ -25,8 +25,8 @@ CREATE TABLE slow_queries (
     query_id BIGSERIAL PRIMARY KEY,
     query_hash VARCHAR(64),
     query_text TEXT,
-    avg_execution_time_ms DECIMAL(10,2),
-    max_execution_time_ms DECIMAL(10,2),
+    avg_execution_time_ms DECIMAL(10, 2),
+    max_execution_time_ms DECIMAL(10, 2),
     execution_count INT,
     total_rows_returned BIGINT,
     first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,14 +37,14 @@ CREATE TABLE slow_queries (
 -- Demonstrate analyzing query performance in detail
 
 -- Function to log query performance
-CREATE OR REPLACE FUNCTION log_query_performance(
+CREATE OR REPLACE FUNCTION LOG_QUERY_PERFORMANCE(
     p_query_text TEXT,
-    p_execution_time_ms DECIMAL(10,2),
+    p_execution_time_ms DECIMAL(10, 2),
     p_rows_returned INT,
     p_rows_scanned INT,
-    p_cpu_time_ms DECIMAL(10,2),
-    p_io_time_ms DECIMAL(10,2),
-    p_memory_usage_mb DECIMAL(10,2),
+    p_cpu_time_ms DECIMAL(10, 2),
+    p_io_time_ms DECIMAL(10, 2),
+    p_memory_usage_mb DECIMAL(10, 2),
     p_session_id VARCHAR(50),
     p_user_name VARCHAR(50)
 ) RETURNS VOID AS $$
@@ -64,34 +64,40 @@ $$ LANGUAGE plpgsql;
 
 -- Create system performance view
 CREATE VIEW v_system_performance AS
-SELECT 
-    'Database Size' as metric,
-    pg_size_pretty(pg_database_size(current_database())) as value
+SELECT
+    'Database Size' AS metric,
+    PG_SIZE_PRETTY(PG_DATABASE_SIZE(CURRENT_DATABASE())) AS value
 UNION ALL
-SELECT 
+SELECT
     'Active Connections',
-    count(*)::text
+    COUNT(*)::TEXT
 FROM pg_stat_activity
 WHERE state = 'active'
 UNION ALL
-SELECT 
+SELECT
     'Idle Connections',
-    count(*)::text
+    COUNT(*)::TEXT
 FROM pg_stat_activity
 WHERE state = 'idle'
 UNION ALL
-SELECT 
+SELECT
     'Cache Hit Ratio',
     ROUND(
-        (sum(heap_blks_hit) * 100.0 / (sum(heap_blks_hit) + sum(heap_blks_read))), 2
-    )::text || '%'
+        (
+            SUM(heap_blks_hit)
+            * 100.0
+            / (SUM(heap_blks_hit) + SUM(heap_blks_read))
+        ),
+        2
+    )::TEXT || '%'
 FROM pg_statio_user_tables
 UNION ALL
-SELECT 
+SELECT
     'Index Cache Hit Ratio',
     ROUND(
-        (sum(idx_blks_hit) * 100.0 / (sum(idx_blks_hit) + sum(idx_blks_read))), 2
-    )::text || '%'
+        (SUM(idx_blks_hit) * 100.0 / (SUM(idx_blks_hit) + SUM(idx_blks_read))),
+        2
+    )::TEXT || '%'
 FROM pg_statio_user_indexes;
 
 -- Example 4: Table and Index Performance Analysis
@@ -99,37 +105,40 @@ FROM pg_statio_user_indexes;
 
 -- Create comprehensive table performance view
 CREATE VIEW v_table_performance AS
-SELECT 
+SELECT
     schemaname,
     tablename,
-    n_tup_ins as inserts,
-    n_tup_upd as updates,
-    n_tup_del as deletes,
-    n_live_tup as live_tuples,
-    n_dead_tup as dead_tuples,
-    ROUND(n_dead_tup * 100.0 / NULLIF(n_live_tup + n_dead_tup, 0), 2) as dead_tuple_ratio,
-    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as table_size,
+    n_tup_ins AS inserts,
+    n_tup_upd AS updates,
+    n_tup_del AS deletes,
+    n_live_tup AS live_tuples,
+    n_dead_tup AS dead_tuples,
     last_vacuum,
     last_autovacuum,
     last_analyze,
-    last_autoanalyze
+    last_autoanalyze,
+    ROUND(n_dead_tup * 100.0 / NULLIF(n_live_tup + n_dead_tup, 0), 2)
+        AS dead_tuple_ratio,
+    PG_SIZE_PRETTY(PG_TOTAL_RELATION_SIZE(schemaname || '.' || tablename))
+        AS table_size
 FROM pg_stat_user_tables
 ORDER BY n_live_tup DESC;
 
 -- Create index performance view
 CREATE VIEW v_index_performance AS
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
-    idx_scan as scans,
-    idx_tup_read as tuples_read,
-    idx_tup_fetch as tuples_fetched,
-    CASE 
+    idx_scan AS scans,
+    idx_tup_read AS tuples_read,
+    idx_tup_fetch AS tuples_fetched,
+    CASE
         WHEN idx_scan = 0 THEN 0
         ELSE ROUND(idx_tup_fetch * 100.0 / idx_tup_read, 2)
-    END as fetch_ratio,
-    pg_size_pretty(pg_relation_size(schemaname||'.'||indexname)) as index_size
+    END AS fetch_ratio,
+    PG_SIZE_PRETTY(PG_RELATION_SIZE(schemaname || '.' || indexname))
+        AS index_size
 FROM pg_stat_user_indexes
 ORDER BY idx_scan DESC;
 
@@ -137,11 +146,13 @@ ORDER BY idx_scan DESC;
 -- Demonstrate tracking query performance over time
 
 -- Function to identify slow queries
-CREATE OR REPLACE FUNCTION identify_slow_queries(p_threshold_ms DECIMAL(10,2) DEFAULT 1000)
+CREATE OR REPLACE FUNCTION IDENTIFY_SLOW_QUERIES(
+    p_threshold_ms DECIMAL(10, 2) DEFAULT 1000
+)
 RETURNS TABLE (
     query_hash VARCHAR(64),
-    avg_time_ms DECIMAL(10,2),
-    max_time_ms DECIMAL(10,2),
+    avg_time_ms DECIMAL(10, 2),
+    max_time_ms DECIMAL(10, 2),
     execution_count INT,
     total_rows BIGINT,
     sample_query TEXT
@@ -166,7 +177,7 @@ $$ LANGUAGE plpgsql;
 -- Demonstrate setting up performance alerts
 
 -- Function to check for performance issues
-CREATE OR REPLACE FUNCTION check_performance_issues()
+CREATE OR REPLACE FUNCTION CHECK_PERFORMANCE_ISSUES()
 RETURNS TABLE (
     issue_type VARCHAR(50),
     description TEXT,
@@ -230,23 +241,23 @@ $$ LANGUAGE plpgsql;
 -- Demonstrate generating performance reports
 
 -- Generate performance summary report
-SELECT 
-    'Performance Summary Report' as report_title,
-    CURRENT_TIMESTAMP as report_time;
+SELECT
+    'Performance Summary Report' AS report_title,
+    CURRENT_TIMESTAMP AS report_time;
 
 -- Top 10 slowest queries
-SELECT 
-    'Top 10 Slowest Queries' as section,
+SELECT
+    'Top 10 Slowest Queries' AS section,
     query_hash,
     avg_time_ms,
     execution_count,
     sample_query
-FROM identify_slow_queries(100)
+FROM IDENTIFY_SLOW_QUERIES(100)
 LIMIT 10;
 
 -- Table performance summary
-SELECT 
-    'Table Performance Summary' as section,
+SELECT
+    'Table Performance Summary' AS section,
     tablename,
     live_tuples,
     dead_tuple_ratio,
@@ -256,8 +267,8 @@ WHERE live_tuples > 1000
 ORDER BY live_tuples DESC;
 
 -- Index usage summary
-SELECT 
-    'Index Usage Summary' as section,
+SELECT
+    'Index Usage Summary' AS section,
     indexname,
     scans,
     fetch_ratio,
@@ -267,20 +278,22 @@ WHERE scans > 0
 ORDER BY scans DESC;
 
 -- Performance issues
-SELECT 
-    'Performance Issues' as section,
+SELECT
+    'Performance Issues' AS section,
     issue_type,
     description,
     severity,
     recommendation
-FROM check_performance_issues();
+FROM CHECK_PERFORMANCE_ISSUES();
 
 -- Clean up
-DROP FUNCTION IF EXISTS log_query_performance(TEXT, DECIMAL, INT, INT, DECIMAL, DECIMAL, DECIMAL, VARCHAR, VARCHAR) CASCADE;
+DROP FUNCTION IF EXISTS log_query_performance(
+    TEXT, DECIMAL, INT, INT, DECIMAL, DECIMAL, DECIMAL, VARCHAR, VARCHAR
+) CASCADE;
 DROP FUNCTION IF EXISTS identify_slow_queries(DECIMAL) CASCADE;
 DROP FUNCTION IF EXISTS check_performance_issues() CASCADE;
 DROP VIEW IF EXISTS v_system_performance CASCADE;
 DROP VIEW IF EXISTS v_table_performance CASCADE;
 DROP VIEW IF EXISTS v_index_performance CASCADE;
 DROP TABLE IF EXISTS performance_logs CASCADE;
-DROP TABLE IF EXISTS slow_queries CASCADE; 
+DROP TABLE IF EXISTS slow_queries CASCADE;

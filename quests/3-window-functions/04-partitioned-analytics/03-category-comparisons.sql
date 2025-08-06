@@ -25,7 +25,7 @@ CREATE TABLE product_sales (
     product_name VARCHAR(100),
     category VARCHAR(50),
     subcategory VARCHAR(50),
-    sales_amount DECIMAL(10,2),
+    sales_amount DECIMAL(10, 2),
     units_sold INT,
     sale_date DATE,
     region VARCHAR(50)
@@ -34,11 +34,47 @@ CREATE TABLE product_sales (
 -- Insert realistic sales data across multiple categories
 INSERT INTO product_sales VALUES
 -- Electronics Category
-(1, 'Laptop Pro', 'Electronics', 'Computers', 1200.00, 15, '2024-01-15', 'North'),
-(2, 'Wireless Mouse', 'Electronics', 'Accessories', 45.00, 120, '2024-01-16', 'North'),
-(3, 'Gaming Keyboard', 'Electronics', 'Accessories', 150.00, 25, '2024-01-17', 'South'),
+(
+    1,
+    'Laptop Pro',
+    'Electronics',
+    'Computers',
+    1200.00,
+    15,
+    '2024-01-15',
+    'North'
+),
+(
+    2,
+    'Wireless Mouse',
+    'Electronics',
+    'Accessories',
+    45.00,
+    120,
+    '2024-01-16',
+    'North'
+),
+(
+    3,
+    'Gaming Keyboard',
+    'Electronics',
+    'Accessories',
+    150.00,
+    25,
+    '2024-01-17',
+    'South'
+),
 (4, '4K Monitor', 'Electronics', 'Displays', 450.00, 8, '2024-01-18', 'East'),
-(5, 'Bluetooth Headphones', 'Electronics', 'Audio', 89.99, 45, '2024-01-19', 'West'),
+(
+    5,
+    'Bluetooth Headphones',
+    'Electronics',
+    'Audio',
+    89.99,
+    45,
+    '2024-01-19',
+    'West'
+),
 (6, 'Tablet Air', 'Electronics', 'Mobile', 350.00, 12, '2024-01-20', 'North'),
 
 -- Clothing Category
@@ -50,11 +86,56 @@ INSERT INTO product_sales VALUES
 (12, 'Sneakers', 'Clothing', 'Footwear', 95.00, 28, '2024-01-20', 'South'),
 
 -- Home & Garden Category
-(13, 'Garden Hose', 'Home & Garden', 'Outdoor', 35.00, 40, '2024-01-15', 'West'),
-(14, 'Kitchen Blender', 'Home & Garden', 'Appliances', 75.00, 15, '2024-01-16', 'East'),
-(15, 'LED Light Bulbs', 'Home & Garden', 'Lighting', 12.99, 200, '2024-01-17', 'North'),
-(16, 'Coffee Maker', 'Home & Garden', 'Appliances', 120.00, 10, '2024-01-18', 'South'),
-(17, 'Plant Pot Set', 'Home & Garden', 'Decor', 45.00, 25, '2024-01-19', 'West'),
+(
+    13,
+    'Garden Hose',
+    'Home & Garden',
+    'Outdoor',
+    35.00,
+    40,
+    '2024-01-15',
+    'West'
+),
+(
+    14,
+    'Kitchen Blender',
+    'Home & Garden',
+    'Appliances',
+    75.00,
+    15,
+    '2024-01-16',
+    'East'
+),
+(
+    15,
+    'LED Light Bulbs',
+    'Home & Garden',
+    'Lighting',
+    12.99,
+    200,
+    '2024-01-17',
+    'North'
+),
+(
+    16,
+    'Coffee Maker',
+    'Home & Garden',
+    'Appliances',
+    120.00,
+    10,
+    '2024-01-18',
+    'South'
+),
+(
+    17,
+    'Plant Pot Set',
+    'Home & Garden',
+    'Decor',
+    45.00,
+    25,
+    '2024-01-19',
+    'West'
+),
 (18, 'Tool Kit', 'Home & Garden', 'Tools', 85.00, 8, '2024-01-20', 'East');
 
 -- =====================================================
@@ -62,19 +143,24 @@ INSERT INTO product_sales VALUES
 -- =====================================================
 
 -- Analyze regional performance within categories
-SELECT 
+SELECT
     category,
     region,
-    COUNT(*) as product_count,
-    ROUND(AVG(sales_amount), 2) as avg_sales,
-    ROUND(SUM(sales_amount), 2) as total_sales,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY SUM(sales_amount) DESC) as category_region_rank,
+    COUNT(*) AS product_count,
+    ROUND(AVG(sales_amount), 2) AS avg_sales,
+    ROUND(SUM(sales_amount), 2) AS total_sales,
+    ROW_NUMBER()
+        OVER (PARTITION BY category ORDER BY SUM(sales_amount) DESC)
+        AS category_region_rank,
     ROUND(
-        SUM(sales_amount) * 100.0 / SUM(SUM(sales_amount)) OVER (PARTITION BY category), 2
-    ) as category_contribution_pct
+        SUM(sales_amount)
+        * 100.0
+        / SUM(SUM(sales_amount)) OVER (PARTITION BY category),
+        2
+    ) AS category_contribution_pct
 FROM product_sales
 GROUP BY category, region
-ORDER BY category, total_sales DESC;
+ORDER BY category ASC, total_sales DESC;
 
 -- =====================================================
 -- Example 2: Performance Gap Analysis
@@ -82,14 +168,15 @@ ORDER BY category, total_sales DESC;
 
 -- Identify performance gaps within categories
 WITH category_stats AS (
-    SELECT 
+    SELECT
         category,
-        AVG(sales_amount) as category_avg,
-        STDDEV(sales_amount) as category_stddev
+        AVG(sales_amount) AS category_avg,
+        STDDEV(sales_amount) AS category_stddev
     FROM product_sales
     GROUP BY category
 )
-SELECT 
+
+SELECT
     ps.product_name,
     ps.category,
     ps.sales_amount,
@@ -97,39 +184,43 @@ SELECT
     cs.category_stddev,
     ROUND(
         (ps.sales_amount - cs.category_avg) / cs.category_stddev, 2
-    ) as z_score,
-    CASE 
-        WHEN ps.sales_amount > cs.category_avg + cs.category_stddev THEN 'High Performer'
-        WHEN ps.sales_amount < cs.category_avg - cs.category_stddev THEN 'Low Performer'
+    ) AS z_score,
+    CASE
+        WHEN
+            ps.sales_amount > cs.category_avg + cs.category_stddev
+            THEN 'High Performer'
+        WHEN
+            ps.sales_amount < cs.category_avg - cs.category_stddev
+            THEN 'Low Performer'
         ELSE 'Average Performer'
-    END as performance_level
-FROM product_sales ps
-JOIN category_stats cs ON ps.category = cs.category
-ORDER BY ps.category, ps.sales_amount DESC;
+    END AS performance_level
+FROM product_sales AS ps
+INNER JOIN category_stats AS cs ON ps.category = cs.category
+ORDER BY ps.category ASC, ps.sales_amount DESC;
 
 -- =====================================================
 -- Example 3: Rolling Category Analysis
 -- =====================================================
 
 -- Show rolling averages within categories
-SELECT 
+SELECT
     product_name,
     category,
     sales_amount,
     ROUND(
         AVG(sales_amount) OVER (
-            PARTITION BY category 
-            ORDER BY sales_amount 
+            PARTITION BY category
+            ORDER BY sales_amount
             ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
         ), 2
-    ) as rolling_avg_3,
+    ) AS rolling_avg_3,
     ROUND(
         AVG(sales_amount) OVER (
-            PARTITION BY category 
-            ORDER BY sales_amount 
+            PARTITION BY category
+            ORDER BY sales_amount
             ROWS UNBOUNDED PRECEDING
         ), 2
-    ) as cumulative_avg
+    ) AS cumulative_avg
 FROM product_sales
 ORDER BY category, sales_amount;
 
@@ -138,25 +229,25 @@ ORDER BY category, sales_amount;
 -- =====================================================
 
 -- Comprehensive category performance summary
-SELECT 
+SELECT
     category,
-    COUNT(*) as total_products,
-    ROUND(AVG(sales_amount), 2) as avg_sales,
-    ROUND(SUM(sales_amount), 2) as total_sales,
-    ROUND(MAX(sales_amount), 2) as max_sales,
-    ROUND(MIN(sales_amount), 2) as min_sales,
+    COUNT(*) AS total_products,
+    ROUND(AVG(sales_amount), 2) AS avg_sales,
+    ROUND(SUM(sales_amount), 2) AS total_sales,
+    ROUND(MAX(sales_amount), 2) AS max_sales,
+    ROUND(MIN(sales_amount), 2) AS min_sales,
     ROUND(
         (MAX(sales_amount) - MIN(sales_amount)) * 100.0 / AVG(sales_amount), 2
-    ) as variation_pct,
+    ) AS variation_pct,
     ROUND(
         SUM(sales_amount) * 100.0 / SUM(SUM(sales_amount)) OVER (), 2
-    ) as market_share_pct,
+    ) AS market_share_pct,
     ROUND(
         PERCENT_RANK() OVER (ORDER BY SUM(sales_amount)) * 100, 1
-    ) as category_percentile
+    ) AS category_percentile
 FROM product_sales
 GROUP BY category
 ORDER BY total_sales DESC;
 
 -- Clean up
-DROP TABLE IF EXISTS product_sales CASCADE; 
+DROP TABLE IF EXISTS product_sales CASCADE;

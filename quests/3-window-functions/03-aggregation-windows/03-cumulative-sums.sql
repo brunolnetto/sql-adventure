@@ -27,7 +27,7 @@ CREATE TABLE sales_transactions (
     transaction_id INT PRIMARY KEY,
     date DATE,
     product_category VARCHAR(50),
-    sales_amount DECIMAL(10,2),
+    sales_amount DECIMAL(10, 2),
     customer_id INT,
     region VARCHAR(50)
 );
@@ -51,36 +51,36 @@ INSERT INTO sales_transactions VALUES
 (15, '2024-01-08', 'Electronics', 1900.00, 115, 'South');
 
 -- Demonstrate cumulative sums and running totals
-SELECT 
+SELECT
     date,
     product_category,
     sales_amount,
     -- Cumulative sum by date
     SUM(sales_amount) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS UNBOUNDED PRECEDING
-    ) as cumulative_total,
+    ) AS cumulative_total,
     -- Cumulative sum by category
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
-        ORDER BY date 
+        PARTITION BY product_category
+        ORDER BY date
         ROWS UNBOUNDED PRECEDING
-    ) as category_cumulative,
+    ) AS category_cumulative,
     -- Running total for last 3 days
     SUM(sales_amount) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as rolling_3day_total,
+    ) AS rolling_3day_total,
     -- Percentage of total sales
     ROUND(
         sales_amount * 100.0 / SUM(sales_amount) OVER (), 2
-    ) as percent_of_total,
+    ) AS percent_of_total,
     -- Percentage within category
     ROUND(
         sales_amount * 100.0 / SUM(sales_amount) OVER (
             PARTITION BY product_category
         ), 2
-    ) as percent_within_category
+    ) AS percent_within_category
 FROM sales_transactions
 ORDER BY date, product_category;
 
@@ -102,24 +102,150 @@ CREATE TABLE project_tasks (
 
 -- Insert sample project data
 INSERT INTO project_tasks VALUES
-(1, 'Website Redesign', 'Requirements Analysis', '2024-01-01', '2024-01-03', 16, 18, 'Completed'),
-(2, 'Website Redesign', 'Design Mockups', '2024-01-04', '2024-01-08', 24, 22, 'Completed'),
-(3, 'Website Redesign', 'Frontend Development', '2024-01-09', '2024-01-15', 40, 45, 'In Progress'),
-(4, 'Website Redesign', 'Backend Development', '2024-01-10', '2024-01-16', 32, 30, 'In Progress'),
-(5, 'Website Redesign', 'Testing', '2024-01-17', '2024-01-19', 16, NULL, 'Not Started'),
+(
+    1,
+    'Website Redesign',
+    'Requirements Analysis',
+    '2024-01-01',
+    '2024-01-03',
+    16,
+    18,
+    'Completed'
+),
+(
+    2,
+    'Website Redesign',
+    'Design Mockups',
+    '2024-01-04',
+    '2024-01-08',
+    24,
+    22,
+    'Completed'
+),
+(
+    3,
+    'Website Redesign',
+    'Frontend Development',
+    '2024-01-09',
+    '2024-01-15',
+    40,
+    45,
+    'In Progress'
+),
+(
+    4,
+    'Website Redesign',
+    'Backend Development',
+    '2024-01-10',
+    '2024-01-16',
+    32,
+    30,
+    'In Progress'
+),
+(
+    5,
+    'Website Redesign',
+    'Testing',
+    '2024-01-17',
+    '2024-01-19',
+    16,
+    NULL,
+    'Not Started'
+),
 (6, 'Mobile App', 'UI Design', '2024-01-01', '2024-01-05', 20, 19, 'Completed'),
-(7, 'Mobile App', 'iOS Development', '2024-01-06', '2024-01-12', 35, 38, 'Completed'),
-(8, 'Mobile App', 'Android Development', '2024-01-07', '2024-01-13', 35, 32, 'Completed'),
-(9, 'Mobile App', 'Testing & QA', '2024-01-14', '2024-01-18', 20, 22, 'In Progress'),
-(10, 'Mobile App', 'App Store Submission', '2024-01-19', '2024-01-20', 8, NULL, 'Not Started'),
-(11, 'Database Migration', 'Data Analysis', '2024-01-01', '2024-01-02', 12, 10, 'Completed'),
-(12, 'Database Migration', 'Schema Design', '2024-01-03', '2024-01-05', 16, 14, 'Completed'),
-(13, 'Database Migration', 'Migration Scripts', '2024-01-06', '2024-01-10', 24, 26, 'Completed'),
-(14, 'Database Migration', 'Testing', '2024-01-11', '2024-01-12', 12, 11, 'Completed'),
-(15, 'Database Migration', 'Go-Live', '2024-01-13', '2024-01-13', 8, 6, 'Completed');
+(
+    7,
+    'Mobile App',
+    'iOS Development',
+    '2024-01-06',
+    '2024-01-12',
+    35,
+    38,
+    'Completed'
+),
+(
+    8,
+    'Mobile App',
+    'Android Development',
+    '2024-01-07',
+    '2024-01-13',
+    35,
+    32,
+    'Completed'
+),
+(
+    9,
+    'Mobile App',
+    'Testing & QA',
+    '2024-01-14',
+    '2024-01-18',
+    20,
+    22,
+    'In Progress'
+),
+(
+    10,
+    'Mobile App',
+    'App Store Submission',
+    '2024-01-19',
+    '2024-01-20',
+    8,
+    NULL,
+    'Not Started'
+),
+(
+    11,
+    'Database Migration',
+    'Data Analysis',
+    '2024-01-01',
+    '2024-01-02',
+    12,
+    10,
+    'Completed'
+),
+(
+    12,
+    'Database Migration',
+    'Schema Design',
+    '2024-01-03',
+    '2024-01-05',
+    16,
+    14,
+    'Completed'
+),
+(
+    13,
+    'Database Migration',
+    'Migration Scripts',
+    '2024-01-06',
+    '2024-01-10',
+    24,
+    26,
+    'Completed'
+),
+(
+    14,
+    'Database Migration',
+    'Testing',
+    '2024-01-11',
+    '2024-01-12',
+    12,
+    11,
+    'Completed'
+),
+(
+    15,
+    'Database Migration',
+    'Go-Live',
+    '2024-01-13',
+    '2024-01-13',
+    8,
+    6,
+    'Completed'
+);
 
 -- Analyze project progress with cumulative metrics
-SELECT 
+SELECT
     project_name,
     task_name,
     start_date,
@@ -129,38 +255,38 @@ SELECT
     status,
     -- Cumulative estimated hours by project
     SUM(estimated_hours) OVER (
-        PARTITION BY project_name 
-        ORDER BY start_date 
+        PARTITION BY project_name
+        ORDER BY start_date
         ROWS UNBOUNDED PRECEDING
-    ) as cumulative_estimated,
+    ) AS cumulative_estimated,
     -- Cumulative actual hours by project
     SUM(COALESCE(actual_hours, 0)) OVER (
-        PARTITION BY project_name 
-        ORDER BY start_date 
+        PARTITION BY project_name
+        ORDER BY start_date
         ROWS UNBOUNDED PRECEDING
-    ) as cumulative_actual,
+    ) AS cumulative_actual,
     -- Project completion percentage
     ROUND(
         SUM(COALESCE(actual_hours, 0)) OVER (
-            PARTITION BY project_name 
-            ORDER BY start_date 
+            PARTITION BY project_name
+            ORDER BY start_date
             ROWS UNBOUNDED PRECEDING
         ) * 100.0 / SUM(estimated_hours) OVER (
             PARTITION BY project_name
         ), 2
-    ) as project_completion_percent,
+    ) AS project_completion_percent,
     -- Efficiency ratio (actual vs estimated)
-    CASE 
-        WHEN estimated_hours > 0 THEN 
-            ROUND(COALESCE(actual_hours, 0) * 100.0 / estimated_hours, 2)
-        ELSE NULL
-    END as efficiency_percent,
+    CASE
+        WHEN estimated_hours > 0
+            THEN
+                ROUND(COALESCE(actual_hours, 0) * 100.0 / estimated_hours, 2)
+    END AS efficiency_percent,
     -- Running average of actual hours
     AVG(COALESCE(actual_hours, 0)) OVER (
-        PARTITION BY project_name 
-        ORDER BY start_date 
+        PARTITION BY project_name
+        ORDER BY start_date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as running_avg_hours
+    ) AS running_avg_hours
 FROM project_tasks
 ORDER BY project_name, start_date;
 
@@ -173,9 +299,9 @@ CREATE TABLE customer_orders (
     order_id INT PRIMARY KEY,
     customer_id INT,
     order_date DATE,
-    order_amount DECIMAL(10,2),
-    shipping_cost DECIMAL(8,2),
-    discount_amount DECIMAL(8,2),
+    order_amount DECIMAL(10, 2),
+    shipping_cost DECIMAL(8, 2),
+    discount_amount DECIMAL(8, 2),
     customer_tier VARCHAR(20)
 );
 
@@ -198,7 +324,7 @@ INSERT INTO customer_orders VALUES
 (15, 101, '2024-01-08', 220.00, 10.00, 22.00, 'Bronze');
 
 -- Analyze customer spending patterns
-SELECT 
+SELECT
     customer_id,
     order_date,
     order_amount,
@@ -206,38 +332,38 @@ SELECT
     discount_amount,
     customer_tier,
     -- Net amount (order - discount + shipping)
-    order_amount - discount_amount + shipping_cost as net_amount,
+    order_amount - discount_amount + shipping_cost AS net_amount,
     -- Cumulative spending by customer
     SUM(order_amount) OVER (
-        PARTITION BY customer_id 
-        ORDER BY order_date 
+        PARTITION BY customer_id
+        ORDER BY order_date
         ROWS UNBOUNDED PRECEDING
-    ) as customer_cumulative_spending,
+    ) AS customer_cumulative_spending,
     -- Cumulative net amount by customer
     SUM(order_amount - discount_amount + shipping_cost) OVER (
-        PARTITION BY customer_id 
-        ORDER BY order_date 
+        PARTITION BY customer_id
+        ORDER BY order_date
         ROWS UNBOUNDED PRECEDING
-    ) as customer_cumulative_net,
+    ) AS customer_cumulative_net,
     -- Running average order amount by customer
     AVG(order_amount) OVER (
-        PARTITION BY customer_id 
-        ORDER BY order_date 
+        PARTITION BY customer_id
+        ORDER BY order_date
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) as customer_avg_order,
+    ) AS customer_avg_order,
     -- Customer ranking within tier
     RANK() OVER (
-        PARTITION BY customer_tier 
+        PARTITION BY customer_tier
         ORDER BY SUM(order_amount) OVER (
-            PARTITION BY customer_id 
-            ORDER BY order_date 
+            PARTITION BY customer_id
+            ORDER BY order_date
             ROWS UNBOUNDED PRECEDING
         ) DESC
-    ) as tier_ranking,
+    ) AS tier_ranking,
     -- Days since first order
     order_date - MIN(order_date) OVER (
         PARTITION BY customer_id
-    ) as days_since_first_order
+    ) AS days_since_first_order
 FROM customer_orders
 ORDER BY customer_id, order_date;
 
@@ -247,39 +373,40 @@ ORDER BY customer_id, order_date;
 
 -- Demonstrate complex cumulative calculations
 WITH sales_analysis AS (
-    SELECT 
+    SELECT
         date,
         product_category,
         sales_amount,
         -- Cumulative sum with reset by category
         SUM(sales_amount) OVER (
-            PARTITION BY product_category 
-            ORDER BY date 
+            PARTITION BY product_category
+            ORDER BY date
             ROWS UNBOUNDED PRECEDING
-        ) as category_cumulative,
+        ) AS category_cumulative,
         -- Running total with window
         SUM(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-        ) as rolling_total,
+        ) AS rolling_total,
         -- Running average with window
         AVG(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-        ) as rolling_average,
+        ) AS rolling_average,
         -- Running maximum
         MAX(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-        ) as rolling_max,
+        ) AS rolling_max,
         -- Running minimum
         MIN(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-        ) as rolling_min
+        ) AS rolling_min
     FROM sales_transactions
 )
-SELECT 
+
+SELECT
     date,
     product_category,
     sales_amount,
@@ -289,19 +416,23 @@ SELECT
     rolling_max,
     rolling_min,
     -- Volatility indicator
-    rolling_max - rolling_min as price_range,
+    rolling_max - rolling_min AS price_range,
     -- Trend indicator
-    CASE 
+    CASE
         WHEN sales_amount > rolling_average THEN 'Above Average'
         WHEN sales_amount < rolling_average THEN 'Below Average'
         ELSE 'At Average'
-    END as trend_indicator,
+    END AS trend_indicator,
     -- Momentum indicator
-    CASE 
-        WHEN sales_amount > LAG(sales_amount, 1) OVER (ORDER BY date) THEN 'Increasing'
-        WHEN sales_amount < LAG(sales_amount, 1) OVER (ORDER BY date) THEN 'Decreasing'
+    CASE
+        WHEN
+            sales_amount > LAG(sales_amount, 1) OVER (ORDER BY date)
+            THEN 'Increasing'
+        WHEN
+            sales_amount < LAG(sales_amount, 1) OVER (ORDER BY date)
+            THEN 'Decreasing'
         ELSE 'Stable'
-    END as momentum
+    END AS momentum
 FROM sales_analysis
 ORDER BY date, product_category;
 
@@ -310,67 +441,68 @@ ORDER BY date, product_category;
 -- =====================================================
 
 -- Calculate financial metrics using cumulative functions
-SELECT 
+SELECT
     date,
     product_category,
     sales_amount,
     -- Cumulative revenue
     SUM(sales_amount) OVER (
-        ORDER BY date 
+        ORDER BY date
         ROWS UNBOUNDED PRECEDING
-    ) as total_revenue,
+    ) AS total_revenue,
     -- Cumulative revenue by category
     SUM(sales_amount) OVER (
-        PARTITION BY product_category 
-        ORDER BY date 
+        PARTITION BY product_category
+        ORDER BY date
         ROWS UNBOUNDED PRECEDING
-    ) as category_revenue,
+    ) AS category_revenue,
     -- Revenue growth rate
-    CASE 
-        WHEN LAG(SUM(sales_amount) OVER (
-            ORDER BY date 
-            ROWS UNBOUNDED PRECEDING
-        ), 1) OVER (ORDER BY date) > 0 THEN
-            ROUND(
-                (SUM(sales_amount) OVER (
-                    ORDER BY date 
-                    ROWS UNBOUNDED PRECEDING
-                ) - LAG(SUM(sales_amount) OVER (
-                    ORDER BY date 
-                    ROWS UNBOUNDED PRECEDING
-                ), 1) OVER (ORDER BY date)) * 100.0 / 
-                LAG(SUM(sales_amount) OVER (
-                    ORDER BY date 
-                    ROWS UNBOUNDED PRECEDING
-                ), 1) OVER (ORDER BY date), 2
-            )
-        ELSE NULL
-    END as revenue_growth_percent,
+    CASE
+        WHEN
+            LAG(SUM(sales_amount) OVER (
+                ORDER BY date
+                ROWS UNBOUNDED PRECEDING
+            ), 1) OVER (ORDER BY date) > 0
+            THEN
+                ROUND(
+                    (SUM(sales_amount) OVER (
+                        ORDER BY date
+                        ROWS UNBOUNDED PRECEDING
+                    ) - LAG(SUM(sales_amount) OVER (
+                        ORDER BY date
+                        ROWS UNBOUNDED PRECEDING
+                    ), 1) OVER (ORDER BY date)) * 100.0
+                    / LAG(SUM(sales_amount) OVER (
+                        ORDER BY date
+                        ROWS UNBOUNDED PRECEDING
+                    ), 1) OVER (ORDER BY date), 2
+                )
+    END AS revenue_growth_percent,
     -- Category contribution to total
     ROUND(
         SUM(sales_amount) OVER (
-            PARTITION BY product_category 
-            ORDER BY date 
+            PARTITION BY product_category
+            ORDER BY date
             ROWS UNBOUNDED PRECEDING
         ) * 100.0 / SUM(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS UNBOUNDED PRECEDING
         ), 2
-    ) as category_contribution_percent,
+    ) AS category_contribution_percent,
     -- Running profit margin (assuming 30% margin)
     ROUND(
         SUM(sales_amount * 0.3) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS UNBOUNDED PRECEDING
         ) * 100.0 / SUM(sales_amount) OVER (
-            ORDER BY date 
+            ORDER BY date
             ROWS UNBOUNDED PRECEDING
         ), 2
-    ) as cumulative_profit_margin
+    ) AS cumulative_profit_margin
 FROM sales_transactions
 ORDER BY date, product_category;
 
 -- Clean up
 DROP TABLE IF EXISTS sales_transactions CASCADE;
 DROP TABLE IF EXISTS project_tasks CASCADE;
-DROP TABLE IF EXISTS customer_orders CASCADE; 
+DROP TABLE IF EXISTS customer_orders CASCADE;

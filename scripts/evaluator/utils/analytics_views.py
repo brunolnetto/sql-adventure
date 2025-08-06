@@ -6,12 +6,16 @@ Provides comprehensive reporting and analysis capabilities
 
 from sqlalchemy import text
 from typing import Dict, Any, List
-from .enhanced_database import EnhancedDatabaseManager
+try:
+    from ..core.database_manager import DatabaseManager
+except ImportError:
+    # Fallback for direct execution
+    from core.database_manager import DatabaseManager
 
 class AnalyticsViewManager:
     """Manages database views and analytics functions"""
     
-    def __init__(self, db_manager: EnhancedDatabaseManager):
+    def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
     
     def create_analytics_views(self):

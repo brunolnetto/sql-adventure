@@ -27,9 +27,9 @@ CREATE TABLE sales_performance (
     salesperson_id INT PRIMARY KEY,
     name VARCHAR(100),
     region VARCHAR(50),
-    monthly_sales DECIMAL(10,2),
+    monthly_sales DECIMAL(10, 2),
     customer_count INT,
-    avg_order_value DECIMAL(8,2)
+    avg_order_value DECIMAL(8, 2)
 );
 
 -- Insert sample data
@@ -47,45 +47,56 @@ INSERT INTO sales_performance VALUES
 
 -- Example 1: Basic PERCENT_RANK
 -- Calculate percentile rank for each salesperson based on monthly sales
-SELECT 
+SELECT
     salesperson_id,
     name,
     region,
     monthly_sales,
-    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2) as percentile_rank,
-    CASE 
+    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2)
+        AS percentile_rank,
+    CASE
         WHEN PERCENT_RANK() OVER (ORDER BY monthly_sales) >= 0.8 THEN 'Top 20%'
         WHEN PERCENT_RANK() OVER (ORDER BY monthly_sales) >= 0.6 THEN 'Top 40%'
         WHEN PERCENT_RANK() OVER (ORDER BY monthly_sales) >= 0.4 THEN 'Top 60%'
         WHEN PERCENT_RANK() OVER (ORDER BY monthly_sales) >= 0.2 THEN 'Top 80%'
         ELSE 'Bottom 20%'
-    END as performance_tier
+    END AS performance_tier
 FROM sales_performance
 ORDER BY monthly_sales DESC;
 
 -- Example 2: PERCENT_RANK by Department
 -- Calculate percentile rank within each region
-SELECT 
+SELECT
     salesperson_id,
     name,
     region,
     monthly_sales,
-    ROUND(PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) * 100, 2) as regional_percentile,
-    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2) as overall_percentile,
-    CASE 
-        WHEN PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) >= 0.75 THEN 'Regional Top 25%'
-        WHEN PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) >= 0.5 THEN 'Regional Top 50%'
+    ROUND(
+        PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) * 100,
+        2
+    ) AS regional_percentile,
+    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2)
+        AS overall_percentile,
+    CASE
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales)
+            >= 0.75
+            THEN 'Regional Top 25%'
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales)
+            >= 0.5
+            THEN 'Regional Top 50%'
         ELSE 'Regional Bottom 50%'
-    END as regional_tier
+    END AS regional_tier
 FROM sales_performance
-ORDER BY region, monthly_sales DESC;
+ORDER BY region ASC, monthly_sales DESC;
 
 -- Create student grades table
 CREATE TABLE student_grades (
     student_id INT PRIMARY KEY,
     name VARCHAR(100),
     subject VARCHAR(50),
-    grade DECIMAL(5,2),
+    grade DECIMAL(5, 2),
     class_size INT
 );
 
@@ -104,31 +115,42 @@ INSERT INTO student_grades VALUES
 
 -- Example 3: Performance Tiers Based on Percentiles
 -- Create performance tiers using percentile ranks
-SELECT 
+SELECT
     student_id,
     name,
     subject,
     grade,
-    ROUND(PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) * 100, 2) as subject_percentile,
-    CASE 
-        WHEN PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.9 THEN 'A+ (Top 10%)'
-        WHEN PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.8 THEN 'A (Top 20%)'
-        WHEN PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.7 THEN 'B+ (Top 30%)'
-        WHEN PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.6 THEN 'B (Top 40%)'
-        WHEN PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.5 THEN 'C+ (Top 50%)'
+    ROUND(PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) * 100, 2)
+        AS subject_percentile,
+    CASE
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.9
+            THEN 'A+ (Top 10%)'
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.8
+            THEN 'A (Top 20%)'
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.7
+            THEN 'B+ (Top 30%)'
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.6
+            THEN 'B (Top 40%)'
+        WHEN
+            PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) >= 0.5
+            THEN 'C+ (Top 50%)'
         ELSE 'C or Below'
-    END as letter_grade
+    END AS letter_grade
 FROM student_grades
-ORDER BY subject, grade DESC;
+ORDER BY subject ASC, grade DESC;
 
 -- Create employee metrics table
 CREATE TABLE employee_metrics (
     employee_id INT PRIMARY KEY,
     name VARCHAR(100),
     department VARCHAR(50),
-    productivity_score DECIMAL(5,2),
-    quality_score DECIMAL(5,2),
-    teamwork_score DECIMAL(5,2)
+    productivity_score DECIMAL(5, 2),
+    quality_score DECIMAL(5, 2),
+    teamwork_score DECIMAL(5, 2)
 );
 
 -- Insert sample data
@@ -147,28 +169,37 @@ INSERT INTO employee_metrics VALUES
 -- Example 4: Top Performers by Percentile
 -- Identify top 25% performers based on overall score
 WITH employee_scores AS (
-    SELECT 
+    SELECT
         employee_id,
         name,
         department,
         productivity_score,
         quality_score,
         teamwork_score,
-        (productivity_score + quality_score + teamwork_score) / 3 as overall_score
+        (productivity_score + quality_score + teamwork_score)
+        / 3 AS overall_score
     FROM employee_metrics
 )
-SELECT 
+
+SELECT
     employee_id,
     name,
     department,
     overall_score,
-    ROUND(PERCENT_RANK() OVER (ORDER BY overall_score DESC) * 100, 2) as percentile_rank,
-    CASE 
-        WHEN PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.25 THEN 'Top 25% Performer'
-        WHEN PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.5 THEN 'Top 50% Performer'
-        WHEN PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.75 THEN 'Top 75% Performer'
+    ROUND(PERCENT_RANK() OVER (ORDER BY overall_score DESC) * 100, 2)
+        AS percentile_rank,
+    CASE
+        WHEN
+            PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.25
+            THEN 'Top 25% Performer'
+        WHEN
+            PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.5
+            THEN 'Top 50% Performer'
+        WHEN
+            PERCENT_RANK() OVER (ORDER BY overall_score DESC) <= 0.75
+            THEN 'Top 75% Performer'
         ELSE 'Bottom 25%'
-    END as performance_category
+    END AS performance_category
 FROM employee_scores
 ORDER BY overall_score DESC;
 
@@ -176,4 +207,4 @@ ORDER BY overall_score DESC;
 DROP TABLE IF EXISTS sales_performance CASCADE;
 DROP TABLE IF EXISTS student_grades CASCADE;
 DROP TABLE IF EXISTS employee_metrics CASCADE;
-DROP TABLE IF EXISTS product_ratings CASCADE; 
+DROP TABLE IF EXISTS product_ratings CASCADE;

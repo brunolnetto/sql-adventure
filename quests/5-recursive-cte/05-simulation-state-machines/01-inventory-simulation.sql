@@ -46,55 +46,66 @@ INSERT INTO daily_demand VALUES
 -- Simulate inventory depletion over 5 days
 WITH RECURSIVE inventory_simulation AS (
     -- Base case: day 0 (initial inventory)
-    SELECT 
-        0 as day_number,
+    SELECT
+        0 AS day_number,
         product_id,
         product_name,
         current_stock,
         reorder_point,
         reorder_quantity,
-        0 as total_demand,
-        0 as reorder_count
+        0 AS total_demand,
+        0 AS reorder_count
     FROM inventory
-    
+
     UNION ALL
-    
+
     -- Recursive case: simulate each day
-    SELECT 
+    SELECT
         inv_sim.day_number + 1,
         inv_sim.product_id,
         inv_sim.product_name,
-        CASE 
-            WHEN (inv_sim.current_stock - dd.demand_quantity) < inv_sim.reorder_point 
-            THEN (inv_sim.current_stock - dd.demand_quantity) + inv_sim.reorder_quantity
+        CASE
+            WHEN
+                (inv_sim.current_stock - dd.demand_quantity)
+                < inv_sim.reorder_point
+                THEN
+                    (inv_sim.current_stock - dd.demand_quantity)
+                    + inv_sim.reorder_quantity
             ELSE inv_sim.current_stock - dd.demand_quantity
-        END as current_stock,
+        END AS current_stock,
         inv_sim.reorder_point,
         inv_sim.reorder_quantity,
         inv_sim.total_demand + dd.demand_quantity,
-        CASE 
-            WHEN (inv_sim.current_stock - dd.demand_quantity) < inv_sim.reorder_point 
-            THEN inv_sim.reorder_count + 1
+        CASE
+            WHEN
+                (inv_sim.current_stock - dd.demand_quantity)
+                < inv_sim.reorder_point
+                THEN inv_sim.reorder_count + 1
             ELSE inv_sim.reorder_count
-        END as reorder_count
-    FROM inventory_simulation inv_sim
-    INNER JOIN daily_demand dd ON inv_sim.product_id = dd.product_id AND inv_sim.day_number + 1 = dd.day_number
+        END AS reorder_count
+    FROM inventory_simulation AS inv_sim
+    INNER JOIN
+        daily_demand AS dd
+        ON
+            inv_sim.product_id = dd.product_id
+            AND inv_sim.day_number + 1 = dd.day_number
     WHERE inv_sim.day_number < 5
 )
-SELECT 
+
+SELECT
     day_number,
     product_name,
     current_stock,
     total_demand,
     reorder_count,
-    CASE 
+    CASE
         WHEN current_stock <= reorder_point THEN 'Low Stock'
         WHEN current_stock <= reorder_point * 2 THEN 'Medium Stock'
         ELSE 'Good Stock'
-    END as stock_status
+    END AS stock_status
 FROM inventory_simulation
 ORDER BY product_id, day_number;
 
 -- Clean up
 DROP TABLE IF EXISTS daily_demand CASCADE;
-DROP TABLE IF EXISTS inventory CASCADE; 
+DROP TABLE IF EXISTS inventory CASCADE;

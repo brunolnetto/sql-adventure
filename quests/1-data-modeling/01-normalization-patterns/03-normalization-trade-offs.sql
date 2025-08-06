@@ -17,7 +17,7 @@ CREATE TABLE customers_oltp (
 
 CREATE TABLE addresses_oltp (
     address_id INT PRIMARY KEY,
-    customer_id INT REFERENCES customers_oltp(customer_id),
+    customer_id INT REFERENCES customers_oltp (customer_id),
     address_type VARCHAR(20),
     street_address VARCHAR(200),
     city VARCHAR(100),
@@ -27,9 +27,9 @@ CREATE TABLE addresses_oltp (
 
 CREATE TABLE orders_oltp (
     order_id INT PRIMARY KEY,
-    customer_id INT REFERENCES customers_oltp(customer_id),
+    customer_id INT REFERENCES customers_oltp (customer_id),
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10,2)
+    total_amount DECIMAL(10, 2)
 );
 
 -- Denormalized schema for OLAP (Online Analytical Processing)
@@ -41,9 +41,9 @@ CREATE TABLE customer_orders_olap (
     customer_state VARCHAR(50),
     order_id INT,
     order_date DATE,
-    total_amount DECIMAL(10,2),
+    total_amount DECIMAL(10, 2),
     customer_total_orders INT,
-    customer_total_spent DECIMAL(12,2)
+    customer_total_spent DECIMAL(12, 2)
 );
 
 -- Insert sample data
@@ -61,9 +61,42 @@ INSERT INTO orders_oltp VALUES
 (3, 2, '2024-01-25', 200.00);
 
 INSERT INTO customer_orders_olap VALUES
-(1, 'John Smith', 'john@email.com', 'New York', 'NY', 1, '2024-01-15', 150.00, 2, 225.50),
-(1, 'John Smith', 'john@email.com', 'New York', 'NY', 2, '2024-01-20', 75.50, 2, 225.50),
-(2, 'Jane Doe', 'jane@email.com', 'Los Angeles', 'CA', 3, '2024-01-25', 200.00, 1, 200.00);
+(
+    1,
+    'John Smith',
+    'john@email.com',
+    'New York',
+    'NY',
+    1,
+    '2024-01-15',
+    150.00,
+    2,
+    225.50
+),
+(
+    1,
+    'John Smith',
+    'john@email.com',
+    'New York',
+    'NY',
+    2,
+    '2024-01-20',
+    75.50,
+    2,
+    225.50
+),
+(
+    2,
+    'Jane Doe',
+    'jane@email.com',
+    'Los Angeles',
+    'CA',
+    3,
+    '2024-01-25',
+    200.00,
+    1,
+    200.00
+);
 
 -- Example 2: Read vs. Write Performance Trade-offs
 -- Demonstrate performance differences between normalized and denormalized
@@ -115,16 +148,16 @@ INSERT INTO products_denormalized VALUES
 -- Show the trade-off between data consistency and query performance
 
 -- Normalized approach (consistent data, multiple joins)
-SELECT 
+SELECT
     p.product_name,
     c.category_name,
     s.supplier_name
-FROM products_normalized p
-JOIN categories_normalized c ON p.category_id = c.category_id
-JOIN suppliers_normalized s ON p.supplier_id = s.supplier_id;
+FROM products_normalized AS p
+INNER JOIN categories_normalized AS c ON p.category_id = c.category_id
+INNER JOIN suppliers_normalized AS s ON p.supplier_id = s.supplier_id;
 
 -- Denormalized approach (faster query, potential inconsistency)
-SELECT 
+SELECT
     product_name,
     category_name,
     supplier_name
@@ -138,4 +171,4 @@ DROP TABLE IF EXISTS customer_orders_olap CASCADE;
 DROP TABLE IF EXISTS products_normalized CASCADE;
 DROP TABLE IF EXISTS categories_normalized CASCADE;
 DROP TABLE IF EXISTS suppliers_normalized CASCADE;
-DROP TABLE IF EXISTS products_denormalized CASCADE; 
+DROP TABLE IF EXISTS products_denormalized CASCADE;

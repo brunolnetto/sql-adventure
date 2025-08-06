@@ -53,60 +53,59 @@ INSERT INTO user_profiles VALUES
 
 -- Example 1: Basic JSON Value Extraction
 -- Extract simple values from JSON objects using -> and ->> operators
-SELECT 
+SELECT
     id,
-    profile_data->>'name' as user_name,
-    profile_data->>'email' as email,
-    (profile_data->>'age')::INT as age,
-    (profile_data->>'is_active')::BOOLEAN as is_active
+    (profile_data ->> 'age')::INT AS age,
+    (profile_data ->> 'is_active')::BOOLEAN AS is_active,
+    profile_data ->> 'name' AS user_name,
+    profile_data ->> 'email' AS email
 FROM user_profiles
 ORDER BY id;
 
 -- Example 2: Nested JSON Object Extraction
 -- Extract values from nested objects using chained operators
-SELECT 
+SELECT
     id,
-    profile_data->'preferences'->>'theme' as theme,
-    profile_data->'preferences'->>'language' as language,
-    (profile_data->'preferences'->>'notifications')::BOOLEAN as notifications_enabled
+    (profile_data -> 'preferences' ->> 'notifications')::BOOLEAN
+        AS notifications_enabled,
+    profile_data -> 'preferences' ->> 'theme' AS theme,
+    profile_data -> 'preferences' ->> 'language' AS language
 FROM user_profiles
 ORDER BY id;
 
 -- Example 3: JSON Array Handling
 -- Extract and work with JSON arrays
-SELECT 
+SELECT
     id,
-    profile_data->>'name' as user_name,
-    profile_data->'hobbies' as hobbies_array,
-    jsonb_array_length(profile_data->'hobbies') as hobby_count,
-    profile_data->'hobbies'->0 as first_hobby,
-    profile_data->'hobbies'->1 as second_hobby
+    profile_data ->> 'name' AS user_name,
+    profile_data -> 'hobbies' AS hobbies_array,
+    jsonb_array_length(profile_data -> 'hobbies') AS hobby_count,
+    profile_data -> 'hobbies' -> 0 AS first_hobby,
+    profile_data -> 'hobbies' -> 1 AS second_hobby
 FROM user_profiles
 ORDER BY id;
 
 -- Example 4: JSON Type Validation and Conversion
 -- Validate and convert JSON data types
-SELECT 
+SELECT
     id,
-    profile_data->>'name' as name_string,
-    CASE 
-        WHEN jsonb_typeof(profile_data->'age') = 'number' 
-        THEN (profile_data->>'age')::INT 
-        ELSE NULL 
-    END as age_validated,
-    CASE 
-        WHEN jsonb_typeof(profile_data->'is_active') = 'boolean' 
-        THEN (profile_data->>'is_active')::BOOLEAN 
-        ELSE NULL 
-    END as is_active_validated,
-    CASE 
-        WHEN jsonb_typeof(profile_data->'hobbies') = 'array' 
-        THEN jsonb_array_length(profile_data->'hobbies') 
-        ELSE 0 
-    END as hobbies_count
+    profile_data ->> 'name' AS name_string,
+    CASE
+        WHEN jsonb_typeof(profile_data -> 'age') = 'number'
+            THEN (profile_data ->> 'age')::INT
+    END AS age_validated,
+    CASE
+        WHEN jsonb_typeof(profile_data -> 'is_active') = 'boolean'
+            THEN (profile_data ->> 'is_active')::BOOLEAN
+    END AS is_active_validated,
+    CASE
+        WHEN jsonb_typeof(profile_data -> 'hobbies') = 'array'
+            THEN jsonb_array_length(profile_data -> 'hobbies')
+        ELSE 0
+    END AS hobbies_count
 FROM user_profiles
 ORDER BY id;
 
 -- Clean up
 DROP TABLE IF EXISTS user_profiles CASCADE;
-DROP TABLE IF EXISTS product_catalog CASCADE; 
+DROP TABLE IF EXISTS product_catalog CASCADE;

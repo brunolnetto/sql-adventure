@@ -20,9 +20,9 @@ CREATE TABLE orders (
     order_id INT PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date DATE NOT NULL,
-    total_amount DECIMAL(10,2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
 );
 
 -- Insert sample data
@@ -41,25 +41,25 @@ INSERT INTO orders VALUES
 -- Demonstrate JOIN queries to get related information
 
 -- Get customer information with their orders
-SELECT 
+SELECT
     c.customer_name,
     c.email,
     o.order_id,
     o.order_date,
     o.total_amount,
     o.status
-FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
+FROM customers AS c
+INNER JOIN orders AS o ON c.customer_id = o.customer_id
 ORDER BY c.customer_name, o.order_date;
 
 -- Get customers with their order counts
-SELECT 
+SELECT
     c.customer_name,
     c.email,
-    COUNT(o.order_id) as total_orders,
-    SUM(o.total_amount) as total_spent
-FROM customers c
-LEFT JOIN orders o ON c.customer_id = o.customer_id
+    COUNT(o.order_id) AS total_orders,
+    SUM(o.total_amount) AS total_spent
+FROM customers AS c
+LEFT JOIN orders AS o ON c.customer_id = o.customer_id
 GROUP BY c.customer_id, c.customer_name, c.email
 ORDER BY total_spent DESC;
 
@@ -77,7 +77,7 @@ CREATE TABLE categories (
 CREATE TABLE products (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL
+    price DECIMAL(10, 2) NOT NULL
 );
 
 -- Create junction table for many-to-many relationship
@@ -85,8 +85,8 @@ CREATE TABLE product_categories (
     product_id INT,
     category_id INT,
     PRIMARY KEY (product_id, category_id),
-    FOREIGN KEY (product_id) REFERENCES products(product_id),
-    FOREIGN KEY (category_id) REFERENCES categories(category_id)
+    FOREIGN KEY (product_id) REFERENCES products (product_id),
+    FOREIGN KEY (category_id) REFERENCES categories (category_id)
 );
 
 -- Insert sample data
@@ -109,13 +109,13 @@ INSERT INTO product_categories VALUES
 (1, 3); -- Laptop also in Books (tech books)
 
 -- Query products with their categories
-SELECT 
+SELECT
     p.product_name,
     p.price,
-    STRING_AGG(c.category_name, ', ') as categories
-FROM products p
-JOIN product_categories pc ON p.product_id = pc.product_id
-JOIN categories c ON pc.category_id = c.category_id
+    STRING_AGG(c.category_name, ', ') AS categories
+FROM products AS p
+INNER JOIN product_categories AS pc ON p.product_id = pc.product_id
+INNER JOIN categories AS c ON pc.category_id = c.category_id
 GROUP BY p.product_id, p.product_name, p.price
 ORDER BY p.product_name;
 
@@ -124,4 +124,4 @@ DROP TABLE IF EXISTS product_categories CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS customers CASCADE; 
+DROP TABLE IF EXISTS customers CASCADE;

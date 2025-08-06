@@ -20,10 +20,10 @@ DROP TABLE IF EXISTS temperature_readings CASCADE;
 CREATE TABLE stock_prices (
     date_id DATE PRIMARY KEY,
     stock_symbol VARCHAR(10),
-    open_price DECIMAL(8,2),
-    close_price DECIMAL(8,2),
-    high_price DECIMAL(8,2),
-    low_price DECIMAL(8,2),
+    open_price DECIMAL(8, 2),
+    close_price DECIMAL(8, 2),
+    high_price DECIMAL(8, 2),
+    low_price DECIMAL(8, 2),
     volume INT
 );
 
@@ -32,16 +32,16 @@ CREATE TABLE website_traffic (
     visit_date DATE,
     page_views INT,
     unique_visitors INT,
-    bounce_rate DECIMAL(5,2),
+    bounce_rate DECIMAL(5, 2),
     avg_session_duration INT
 );
 
 -- Create temperature readings table
 CREATE TABLE temperature_readings (
     reading_time TIMESTAMP,
-    temperature_celsius DECIMAL(4,2),
-    humidity_percent DECIMAL(5,2),
-    pressure_hpa DECIMAL(6,2)
+    temperature_celsius DECIMAL(4, 2),
+    humidity_percent DECIMAL(5, 2),
+    pressure_hpa DECIMAL(6, 2)
 );
 
 -- Insert stock price data
@@ -103,32 +103,36 @@ INSERT INTO temperature_readings VALUES
 -- =====================================================
 
 -- Analyze stock price trends using LEAD and LAG
-SELECT 
+SELECT
     date_id,
     stock_symbol,
     close_price,
-    LAG(close_price) OVER (ORDER BY date_id) as prev_close,
-    LEAD(close_price) OVER (ORDER BY date_id) as next_close,
-    LAG(close_price, 2) OVER (ORDER BY date_id) as two_days_ago,
-    LEAD(close_price, 2) OVER (ORDER BY date_id) as two_days_ahead,
+    LAG(close_price) OVER (ORDER BY date_id) AS prev_close,
+    LEAD(close_price) OVER (ORDER BY date_id) AS next_close,
+    LAG(close_price, 2) OVER (ORDER BY date_id) AS two_days_ago,
+    LEAD(close_price, 2) OVER (ORDER BY date_id) AS two_days_ahead,
     ROUND(
-        (close_price - LAG(close_price) OVER (ORDER BY date_id)) * 100.0 / 
-        LAG(close_price) OVER (ORDER BY date_id), 2
-    ) as daily_change_percent,
+        (close_price - LAG(close_price) OVER (ORDER BY date_id)) * 100.0
+        / LAG(close_price) OVER (ORDER BY date_id), 2
+    ) AS daily_change_percent,
     ROUND(
-        (close_price - LAG(close_price, 2) OVER (ORDER BY date_id)) * 100.0 / 
-        LAG(close_price, 2) OVER (ORDER BY date_id), 2
-    ) as two_day_change_percent,
-    CASE 
+        (close_price - LAG(close_price, 2) OVER (ORDER BY date_id)) * 100.0
+        / LAG(close_price, 2) OVER (ORDER BY date_id), 2
+    ) AS two_day_change_percent,
+    CASE
         WHEN close_price > LAG(close_price) OVER (ORDER BY date_id) THEN 'Up'
         WHEN close_price < LAG(close_price) OVER (ORDER BY date_id) THEN 'Down'
         ELSE 'Flat'
-    END as daily_trend,
-    CASE 
-        WHEN close_price > LAG(close_price, 2) OVER (ORDER BY date_id) THEN 'Rising'
-        WHEN close_price < LAG(close_price, 2) OVER (ORDER BY date_id) THEN 'Falling'
+    END AS daily_trend,
+    CASE
+        WHEN
+            close_price > LAG(close_price, 2) OVER (ORDER BY date_id)
+            THEN 'Rising'
+        WHEN
+            close_price < LAG(close_price, 2) OVER (ORDER BY date_id)
+            THEN 'Falling'
         ELSE 'Sideways'
-    END as two_day_trend
+    END AS two_day_trend
 FROM stock_prices
 WHERE stock_symbol = 'AAPL'
 ORDER BY date_id;
@@ -139,18 +143,19 @@ ORDER BY date_id;
 
 -- Calculate moving averages and momentum indicators
 WITH price_analysis AS (
-    SELECT 
+    SELECT
         date_id,
         close_price,
-        LAG(close_price) OVER (ORDER BY date_id) as prev_close,
-        LAG(close_price, 2) OVER (ORDER BY date_id) as two_days_ago,
-        LAG(close_price, 3) OVER (ORDER BY date_id) as three_days_ago,
-        LEAD(close_price) OVER (ORDER BY date_id) as next_close,
-        LEAD(close_price, 2) OVER (ORDER BY date_id) as two_days_ahead
+        LAG(close_price) OVER (ORDER BY date_id) AS prev_close,
+        LAG(close_price, 2) OVER (ORDER BY date_id) AS two_days_ago,
+        LAG(close_price, 3) OVER (ORDER BY date_id) AS three_days_ago,
+        LEAD(close_price) OVER (ORDER BY date_id) AS next_close,
+        LEAD(close_price, 2) OVER (ORDER BY date_id) AS two_days_ahead
     FROM stock_prices
     WHERE stock_symbol = 'AAPL'
 )
-SELECT 
+
+SELECT
     date_id,
     close_price,
     prev_close,
@@ -159,26 +164,39 @@ SELECT
     next_close,
     two_days_ahead,
     -- 3-day moving average
-    ROUND((close_price + prev_close + two_days_ago) / 3.0, 2) as ma_3day,
+    ROUND((close_price + prev_close + two_days_ago) / 3.0, 2) AS ma_3day,
     -- 5-day moving average
-    ROUND((close_price + prev_close + two_days_ago + three_days_ago + 
-           LAG(close_price, 4) OVER (ORDER BY date_id)) / 5.0, 2) as ma_5day,
+    ROUND((
+        close_price + prev_close + two_days_ago + three_days_ago
+        + LAG(close_price, 4) OVER (ORDER BY date_id)
+    ) / 5.0, 2) AS ma_5day,
     -- Price momentum (current vs 3 days ago)
     ROUND(
         (close_price - three_days_ago) * 100.0 / three_days_ago, 2
-    ) as momentum_3day_percent,
+    ) AS momentum_3day_percent,
     -- Price acceleration (change in momentum)
     ROUND(
-        ((close_price - prev_close) - (prev_close - two_days_ago)) * 100.0 / two_days_ago, 2
-    ) as acceleration_percent,
+        ((close_price - prev_close) - (prev_close - two_days_ago))
+        * 100.0
+        / two_days_ago,
+        2
+    ) AS acceleration_percent,
     -- Trend strength
-    CASE 
-        WHEN close_price > prev_close AND prev_close > two_days_ago THEN 'Strong Up'
-        WHEN close_price > prev_close AND prev_close <= two_days_ago THEN 'Weak Up'
-        WHEN close_price < prev_close AND prev_close < two_days_ago THEN 'Strong Down'
-        WHEN close_price < prev_close AND prev_close >= two_days_ago THEN 'Weak Down'
+    CASE
+        WHEN
+            close_price > prev_close AND prev_close > two_days_ago
+            THEN 'Strong Up'
+        WHEN
+            close_price > prev_close AND prev_close <= two_days_ago
+            THEN 'Weak Up'
+        WHEN
+            close_price < prev_close AND prev_close < two_days_ago
+            THEN 'Strong Down'
+        WHEN
+            close_price < prev_close AND prev_close >= two_days_ago
+            THEN 'Weak Down'
         ELSE 'Sideways'
-    END as trend_strength
+    END AS trend_strength
 FROM price_analysis
 ORDER BY date_id;
 
@@ -187,37 +205,48 @@ ORDER BY date_id;
 -- =====================================================
 
 -- Analyze website traffic patterns and trends
-SELECT 
+SELECT
     visit_date,
     page_views,
     unique_visitors,
     bounce_rate,
     avg_session_duration,
-    LAG(page_views) OVER (ORDER BY visit_date) as prev_page_views,
-    LEAD(page_views) OVER (ORDER BY visit_date) as next_page_views,
-    LAG(unique_visitors) OVER (ORDER BY visit_date) as prev_visitors,
-    LEAD(unique_visitors) OVER (ORDER BY visit_date) as next_visitors,
+    LAG(page_views) OVER (ORDER BY visit_date) AS prev_page_views,
+    LEAD(page_views) OVER (ORDER BY visit_date) AS next_page_views,
+    LAG(unique_visitors) OVER (ORDER BY visit_date) AS prev_visitors,
+    LEAD(unique_visitors) OVER (ORDER BY visit_date) AS next_visitors,
     ROUND(
-        (page_views - LAG(page_views) OVER (ORDER BY visit_date)) * 100.0 / 
-        LAG(page_views) OVER (ORDER BY visit_date), 2
-    ) as page_views_growth_percent,
+        (page_views - LAG(page_views) OVER (ORDER BY visit_date)) * 100.0
+        / LAG(page_views) OVER (ORDER BY visit_date), 2
+    ) AS page_views_growth_percent,
     ROUND(
-        (unique_visitors - LAG(unique_visitors) OVER (ORDER BY visit_date)) * 100.0 / 
-        LAG(unique_visitors) OVER (ORDER BY visit_date), 2
-    ) as visitors_growth_percent,
+        (unique_visitors - LAG(unique_visitors) OVER (ORDER BY visit_date))
+        * 100.0
+        / LAG(unique_visitors) OVER (ORDER BY visit_date), 2
+    ) AS visitors_growth_percent,
     ROUND(
         (bounce_rate - LAG(bounce_rate) OVER (ORDER BY visit_date)), 2
-    ) as bounce_rate_change,
+    ) AS bounce_rate_change,
     ROUND(
-        (avg_session_duration - LAG(avg_session_duration) OVER (ORDER BY visit_date)), 0
-    ) as session_duration_change,
-    CASE 
-        WHEN page_views > LAG(page_views) OVER (ORDER BY visit_date) 
-             AND unique_visitors > LAG(unique_visitors) OVER (ORDER BY visit_date) THEN 'Growth'
-        WHEN page_views < LAG(page_views) OVER (ORDER BY visit_date) 
-             AND unique_visitors < LAG(unique_visitors) OVER (ORDER BY visit_date) THEN 'Decline'
+        (
+            avg_session_duration
+            - LAG(avg_session_duration) OVER (ORDER BY visit_date)
+        ),
+        0
+    ) AS session_duration_change,
+    CASE
+        WHEN
+            page_views > LAG(page_views) OVER (ORDER BY visit_date)
+            AND unique_visitors
+            > LAG(unique_visitors) OVER (ORDER BY visit_date)
+            THEN 'Growth'
+        WHEN
+            page_views < LAG(page_views) OVER (ORDER BY visit_date)
+            AND unique_visitors
+            < LAG(unique_visitors) OVER (ORDER BY visit_date)
+            THEN 'Decline'
         ELSE 'Mixed'
-    END as traffic_trend
+    END AS traffic_trend
 FROM website_traffic
 ORDER BY visit_date;
 
@@ -227,57 +256,84 @@ ORDER BY visit_date;
 
 -- Detect temperature anomalies using statistical analysis
 WITH temp_analysis AS (
-    SELECT 
+    SELECT
         reading_time,
         temperature_celsius,
         humidity_percent,
         pressure_hpa,
-        LAG(temperature_celsius) OVER (ORDER BY reading_time) as prev_temp,
-        LEAD(temperature_celsius) OVER (ORDER BY reading_time) as next_temp,
-        LAG(temperature_celsius, 2) OVER (ORDER BY reading_time) as two_hours_ago,
-        LEAD(temperature_celsius, 2) OVER (ORDER BY reading_time) as two_hours_ahead,
+        LAG(temperature_celsius) OVER (ORDER BY reading_time) AS prev_temp,
+        LEAD(temperature_celsius) OVER (ORDER BY reading_time) AS next_temp,
+        LAG(temperature_celsius, 2)
+            OVER (ORDER BY reading_time)
+            AS two_hours_ago,
+        LEAD(temperature_celsius, 2)
+            OVER (ORDER BY reading_time)
+            AS two_hours_ahead,
         AVG(temperature_celsius) OVER (
-            ORDER BY reading_time 
+            ORDER BY reading_time
             ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING
-        ) as moving_avg_5hour,
+        ) AS moving_avg_5hour,
         STDDEV(temperature_celsius) OVER (
-            ORDER BY reading_time 
+            ORDER BY reading_time
             ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING
-        ) as moving_stddev_5hour
+        ) AS moving_stddev_5hour
     FROM temperature_readings
 )
-SELECT 
+
+SELECT
     reading_time,
     temperature_celsius,
     humidity_percent,
     pressure_hpa,
-    ROUND(prev_temp, 2) as prev_temp,
-    ROUND(next_temp, 2) as next_temp,
-    ROUND(two_hours_ago, 2) as two_hours_ago,
-    ROUND(two_hours_ahead, 2) as two_hours_ahead,
-    ROUND(moving_avg_5hour, 2) as moving_avg_5hour,
-    ROUND(moving_stddev_5hour, 2) as moving_stddev_5hour,
+    ROUND(prev_temp, 2) AS prev_temp,
+    ROUND(next_temp, 2) AS next_temp,
+    ROUND(two_hours_ago, 2) AS two_hours_ago,
+    ROUND(two_hours_ahead, 2) AS two_hours_ahead,
+    ROUND(moving_avg_5hour, 2) AS moving_avg_5hour,
+    ROUND(moving_stddev_5hour, 2) AS moving_stddev_5hour,
     ROUND(
-        (temperature_celsius - moving_avg_5hour) / NULLIF(moving_stddev_5hour, 0), 2
-    ) as z_score,
+        (temperature_celsius - moving_avg_5hour)
+        / NULLIF(moving_stddev_5hour, 0),
+        2
+    ) AS z_score,
     ROUND(
         (temperature_celsius - prev_temp), 2
-    ) as temp_change_1h,
+    ) AS temp_change_1h,
     ROUND(
         (temperature_celsius - two_hours_ago), 2
-    ) as temp_change_2h,
-    CASE 
-        WHEN ABS((temperature_celsius - moving_avg_5hour) / NULLIF(moving_stddev_5hour, 0)) > 2 THEN 'Anomaly'
-        WHEN ABS((temperature_celsius - moving_avg_5hour) / NULLIF(moving_stddev_5hour, 0)) > 1.5 THEN 'Unusual'
+    ) AS temp_change_2h,
+    CASE
+        WHEN
+            ABS(
+                (temperature_celsius - moving_avg_5hour)
+                / NULLIF(moving_stddev_5hour, 0)
+            )
+            > 2
+            THEN 'Anomaly'
+        WHEN
+            ABS(
+                (temperature_celsius - moving_avg_5hour)
+                / NULLIF(moving_stddev_5hour, 0)
+            )
+            > 1.5
+            THEN 'Unusual'
         ELSE 'Normal'
-    END as anomaly_status,
-    CASE 
-        WHEN temperature_celsius > prev_temp AND prev_temp > two_hours_ago THEN 'Rising'
-        WHEN temperature_celsius < prev_temp AND prev_temp < two_hours_ago THEN 'Falling'
-        WHEN temperature_celsius > prev_temp AND prev_temp <= two_hours_ago THEN 'Turning Up'
-        WHEN temperature_celsius < prev_temp AND prev_temp >= two_hours_ago THEN 'Turning Down'
+    END AS anomaly_status,
+    CASE
+        WHEN
+            temperature_celsius > prev_temp AND prev_temp > two_hours_ago
+            THEN 'Rising'
+        WHEN
+            temperature_celsius < prev_temp AND prev_temp < two_hours_ago
+            THEN 'Falling'
+        WHEN
+            temperature_celsius > prev_temp AND prev_temp <= two_hours_ago
+            THEN 'Turning Up'
+        WHEN
+            temperature_celsius < prev_temp AND prev_temp >= two_hours_ago
+            THEN 'Turning Down'
         ELSE 'Stable'
-    END as temperature_trend
+    END AS temperature_trend
 FROM temp_analysis
 ORDER BY reading_time;
 
@@ -287,58 +343,83 @@ ORDER BY reading_time;
 
 -- Identify patterns that might predict future movements
 WITH pattern_analysis AS (
-    SELECT 
+    SELECT
         date_id,
         close_price,
         volume,
-        LAG(close_price) OVER (ORDER BY date_id) as prev_close,
-        LAG(close_price, 2) OVER (ORDER BY date_id) as two_days_ago,
-        LAG(volume) OVER (ORDER BY date_id) as prev_volume,
-        LAG(volume, 2) OVER (ORDER BY date_id) as two_days_ago_volume,
-        LEAD(close_price) OVER (ORDER BY date_id) as next_close,
-        LEAD(close_price, 2) OVER (ORDER BY date_id) as two_days_ahead,
-        LEAD(volume) OVER (ORDER BY date_id) as next_volume
+        LAG(close_price) OVER (ORDER BY date_id) AS prev_close,
+        LAG(close_price, 2) OVER (ORDER BY date_id) AS two_days_ago,
+        LAG(volume) OVER (ORDER BY date_id) AS prev_volume,
+        LAG(volume, 2) OVER (ORDER BY date_id) AS two_days_ago_volume,
+        LEAD(close_price) OVER (ORDER BY date_id) AS next_close,
+        LEAD(close_price, 2) OVER (ORDER BY date_id) AS two_days_ahead,
+        LEAD(volume) OVER (ORDER BY date_id) AS next_volume
     FROM stock_prices
     WHERE stock_symbol = 'AAPL'
 )
-SELECT 
+
+SELECT
     date_id,
     close_price,
     volume,
-    ROUND(prev_close, 2) as prev_close,
-    ROUND(two_days_ago, 2) as two_days_ago,
-    ROUND(next_close, 2) as next_close,
-    ROUND(two_days_ahead, 2) as two_days_ahead,
+    ROUND(prev_close, 2) AS prev_close,
+    ROUND(two_days_ago, 2) AS two_days_ago,
+    ROUND(next_close, 2) AS next_close,
+    ROUND(two_days_ahead, 2) AS two_days_ahead,
     -- Volume trend
-    CASE 
-        WHEN volume > prev_volume AND prev_volume > two_days_ago_volume THEN 'Increasing Volume'
-        WHEN volume < prev_volume AND prev_volume < two_days_ago_volume THEN 'Decreasing Volume'
+    CASE
+        WHEN
+            volume > prev_volume AND prev_volume > two_days_ago_volume
+            THEN 'Increasing Volume'
+        WHEN
+            volume < prev_volume AND prev_volume < two_days_ago_volume
+            THEN 'Decreasing Volume'
         ELSE 'Mixed Volume'
-    END as volume_trend,
+    END AS volume_trend,
     -- Price pattern
-    CASE 
-        WHEN close_price > prev_close AND prev_close > two_days_ago THEN 'Uptrend'
-        WHEN close_price < prev_close AND prev_close < two_days_ago THEN 'Downtrend'
-        WHEN close_price > prev_close AND prev_close <= two_days_ago THEN 'Reversal Up'
-        WHEN close_price < prev_close AND prev_temp >= two_days_ago THEN 'Reversal Down'
+    CASE
+        WHEN
+            close_price > prev_close AND prev_close > two_days_ago
+            THEN 'Uptrend'
+        WHEN
+            close_price < prev_close AND prev_close < two_days_ago
+            THEN 'Downtrend'
+        WHEN
+            close_price > prev_close AND prev_close <= two_days_ago
+            THEN 'Reversal Up'
+        WHEN
+            close_price < prev_close AND prev_temp >= two_days_ago
+            THEN 'Reversal Down'
         ELSE 'Sideways'
-    END as price_pattern,
+    END AS price_pattern,
     -- Volume-price relationship
-    CASE 
+    CASE
         WHEN close_price > prev_close AND volume > prev_volume THEN 'Bullish'
         WHEN close_price < prev_close AND volume > prev_volume THEN 'Bearish'
-        WHEN close_price > prev_close AND volume < prev_volume THEN 'Weak Bullish'
-        WHEN close_price < prev_close AND volume < prev_volume THEN 'Weak Bearish'
+        WHEN
+            close_price > prev_close AND volume < prev_volume
+            THEN 'Weak Bullish'
+        WHEN
+            close_price < prev_close AND volume < prev_volume
+            THEN 'Weak Bearish'
         ELSE 'Neutral'
-    END as volume_price_signal,
+    END AS volume_price_signal,
     -- Predictive signal
-    CASE 
-        WHEN close_price > prev_close AND volume > prev_volume * 1.2 THEN 'Strong Buy Signal'
-        WHEN close_price < prev_close AND volume > prev_volume * 1.2 THEN 'Strong Sell Signal'
-        WHEN close_price > prev_close AND volume < prev_volume * 0.8 THEN 'Weak Buy Signal'
-        WHEN close_price < prev_close AND volume < prev_volume * 0.8 THEN 'Weak Sell Signal'
+    CASE
+        WHEN
+            close_price > prev_close AND volume > prev_volume * 1.2
+            THEN 'Strong Buy Signal'
+        WHEN
+            close_price < prev_close AND volume > prev_volume * 1.2
+            THEN 'Strong Sell Signal'
+        WHEN
+            close_price > prev_close AND volume < prev_volume * 0.8
+            THEN 'Weak Buy Signal'
+        WHEN
+            close_price < prev_close AND volume < prev_volume * 0.8
+            THEN 'Weak Sell Signal'
         ELSE 'Hold'
-    END as trading_signal
+    END AS trading_signal
 FROM pattern_analysis
 ORDER BY date_id;
 
@@ -348,18 +429,25 @@ ORDER BY date_id;
 
 -- Detect weekly patterns in website traffic
 WITH weekly_patterns AS (
-    SELECT 
+    SELECT
         visit_date,
         page_views,
         unique_visitors,
-        EXTRACT(DOW FROM visit_date) as day_of_week,
-        LAG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM visit_date) ORDER BY visit_date) as prev_week_same_day,
-        LAG(page_views, 7) OVER (ORDER BY visit_date) as week_ago,
-        AVG(page_views) OVER (PARTITION BY EXTRACT(DOW FROM visit_date)) as avg_same_day_views,
-        STDDEV(page_views) OVER (PARTITION BY EXTRACT(DOW FROM visit_date)) as stddev_same_day_views
+        EXTRACT(DOW FROM visit_date) AS day_of_week,
+        LAG(page_views)
+            OVER (PARTITION BY EXTRACT(DOW FROM visit_date) ORDER BY visit_date)
+            AS prev_week_same_day,
+        LAG(page_views, 7) OVER (ORDER BY visit_date) AS week_ago,
+        AVG(page_views)
+            OVER (PARTITION BY EXTRACT(DOW FROM visit_date))
+            AS avg_same_day_views,
+        STDDEV(page_views)
+            OVER (PARTITION BY EXTRACT(DOW FROM visit_date))
+            AS stddev_same_day_views
     FROM website_traffic
 )
-SELECT 
+
+SELECT
     visit_date,
     page_views,
     unique_visitors,
@@ -371,36 +459,51 @@ SELECT
         WHEN 4 THEN 'Thursday'
         WHEN 5 THEN 'Friday'
         WHEN 6 THEN 'Saturday'
-    END as day_name,
-    ROUND(prev_week_same_day, 0) as prev_week_same_day,
-    ROUND(week_ago, 0) as week_ago,
-    ROUND(avg_same_day_views, 0) as avg_same_day_views,
-    ROUND(stddev_same_day_views, 0) as stddev_same_day_views,
+    END AS day_name,
+    ROUND(prev_week_same_day, 0) AS prev_week_same_day,
+    ROUND(week_ago, 0) AS week_ago,
+    ROUND(avg_same_day_views, 0) AS avg_same_day_views,
+    ROUND(stddev_same_day_views, 0) AS stddev_same_day_views,
     ROUND(
         (page_views - avg_same_day_views) / NULLIF(stddev_same_day_views, 0), 2
-    ) as same_day_z_score,
+    ) AS same_day_z_score,
     ROUND(
-        (page_views - prev_week_same_day) * 100.0 / NULLIF(prev_week_same_day, 0), 2
-    ) as week_over_week_change,
+        (page_views - prev_week_same_day)
+        * 100.0
+        / NULLIF(prev_week_same_day, 0),
+        2
+    ) AS week_over_week_change,
     ROUND(
         (page_views - week_ago) * 100.0 / NULLIF(week_ago, 0), 2
-    ) as week_ago_change,
-    CASE 
-        WHEN page_views > avg_same_day_views + stddev_same_day_views THEN 'Above Average'
-        WHEN page_views < avg_same_day_views - stddev_same_day_views THEN 'Below Average'
+    ) AS week_ago_change,
+    CASE
+        WHEN
+            page_views > avg_same_day_views + stddev_same_day_views
+            THEN 'Above Average'
+        WHEN
+            page_views < avg_same_day_views - stddev_same_day_views
+            THEN 'Below Average'
         ELSE 'Average'
-    END as performance_vs_typical,
-    CASE 
-        WHEN page_views > prev_week_same_day AND prev_week_same_day > week_ago THEN 'Improving Trend'
-        WHEN page_views < prev_week_same_day AND prev_week_same_day < week_ago THEN 'Declining Trend'
-        WHEN page_views > prev_week_same_day AND prev_week_same_day <= week_ago THEN 'Recovery'
-        WHEN page_views < prev_week_same_day AND prev_week_same_day >= week_ago THEN 'Deterioration'
+    END AS performance_vs_typical,
+    CASE
+        WHEN
+            page_views > prev_week_same_day AND prev_week_same_day > week_ago
+            THEN 'Improving Trend'
+        WHEN
+            page_views < prev_week_same_day AND prev_week_same_day < week_ago
+            THEN 'Declining Trend'
+        WHEN
+            page_views > prev_week_same_day AND prev_week_same_day <= week_ago
+            THEN 'Recovery'
+        WHEN
+            page_views < prev_week_same_day AND prev_week_same_day >= week_ago
+            THEN 'Deterioration'
         ELSE 'Stable'
-    END as weekly_trend
+    END AS weekly_trend
 FROM weekly_patterns
 ORDER BY visit_date;
 
 -- Clean up
 DROP TABLE IF EXISTS stock_prices CASCADE;
 DROP TABLE IF EXISTS website_traffic CASCADE;
-DROP TABLE IF EXISTS temperature_readings CASCADE; 
+DROP TABLE IF EXISTS temperature_readings CASCADE;

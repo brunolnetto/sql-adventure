@@ -23,7 +23,7 @@ CREATE TABLE product_sales (
     product_name VARCHAR(100),
     category VARCHAR(50),
     subcategory VARCHAR(50),
-    sales_amount DECIMAL(10,2),
+    sales_amount DECIMAL(10, 2),
     units_sold INT,
     sale_date DATE,
     region VARCHAR(50)
@@ -32,11 +32,47 @@ CREATE TABLE product_sales (
 -- Insert realistic sales data across multiple categories
 INSERT INTO product_sales VALUES
 -- Electronics Category
-(1, 'Laptop Pro', 'Electronics', 'Computers', 1200.00, 15, '2024-01-15', 'North'),
-(2, 'Wireless Mouse', 'Electronics', 'Accessories', 45.00, 120, '2024-01-16', 'North'),
-(3, 'Gaming Keyboard', 'Electronics', 'Accessories', 150.00, 25, '2024-01-17', 'South'),
+(
+    1,
+    'Laptop Pro',
+    'Electronics',
+    'Computers',
+    1200.00,
+    15,
+    '2024-01-15',
+    'North'
+),
+(
+    2,
+    'Wireless Mouse',
+    'Electronics',
+    'Accessories',
+    45.00,
+    120,
+    '2024-01-16',
+    'North'
+),
+(
+    3,
+    'Gaming Keyboard',
+    'Electronics',
+    'Accessories',
+    150.00,
+    25,
+    '2024-01-17',
+    'South'
+),
 (4, '4K Monitor', 'Electronics', 'Displays', 450.00, 8, '2024-01-18', 'East'),
-(5, 'Bluetooth Headphones', 'Electronics', 'Audio', 89.99, 45, '2024-01-19', 'West'),
+(
+    5,
+    'Bluetooth Headphones',
+    'Electronics',
+    'Audio',
+    89.99,
+    45,
+    '2024-01-19',
+    'West'
+),
 (6, 'Tablet Air', 'Electronics', 'Mobile', 350.00, 12, '2024-01-20', 'North'),
 
 -- Clothing Category
@@ -48,11 +84,56 @@ INSERT INTO product_sales VALUES
 (12, 'Sneakers', 'Clothing', 'Footwear', 95.00, 28, '2024-01-20', 'South'),
 
 -- Home & Garden Category
-(13, 'Garden Hose', 'Home & Garden', 'Outdoor', 35.00, 40, '2024-01-15', 'West'),
-(14, 'Kitchen Blender', 'Home & Garden', 'Appliances', 75.00, 15, '2024-01-16', 'East'),
-(15, 'LED Light Bulbs', 'Home & Garden', 'Lighting', 12.99, 200, '2024-01-17', 'North'),
-(16, 'Coffee Maker', 'Home & Garden', 'Appliances', 120.00, 10, '2024-01-18', 'South'),
-(17, 'Plant Pot Set', 'Home & Garden', 'Decor', 45.00, 25, '2024-01-19', 'West'),
+(
+    13,
+    'Garden Hose',
+    'Home & Garden',
+    'Outdoor',
+    35.00,
+    40,
+    '2024-01-15',
+    'West'
+),
+(
+    14,
+    'Kitchen Blender',
+    'Home & Garden',
+    'Appliances',
+    75.00,
+    15,
+    '2024-01-16',
+    'East'
+),
+(
+    15,
+    'LED Light Bulbs',
+    'Home & Garden',
+    'Lighting',
+    12.99,
+    200,
+    '2024-01-17',
+    'North'
+),
+(
+    16,
+    'Coffee Maker',
+    'Home & Garden',
+    'Appliances',
+    120.00,
+    10,
+    '2024-01-18',
+    'South'
+),
+(
+    17,
+    'Plant Pot Set',
+    'Home & Garden',
+    'Decor',
+    45.00,
+    25,
+    '2024-01-19',
+    'West'
+),
 (18, 'Tool Kit', 'Home & Garden', 'Tools', 85.00, 8, '2024-01-20', 'East');
 
 -- =====================================================
@@ -60,33 +141,39 @@ INSERT INTO product_sales VALUES
 -- =====================================================
 
 -- Rank products within each category by sales amount
-SELECT 
+SELECT
     product_name,
     category,
     subcategory,
     sales_amount,
-    ROW_NUMBER() OVER (PARTITION BY category ORDER BY sales_amount DESC) as category_rank,
-    RANK() OVER (PARTITION BY category ORDER BY sales_amount DESC) as rank_with_ties,
-    DENSE_RANK() OVER (PARTITION BY category ORDER BY sales_amount DESC) as dense_rank
+    ROW_NUMBER()
+        OVER (PARTITION BY category ORDER BY sales_amount DESC)
+        AS category_rank,
+    RANK()
+        OVER (PARTITION BY category ORDER BY sales_amount DESC)
+        AS rank_with_ties,
+    DENSE_RANK()
+        OVER (PARTITION BY category ORDER BY sales_amount DESC)
+        AS dense_rank
 FROM product_sales
-ORDER BY category, sales_amount DESC;
+ORDER BY category ASC, sales_amount DESC;
 
 -- =====================================================
 -- Example 2: Category Performance Analysis
 -- =====================================================
 
 -- Analyze category performance with multiple metrics
-SELECT 
+SELECT
     category,
-    COUNT(*) as product_count,
-    ROUND(AVG(sales_amount), 2) as avg_sales,
-    ROUND(SUM(sales_amount), 2) as total_sales,
-    ROUND(MAX(sales_amount), 2) as max_sales,
-    ROUND(MIN(sales_amount), 2) as min_sales,
-    ROUND(STDDEV(sales_amount), 2) as sales_stddev,
+    COUNT(*) AS product_count,
+    ROUND(AVG(sales_amount), 2) AS avg_sales,
+    ROUND(SUM(sales_amount), 2) AS total_sales,
+    ROUND(MAX(sales_amount), 2) AS max_sales,
+    ROUND(MIN(sales_amount), 2) AS min_sales,
+    ROUND(STDDEV(sales_amount), 2) AS sales_stddev,
     ROUND(
         (MAX(sales_amount) - MIN(sales_amount)) * 100.0 / AVG(sales_amount), 2
-    ) as sales_variation_pct
+    ) AS sales_variation_pct
 FROM product_sales
 GROUP BY category
 ORDER BY total_sales DESC;
@@ -97,16 +184,19 @@ ORDER BY total_sales DESC;
 
 -- Get top 3 products from each category
 WITH ranked_products AS (
-    SELECT 
+    SELECT
         product_name,
         category,
         subcategory,
         sales_amount,
         units_sold,
-        ROW_NUMBER() OVER (PARTITION BY category ORDER BY sales_amount DESC) as category_rank
+        ROW_NUMBER()
+            OVER (PARTITION BY category ORDER BY sales_amount DESC)
+            AS category_rank
     FROM product_sales
 )
-SELECT 
+
+SELECT
     product_name,
     category,
     subcategory,
@@ -118,4 +208,4 @@ WHERE category_rank <= 3
 ORDER BY category, category_rank;
 
 -- Clean up
-DROP TABLE IF EXISTS product_sales CASCADE; 
+DROP TABLE IF EXISTS product_sales CASCADE;

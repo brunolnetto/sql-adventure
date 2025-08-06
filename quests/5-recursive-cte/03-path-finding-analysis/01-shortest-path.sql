@@ -24,8 +24,8 @@ CREATE TABLE graph_nodes (
 CREATE TABLE graph_edges (
     from_node INT,
     to_node INT,
-    FOREIGN KEY (from_node) REFERENCES graph_nodes(node_id),
-    FOREIGN KEY (to_node) REFERENCES graph_nodes(node_id)
+    FOREIGN KEY (from_node) REFERENCES graph_nodes (node_id),
+    FOREIGN KEY (to_node) REFERENCES graph_nodes (node_id)
 );
 
 -- Insert sample data
@@ -54,29 +54,31 @@ INSERT INTO graph_edges VALUES
 -- Find shortest path from A to H using BFS
 WITH RECURSIVE shortest_path AS (
     -- Base case: start node
-    SELECT 
-        1 as node_id,
-        0 as distance,
-        ARRAY[1] as path,
-        ARRAY['A'] as path_names
+    SELECT
+        1 AS node_id,
+        0 AS distance,
+        ARRAY[1] AS path,
+        ARRAY['A'] AS path_names
     FROM graph_nodes
     WHERE node_id = 1
-    
+
     UNION ALL
-    
+
     -- Recursive case: explore neighbors
-    SELECT 
+    SELECT
         ge.to_node,
         sp.distance + 1,
         sp.path || ge.to_node,
         sp.path_names || gn.node_name
-    FROM graph_edges ge
-    INNER JOIN shortest_path sp ON ge.from_node = sp.node_id
-    INNER JOIN graph_nodes gn ON ge.to_node = gn.node_id
-    WHERE NOT (ge.to_node = ANY(sp.path))  -- Avoid cycles
-    AND sp.distance < 10  -- Limit depth to prevent infinite recursion
+    FROM graph_edges AS ge
+    INNER JOIN shortest_path AS sp ON ge.from_node = sp.node_id
+    INNER JOIN graph_nodes AS gn ON ge.to_node = gn.node_id
+    WHERE
+        NOT (ge.to_node = ANY(sp.path))  -- Avoid cycles
+        AND sp.distance < 10  -- Limit depth to prevent infinite recursion
 )
-SELECT 
+
+SELECT
     node_id,
     distance,
     path_names,
@@ -88,4 +90,4 @@ LIMIT 1;
 
 -- Clean up
 DROP TABLE IF EXISTS graph_edges CASCADE;
-DROP TABLE IF EXISTS graph_nodes CASCADE; 
+DROP TABLE IF EXISTS graph_nodes CASCADE;

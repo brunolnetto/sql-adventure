@@ -22,7 +22,7 @@ CREATE TABLE filesystem (
     is_directory BOOLEAN,
     size_bytes BIGINT,
     created_date TIMESTAMP,
-    FOREIGN KEY (parent_id) REFERENCES filesystem(id)
+    FOREIGN KEY (parent_id) REFERENCES filesystem (id)
 );
 
 -- Insert sample filesystem data
@@ -47,23 +47,23 @@ INSERT INTO filesystem VALUES
 -- Find complete filesystem hierarchy with full paths
 WITH RECURSIVE filesystem_tree AS (
     -- Base case: root directory
-    SELECT 
+    SELECT
         id,
         name,
         parent_id,
         is_directory,
         size_bytes,
         created_date,
-        0 as level,
-        CAST(name AS VARCHAR(500)) as full_path,
-        size_bytes as total_size
-    FROM filesystem 
+        0 AS level,
+        CAST(name AS VARCHAR(500)) AS full_path,
+        size_bytes AS total_size
+    FROM filesystem
     WHERE parent_id IS NULL
-    
+
     UNION ALL
-    
+
     -- Recursive case: child files and directories
-    SELECT 
+    SELECT
         f.id,
         f.name,
         f.parent_id,
@@ -72,70 +72,73 @@ WITH RECURSIVE filesystem_tree AS (
         f.created_date,
         ft.level + 1,
         CAST(ft.full_path || '/' || f.name AS VARCHAR(500)),
-        CASE 
+        CASE
             WHEN f.is_directory THEN 0
             ELSE f.size_bytes
-        END as total_size
-    FROM filesystem f
-    INNER JOIN filesystem_tree ft ON f.parent_id = ft.id
+        END AS total_size
+    FROM filesystem AS f
+    INNER JOIN filesystem_tree AS ft ON f.parent_id = ft.id
 )
-SELECT 
+
+SELECT
     level,
     name,
-    CASE 
+    full_path,
+    created_date,
+    CASE
         WHEN is_directory THEN 'Directory'
         ELSE 'File'
-    END as type,
-    full_path,
-    CASE 
+    END AS type,
+    CASE
         WHEN is_directory THEN 'N/A'
-        ELSE size_bytes::VARCHAR || ' bytes'
-    END as size,
-    created_date
+        ELSE CAST (size_bytes AS VARCHAR) || ' bytes'
+    END AS size
 FROM filesystem_tree
 ORDER BY full_path;
 
 -- Calculate directory sizes (including subdirectories)
 WITH RECURSIVE directory_sizes AS (
     -- Base case: files (leaf nodes)
-    SELECT 
+    SELECT
         id,
         parent_id,
-        size_bytes as total_size,
-        0 as level
+        size_bytes AS total_size,
+        0 AS level
     FROM filesystem
     WHERE NOT is_directory
-    
+
     UNION ALL
-    
+
     -- Recursive case: aggregate sizes up the tree
-    SELECT 
+    SELECT
         f.id,
         f.parent_id,
         ds.total_size + COALESCE(f.size_bytes, 0),
         ds.level + 1
-    FROM filesystem f
-    INNER JOIN directory_sizes ds ON f.id = ds.parent_id
+    FROM filesystem AS f
+    INNER JOIN directory_sizes AS ds ON f.id = ds.parent_id
     WHERE f.is_directory
 ),
+
 final_sizes AS (
     -- Get the final size for each directory (highest level)
     SELECT DISTINCT
         id,
         parent_id,
-        MAX(total_size) OVER (PARTITION BY id) as total_size,
-        MAX(level) OVER (PARTITION BY id) as max_level
+        MAX(total_size) OVER (PARTITION BY id) AS total_size,
+        MAX(level) OVER (PARTITION BY id) AS max_level
     FROM directory_sizes
 )
-SELECT 
-    f.name as directory_name,
-    fs.total_size as total_size_bytes,
-    ROUND(fs.total_size / 1024.0, 2) as total_size_kb,
-    ROUND(fs.total_size / 1024.0 / 1024.0, 2) as total_size_mb
-FROM final_sizes fs
-INNER JOIN filesystem f ON fs.id = f.id
+
+SELECT
+    f.name AS directory_name,
+    fs.total_size AS total_size_bytes,
+    ROUND(fs.total_size / 1024.0, 2) AS total_size_kb,
+    ROUND(fs.total_size / 1024.0 / 1024.0, 2) AS total_size_mb
+FROM final_sizes AS fs
+INNER JOIN filesystem AS f ON fs.id = f.id
 WHERE f.is_directory
 ORDER BY fs.total_size DESC;
 
 -- Clean up
-DROP TABLE IF EXISTS filesystem CASCADE; 
+DROP TABLE IF EXISTS filesystem CASCADE;

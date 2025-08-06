@@ -33,15 +33,15 @@ DROP TABLE IF EXISTS products CASCADE;
 CREATE TABLE products (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(100),
-    cost DECIMAL(10,2)
+    cost DECIMAL(10, 2)
 );
 
 CREATE TABLE bom (
     parent_id INT,
     child_id INT,
     quantity INT,
-    FOREIGN KEY (parent_id) REFERENCES products(product_id),
-    FOREIGN KEY (child_id) REFERENCES products(product_id)
+    FOREIGN KEY (parent_id) REFERENCES products (product_id),
+    FOREIGN KEY (child_id) REFERENCES products (product_id)
 );
 
 -- Insert sample data
@@ -65,47 +65,54 @@ INSERT INTO bom VALUES
 -- Calculate total cost of each product including subcomponents
 WITH RECURSIVE product_cost AS (
     -- Base case: products with no subcomponents
-    SELECT 
+    SELECT
         p.product_id,
         p.product_name,
-        p.cost as direct_cost,
-        CAST(p.cost AS DECIMAL(10,2)) as total_cost,
-        0 as level
-    FROM products p
-    WHERE NOT EXISTS (SELECT 1 FROM bom WHERE parent_id = p.product_id)
-    
+        p.cost AS direct_cost,
+        CAST(p.cost AS DECIMAL(10, 2)) AS total_cost,
+        0 AS level
+    FROM products AS p
+    WHERE
+        NOT EXISTS (
+            SELECT 1 FROM bom
+            WHERE parent_id = p.product_id
+        )
+
     UNION ALL
-    
+
     -- Recursive case: products with subcomponents
-    SELECT 
+    SELECT
         p.product_id,
         p.product_name,
-        p.cost as direct_cost,
-        CAST(p.cost + (b.quantity * pc.total_cost) AS DECIMAL(10,2)) as total_cost,
+        p.cost AS direct_cost,
+        CAST(p.cost + (b.quantity * pc.total_cost) AS DECIMAL(10, 2))
+            AS total_cost,
         pc.level + 1
-    FROM products p
-    INNER JOIN bom b ON p.product_id = b.parent_id
-    INNER JOIN product_cost pc ON b.child_id = pc.product_id
+    FROM products AS p
+    INNER JOIN bom AS b ON p.product_id = b.parent_id
+    INNER JOIN product_cost AS pc ON b.child_id = pc.product_id
 ),
+
 final_costs AS (
     -- Get the final cost for each product (highest level)
     SELECT DISTINCT
         product_id,
         product_name,
         direct_cost,
-        MAX(total_cost) OVER (PARTITION BY product_id) as total_cost,
-        MAX(level) OVER (PARTITION BY product_id) as max_level
+        MAX(total_cost) OVER (PARTITION BY product_id) AS total_cost,
+        MAX(level) OVER (PARTITION BY product_id) AS max_level
     FROM product_cost
 )
-SELECT 
+
+SELECT
     product_name,
     direct_cost,
     total_cost,
-    max_level as level,
-    (total_cost - direct_cost) as component_cost
+    max_level AS level,
+    (total_cost - direct_cost) AS component_cost
 FROM final_costs
-ORDER BY max_level DESC, product_name;
+ORDER BY max_level DESC, product_name ASC;
 
 -- Clean up
 DROP TABLE IF EXISTS bom CASCADE;
-DROP TABLE IF EXISTS products CASCADE; 
+DROP TABLE IF EXISTS products CASCADE;

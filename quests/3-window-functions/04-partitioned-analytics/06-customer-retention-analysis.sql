@@ -23,7 +23,7 @@ CREATE TABLE customer_transactions (
     transaction_id INT PRIMARY KEY,
     customer_id INT,
     transaction_date DATE,
-    amount DECIMAL(10,2),
+    amount DECIMAL(10, 2),
     product_category VARCHAR(50),
     payment_method VARCHAR(20)
 );
@@ -117,34 +117,46 @@ INSERT INTO customer_transactions VALUES
 
 -- Analyze customer retention patterns
 WITH customer_retention AS (
-    SELECT 
+    SELECT
         ct.customer_id,
         cp.customer_name,
         cp.registration_date,
-        COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date)) as active_months,
-        EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) as months_since_registration,
-        CASE 
-            WHEN COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date)) >= 
-                 EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.8 THEN 'High Retention'
-            WHEN COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date)) >= 
-                 EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.5 THEN 'Medium Retention'
+        COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
+            AS active_months,
+        EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+            AS months_since_registration,
+        CASE
+            WHEN
+                COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
+                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.8 THEN 'High Retention'
+            WHEN
+                COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
+                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.5 THEN 'Medium Retention'
             ELSE 'Low Retention'
-        END as retention_level
-    FROM customer_transactions ct
-    JOIN customer_profiles cp ON ct.customer_id = cp.customer_id
+        END AS retention_level
+    FROM customer_transactions AS ct
+    INNER JOIN customer_profiles AS cp ON ct.customer_id = cp.customer_id
     GROUP BY ct.customer_id, cp.customer_name, cp.registration_date
 )
-SELECT 
+
+SELECT
     customer_id,
     customer_name,
     registration_date,
     active_months,
     months_since_registration,
+    retention_level,
     ROUND(
         (active_months * 100.0 / NULLIF(months_since_registration, 0)), 2
-    ) as retention_rate,
-    retention_level,
-    ROW_NUMBER() OVER (ORDER BY (active_months * 100.0 / NULLIF(months_since_registration, 0)) DESC) as retention_rank
+    ) AS retention_rate,
+    ROW_NUMBER()
+        OVER (
+            ORDER BY
+                (
+                    active_months * 100.0 / NULLIF(months_since_registration, 0)
+                ) DESC
+        )
+        AS retention_rank
 FROM customer_retention
 ORDER BY retention_rate DESC;
 
@@ -154,26 +166,42 @@ ORDER BY retention_rate DESC;
 
 -- Predict future customer value based on current behavior
 WITH customer_predictions AS (
-    SELECT 
+    SELECT
         ct.customer_id,
         cp.customer_name,
         cp.customer_tier,
-        COUNT(*) as transaction_count,
-        SUM(ct.amount) as total_spent,
-        AVG(ct.amount) as avg_transaction,
-        EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date)) as customer_age_days,
-        EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date))) as days_since_last_purchase,
+        COUNT(*) AS transaction_count,
+        SUM(ct.amount) AS total_spent,
+        AVG(ct.amount) AS avg_transaction,
+        EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date))
+            AS customer_age_days,
+        EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date)))
+            AS days_since_last_purchase,
         -- Predicted annual value
         ROUND(
-            (SUM(ct.amount) * 365.0 / NULLIF(EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date)), 0)), 2
-        ) as predicted_annual_value,
+            (
+                SUM(ct.amount)
+                * 365.0
+                / NULLIF(
+                    EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date)), 0
+                )
+            ),
+            2
+        ) AS predicted_annual_value,
         -- Churn risk (higher days since last purchase = higher risk)
-        NTILE(5) OVER (ORDER BY EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date)))) as churn_risk_score
-    FROM customer_transactions ct
-    JOIN customer_profiles cp ON ct.customer_id = cp.customer_id
-    GROUP BY ct.customer_id, cp.customer_name, cp.customer_tier, cp.registration_date
+        NTILE(5)
+            OVER (
+                ORDER BY
+                    EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date)))
+            )
+            AS churn_risk_score
+    FROM customer_transactions AS ct
+    INNER JOIN customer_profiles AS cp ON ct.customer_id = cp.customer_id
+    GROUP BY
+        ct.customer_id, cp.customer_name, cp.customer_tier, cp.registration_date
 )
-SELECT 
+
+SELECT
     customer_id,
     customer_name,
     customer_tier,
@@ -190,11 +218,11 @@ SELECT
         WHEN 3 THEN 'Medium Risk'
         WHEN 4 THEN 'High Risk'
         WHEN 5 THEN 'Very High Risk'
-    END as churn_risk_level,
-    ROW_NUMBER() OVER (ORDER BY predicted_annual_value DESC) as value_rank
+    END AS churn_risk_level,
+    ROW_NUMBER() OVER (ORDER BY predicted_annual_value DESC) AS value_rank
 FROM customer_predictions
 ORDER BY predicted_annual_value DESC;
 
 -- Clean up
 DROP TABLE IF EXISTS customer_transactions CASCADE;
-DROP TABLE IF EXISTS customer_profiles CASCADE; 
+DROP TABLE IF EXISTS customer_profiles CASCADE;

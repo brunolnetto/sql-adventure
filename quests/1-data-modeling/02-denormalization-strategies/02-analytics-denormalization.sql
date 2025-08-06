@@ -31,14 +31,14 @@ CREATE TABLE products_normalized (
     category_id INT,
     brand_id INT,
     sku VARCHAR(50) UNIQUE,
-    unit_price DECIMAL(10,2),
-    cost_price DECIMAL(10,2)
+    unit_price DECIMAL(10, 2),
+    cost_price DECIMAL(10, 2)
 );
 
 CREATE TABLE categories_normalized (
     category_id INT PRIMARY KEY,
     category_name VARCHAR(100),
-    parent_category_id INT REFERENCES categories_normalized(category_id),
+    parent_category_id INT REFERENCES categories_normalized (category_id),
     description TEXT
 );
 
@@ -50,19 +50,19 @@ CREATE TABLE brands_normalized (
 
 CREATE TABLE orders_normalized (
     order_id INT PRIMARY KEY,
-    customer_id INT REFERENCES customers_normalized(customer_id),
+    customer_id INT REFERENCES customers_normalized (customer_id),
     order_date TIMESTAMP,
     status VARCHAR(20),
-    total_amount DECIMAL(10,2)
+    total_amount DECIMAL(10, 2)
 );
 
 CREATE TABLE order_items_normalized (
     order_item_id INT PRIMARY KEY,
-    order_id INT REFERENCES orders_normalized(order_id),
-    product_id INT REFERENCES products_normalized(product_id),
+    order_id INT REFERENCES orders_normalized (order_id),
+    product_id INT REFERENCES products_normalized (product_id),
     quantity INT,
-    unit_price DECIMAL(10,2),
-    discount_amount DECIMAL(10,2)
+    unit_price DECIMAL(10, 2),
+    discount_amount DECIMAL(10, 2)
 );
 
 -- Insert normalized data
@@ -119,11 +119,11 @@ CREATE TABLE dim_customers (
     customer_state VARCHAR(50),
     customer_country VARCHAR(50),
     customer_segment VARCHAR(50),
-    customer_lifetime_value DECIMAL(12,2),
-    is_active BOOLEAN DEFAULT true,
+    customer_lifetime_value DECIMAL(12, 2),
+    is_active BOOLEAN DEFAULT TRUE,
     valid_from DATE,
     valid_to DATE,
-    current_flag BOOLEAN DEFAULT true
+    current_flag BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE dim_products (
@@ -134,14 +134,14 @@ CREATE TABLE dim_products (
     category_name VARCHAR(100),
     parent_category_name VARCHAR(100),
     brand_name VARCHAR(100),
-    unit_price DECIMAL(10,2),
-    cost_price DECIMAL(10,2),
-    profit_margin DECIMAL(10,2),
-    profit_margin_percent DECIMAL(5,2),
-    is_active BOOLEAN DEFAULT true,
+    unit_price DECIMAL(10, 2),
+    cost_price DECIMAL(10, 2),
+    profit_margin DECIMAL(10, 2),
+    profit_margin_percent DECIMAL(5, 2),
+    is_active BOOLEAN DEFAULT TRUE,
     valid_from DATE,
     valid_to DATE,
-    current_flag BOOLEAN DEFAULT true
+    current_flag BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE dim_time (
@@ -156,7 +156,7 @@ CREATE TABLE dim_time (
     quarter VARCHAR(2),
     year INT,
     is_weekend BOOLEAN,
-    is_holiday BOOLEAN DEFAULT false
+    is_holiday BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE dim_geography (
@@ -172,49 +172,177 @@ CREATE TABLE dim_geography (
 -- Fact Table
 CREATE TABLE fact_sales (
     sale_key BIGSERIAL PRIMARY KEY,
-    customer_key INT REFERENCES dim_customers(customer_key),
-    product_key INT REFERENCES dim_products(product_key),
-    time_key INT REFERENCES dim_time(time_key),
-    geography_key INT REFERENCES dim_geography(geography_key),
+    customer_key INT REFERENCES dim_customers (customer_key),
+    product_key INT REFERENCES dim_products (product_key),
+    time_key INT REFERENCES dim_time (time_key),
+    geography_key INT REFERENCES dim_geography (geography_key),
     order_id INT,
     quantity INT,
-    unit_price DECIMAL(10,2),
-    total_amount DECIMAL(10,2),
-    discount_amount DECIMAL(10,2),
-    net_amount DECIMAL(10,2),
-    cost_amount DECIMAL(10,2),
-    profit_amount DECIMAL(10,2),
-    profit_margin_percent DECIMAL(5,2)
+    unit_price DECIMAL(10, 2),
+    total_amount DECIMAL(10, 2),
+    discount_amount DECIMAL(10, 2),
+    net_amount DECIMAL(10, 2),
+    cost_amount DECIMAL(10, 2),
+    profit_amount DECIMAL(10, 2),
+    profit_margin_percent DECIMAL(5, 2)
 );
 
 -- Populate dimension tables
 INSERT INTO dim_customers (
-    customer_key, customer_id, customer_name, customer_email, 
+    customer_key, customer_id, customer_name, customer_email,
     customer_city, customer_state, customer_country, customer_segment,
     customer_lifetime_value, valid_from, valid_to, current_flag
 ) VALUES
-(1, 1, 'Alice Johnson', 'alice@email.com', 'New York', 'NY', 'USA', 'Premium', 1529.96, '2023-01-15', NULL, true),
-(2, 2, 'Bob Smith', 'bob@email.com', 'Los Angeles', 'CA', 'USA', 'Standard', 139.98, '2023-02-20', NULL, true),
-(3, 3, 'Carol Davis', 'carol@email.com', 'Chicago', 'IL', 'USA', 'Premium', 899.99, '2023-03-10', NULL, true);
+(
+    1,
+    1,
+    'Alice Johnson',
+    'alice@email.com',
+    'New York',
+    'NY',
+    'USA',
+    'Premium',
+    1529.96,
+    '2023-01-15',
+    NULL,
+    TRUE
+),
+(
+    2,
+    2,
+    'Bob Smith',
+    'bob@email.com',
+    'Los Angeles',
+    'CA',
+    'USA',
+    'Standard',
+    139.98,
+    '2023-02-20',
+    NULL,
+    TRUE
+),
+(
+    3,
+    3,
+    'Carol Davis',
+    'carol@email.com',
+    'Chicago',
+    'IL',
+    'USA',
+    'Premium',
+    899.99,
+    '2023-03-10',
+    NULL,
+    TRUE
+);
 
 INSERT INTO dim_products (
-    product_key, product_id, product_name, product_sku, category_name, parent_category_name,
+    product_key,
+    product_id,
+    product_name,
+    product_sku,
+    category_name,
+    parent_category_name,
     brand_name, unit_price, cost_price, profit_margin, profit_margin_percent,
     valid_from, valid_to, current_flag
 ) VALUES
-(1, 1, 'Laptop Pro X1', 'LAP-X1-001', 'Computers', 'Electronics', 'TechCorp', 1299.99, 800.00, 499.99, 38.46, '2024-01-01', NULL, true),
-(2, 2, 'Wireless Mouse Elite', 'ACC-MSE-001', 'Accessories', 'Electronics', 'AccessoryMax', 49.99, 15.00, 34.99, 70.00, '2024-01-01', NULL, true),
-(3, 3, 'Smartphone Ultra', 'PHN-ULT-001', 'Smartphones', 'Electronics', 'MobilePro', 899.99, 450.00, 449.99, 50.00, '2024-01-01', NULL, true),
-(4, 4, 'USB Keyboard Pro', 'ACC-KBD-001', 'Accessories', 'Electronics', 'AccessoryMax', 89.99, 30.00, 59.99, 66.67, '2024-01-01', NULL, true);
+(
+    1,
+    1,
+    'Laptop Pro X1',
+    'LAP-X1-001',
+    'Computers',
+    'Electronics',
+    'TechCorp',
+    1299.99,
+    800.00,
+    499.99,
+    38.46,
+    '2024-01-01',
+    NULL,
+    TRUE
+),
+(
+    2,
+    2,
+    'Wireless Mouse Elite',
+    'ACC-MSE-001',
+    'Accessories',
+    'Electronics',
+    'AccessoryMax',
+    49.99,
+    15.00,
+    34.99,
+    70.00,
+    '2024-01-01',
+    NULL,
+    TRUE
+),
+(
+    3,
+    3,
+    'Smartphone Ultra',
+    'PHN-ULT-001',
+    'Smartphones',
+    'Electronics',
+    'MobilePro',
+    899.99,
+    450.00,
+    449.99,
+    50.00,
+    '2024-01-01',
+    NULL,
+    TRUE
+),
+(
+    4,
+    4,
+    'USB Keyboard Pro',
+    'ACC-KBD-001',
+    'Accessories',
+    'Electronics',
+    'AccessoryMax',
+    89.99,
+    30.00,
+    59.99,
+    66.67,
+    '2024-01-01',
+    NULL,
+    TRUE
+);
 
 INSERT INTO dim_time (
     time_key, full_date, day_of_week, day_of_month, day_of_year, week_of_year,
     month_name, month_number, quarter, year, is_weekend
 ) VALUES
-(20240115, '2024-01-15', 'Monday', 15, 15, 3, 'January', 1, 'Q1', 2024, false),
-(20240116, '2024-01-16', 'Tuesday', 16, 16, 3, 'January', 1, 'Q1', 2024, false),
-(20240117, '2024-01-17', 'Wednesday', 17, 17, 3, 'January', 1, 'Q1', 2024, false),
-(20240118, '2024-01-18', 'Thursday', 18, 18, 3, 'January', 1, 'Q1', 2024, false);
+(20240115, '2024-01-15', 'Monday', 15, 15, 3, 'January', 1, 'Q1', 2024, FALSE),
+(20240116, '2024-01-16', 'Tuesday', 16, 16, 3, 'January', 1, 'Q1', 2024, FALSE),
+(
+    20240117,
+    '2024-01-17',
+    'Wednesday',
+    17,
+    17,
+    3,
+    'January',
+    1,
+    'Q1',
+    2024,
+    FALSE
+),
+(
+    20240118,
+    '2024-01-18',
+    'Thursday',
+    18,
+    18,
+    3,
+    'January',
+    1,
+    'Q1',
+    2024,
+    FALSE
+);
 
 INSERT INTO dim_geography (
     geography_key, city, state, country, region, population, timezone
@@ -229,7 +357,21 @@ INSERT INTO fact_sales (
     quantity, unit_price, total_amount, discount_amount, net_amount,
     cost_amount, profit_amount, profit_margin_percent
 ) VALUES
-(1, 1, 20240115, 1, 1, 1, 1299.99, 1299.99, 0.00, 1299.99, 800.00, 499.99, 38.46),
+(
+    1,
+    1,
+    20240115,
+    1,
+    1,
+    1,
+    1299.99,
+    1299.99,
+    0.00,
+    1299.99,
+    800.00,
+    499.99,
+    38.46
+),
 (1, 2, 20240115, 1, 1, 1, 49.99, 49.99, 0.00, 49.99, 15.00, 34.99, 70.00),
 (1, 4, 20240115, 1, 1, 1, 89.99, 89.99, 0.00, 89.99, 30.00, 59.99, 66.67),
 (2, 2, 20240116, 2, 2, 1, 49.99, 49.99, 0.00, 49.99, 15.00, 34.99, 70.00),
@@ -241,46 +383,47 @@ INSERT INTO fact_sales (
 -- Demonstrate the power of star schema for analytics
 
 -- Sales by customer segment
-SELECT 
+SELECT
     dc.customer_segment,
-    COUNT(DISTINCT fs.order_id) as total_orders,
-    SUM(fs.quantity) as total_quantity,
-    SUM(fs.net_amount) as total_revenue,
-    SUM(fs.profit_amount) as total_profit,
-    ROUND(AVG(fs.profit_margin_percent), 2) as avg_profit_margin,
-    ROUND(SUM(fs.profit_amount) / SUM(fs.net_amount) * 100, 2) as overall_profit_margin
-FROM fact_sales fs
-JOIN dim_customers dc ON fs.customer_key = dc.customer_key
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+    SUM(fs.quantity) AS total_quantity,
+    SUM(fs.net_amount) AS total_revenue,
+    SUM(fs.profit_amount) AS total_profit,
+    ROUND(AVG(fs.profit_margin_percent), 2) AS avg_profit_margin,
+    ROUND(SUM(fs.profit_amount) / SUM(fs.net_amount) * 100, 2)
+        AS overall_profit_margin
+FROM fact_sales AS fs
+INNER JOIN dim_customers AS dc ON fs.customer_key = dc.customer_key
 GROUP BY dc.customer_segment
 ORDER BY total_revenue DESC;
 
 -- Sales by product category and time
-SELECT 
+SELECT
     dp.category_name,
     dt.month_name,
     dt.year,
-    COUNT(DISTINCT fs.order_id) as total_orders,
-    SUM(fs.quantity) as total_quantity,
-    SUM(fs.net_amount) as total_revenue,
-    SUM(fs.profit_amount) as total_profit
-FROM fact_sales fs
-JOIN dim_products dp ON fs.product_key = dp.product_key
-JOIN dim_time dt ON fs.time_key = dt.time_key
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+    SUM(fs.quantity) AS total_quantity,
+    SUM(fs.net_amount) AS total_revenue,
+    SUM(fs.profit_amount) AS total_profit
+FROM fact_sales AS fs
+INNER JOIN dim_products AS dp ON fs.product_key = dp.product_key
+INNER JOIN dim_time AS dt ON fs.time_key = dt.time_key
 GROUP BY dp.category_name, dt.month_name, dt.year
-ORDER BY dt.year, dt.month_number, total_revenue DESC;
+ORDER BY dt.year ASC, dt.month_number ASC, total_revenue DESC;
 
 -- Geographic sales analysis
-SELECT 
+SELECT
     dg.city,
     dg.state,
     dg.region,
-    COUNT(DISTINCT fs.order_id) as total_orders,
-    COUNT(DISTINCT fs.customer_key) as unique_customers,
-    SUM(fs.net_amount) as total_revenue,
-    ROUND(AVG(fs.net_amount), 2) as avg_order_value,
-    SUM(fs.profit_amount) as total_profit
-FROM fact_sales fs
-JOIN dim_geography dg ON fs.geography_key = dg.geography_key
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+    COUNT(DISTINCT fs.customer_key) AS unique_customers,
+    SUM(fs.net_amount) AS total_revenue,
+    ROUND(AVG(fs.net_amount), 2) AS avg_order_value,
+    SUM(fs.profit_amount) AS total_profit
+FROM fact_sales AS fs
+INNER JOIN dim_geography AS dg ON fs.geography_key = dg.geography_key
 GROUP BY dg.city, dg.state, dg.region
 ORDER BY total_revenue DESC;
 
@@ -309,8 +452,8 @@ CREATE TABLE dim_customer_segments (
     segment_key INT PRIMARY KEY,
     segment_name VARCHAR(50),
     segment_description TEXT,
-    min_lifetime_value DECIMAL(12,2),
-    max_lifetime_value DECIMAL(12,2)
+    min_lifetime_value DECIMAL(12, 2),
+    max_lifetime_value DECIMAL(12, 2)
 );
 
 -- Populate snowflake dimensions
@@ -321,13 +464,43 @@ INSERT INTO dim_product_categories VALUES
 (4, 'Smartphones', 'Electronics', 2, 'Electronics > Smartphones');
 
 INSERT INTO dim_product_brands VALUES
-(1, 'TechCorp', 'Leading technology manufacturer', 'USA', 'https://techcorp.com'),
-(2, 'MobilePro', 'Premium mobile device brand', 'South Korea', 'https://mobilepro.com'),
-(3, 'AccessoryMax', 'Quality accessories provider', 'China', 'https://accessorymax.com');
+(
+    1,
+    'TechCorp',
+    'Leading technology manufacturer',
+    'USA',
+    'https://techcorp.com'
+),
+(
+    2,
+    'MobilePro',
+    'Premium mobile device brand',
+    'South Korea',
+    'https://mobilepro.com'
+),
+(
+    3,
+    'AccessoryMax',
+    'Quality accessories provider',
+    'China',
+    'https://accessorymax.com'
+);
 
 INSERT INTO dim_customer_segments VALUES
-(1, 'Premium', 'High-value customers with significant purchase history', 1000.00, NULL),
-(2, 'Standard', 'Regular customers with moderate purchase history', 100.00, 999.99),
+(
+    1,
+    'Premium',
+    'High-value customers with significant purchase history',
+    1000.00,
+    NULL
+),
+(
+    2,
+    'Standard',
+    'Regular customers with moderate purchase history',
+    100.00,
+    999.99
+),
 (3, 'Basic', 'New or occasional customers', 0.00, 99.99);
 
 -- Example 4: Materialized Views for Analytics
@@ -335,45 +508,48 @@ INSERT INTO dim_customer_segments VALUES
 
 -- Materialized view for daily sales summary
 CREATE MATERIALIZED VIEW mv_daily_sales_summary AS
-SELECT 
+SELECT
     dt.full_date,
     dt.day_of_week,
     dt.month_name,
     dt.quarter,
     dt.year,
-    COUNT(DISTINCT fs.order_id) as total_orders,
-    COUNT(DISTINCT fs.customer_key) as unique_customers,
-    SUM(fs.quantity) as total_quantity,
-    SUM(fs.net_amount) as total_revenue,
-    SUM(fs.profit_amount) as total_profit,
-    ROUND(AVG(fs.net_amount), 2) as avg_order_value,
-    ROUND(SUM(fs.profit_amount) / SUM(fs.net_amount) * 100, 2) as profit_margin_percent
-FROM fact_sales fs
-JOIN dim_time dt ON fs.time_key = dt.time_key
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+    COUNT(DISTINCT fs.customer_key) AS unique_customers,
+    SUM(fs.quantity) AS total_quantity,
+    SUM(fs.net_amount) AS total_revenue,
+    SUM(fs.profit_amount) AS total_profit,
+    ROUND(AVG(fs.net_amount), 2) AS avg_order_value,
+    ROUND(SUM(fs.profit_amount) / SUM(fs.net_amount) * 100, 2)
+        AS profit_margin_percent
+FROM fact_sales AS fs
+INNER JOIN dim_time AS dt ON fs.time_key = dt.time_key
 GROUP BY dt.full_date, dt.day_of_week, dt.month_name, dt.quarter, dt.year
 ORDER BY dt.full_date;
 
 -- Materialized view for customer lifetime value
 CREATE MATERIALIZED VIEW mv_customer_lifetime_value AS
-SELECT 
+SELECT
     dc.customer_key,
     dc.customer_name,
     dc.customer_segment,
-    COUNT(DISTINCT fs.order_id) as total_orders,
-    SUM(fs.net_amount) as lifetime_value,
-    SUM(fs.profit_amount) as lifetime_profit,
-    ROUND(AVG(fs.net_amount), 2) as avg_order_value,
-    MIN(dt.full_date) as first_order_date,
-    MAX(dt.full_date) as last_order_date,
-    ROUND(SUM(fs.net_amount) / COUNT(DISTINCT fs.order_id), 2) as customer_value_per_order
-FROM fact_sales fs
-JOIN dim_customers dc ON fs.customer_key = dc.customer_key
-JOIN dim_time dt ON fs.time_key = dt.time_key
+    COUNT(DISTINCT fs.order_id) AS total_orders,
+    SUM(fs.net_amount) AS lifetime_value,
+    SUM(fs.profit_amount) AS lifetime_profit,
+    ROUND(AVG(fs.net_amount), 2) AS avg_order_value,
+    MIN(dt.full_date) AS first_order_date,
+    MAX(dt.full_date) AS last_order_date,
+    ROUND(SUM(fs.net_amount) / COUNT(DISTINCT fs.order_id), 2)
+        AS customer_value_per_order
+FROM fact_sales AS fs
+INNER JOIN dim_customers AS dc ON fs.customer_key = dc.customer_key
+INNER JOIN dim_time AS dt ON fs.time_key = dt.time_key
 GROUP BY dc.customer_key, dc.customer_name, dc.customer_segment
 ORDER BY lifetime_value DESC;
 
 -- Query the materialized views
-SELECT * FROM mv_daily_sales_summary ORDER BY full_date;
+SELECT * FROM mv_daily_sales_summary
+ORDER BY full_date;
 
 SELECT * FROM mv_customer_lifetime_value LIMIT 10;
 
@@ -381,7 +557,9 @@ SELECT * FROM mv_customer_lifetime_value LIMIT 10;
 -- Demonstrate how to incrementally load fact tables
 
 -- Function to incrementally load sales data
-CREATE OR REPLACE FUNCTION load_sales_incremental(p_start_date DATE, p_end_date DATE)
+CREATE OR REPLACE FUNCTION LOAD_SALES_INCREMENTAL(
+    p_start_date DATE, p_end_date DATE
+)
 RETURNS INTEGER AS $$
 DECLARE
     v_records_loaded INTEGER := 0;
@@ -435,7 +613,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Test incremental loading
-SELECT load_sales_incremental('2024-01-15', '2024-01-18');
+SELECT LOAD_SALES_INCREMENTAL('2024-01-15', '2024-01-18');
 
 -- Clean up
 DROP TABLE IF EXISTS customers_normalized CASCADE;
@@ -455,4 +633,4 @@ DROP TABLE IF EXISTS dim_product_brands CASCADE;
 DROP TABLE IF EXISTS dim_customer_segments CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_daily_sales_summary CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_customer_lifetime_value CASCADE;
-DROP FUNCTION IF EXISTS load_sales_incremental(DATE, DATE) CASCADE; 
+DROP FUNCTION IF EXISTS load_sales_incremental(DATE, DATE) CASCADE;

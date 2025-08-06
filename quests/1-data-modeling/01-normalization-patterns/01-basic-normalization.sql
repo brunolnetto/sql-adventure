@@ -29,13 +29,13 @@ CREATE TABLE customers (
 
 CREATE TABLE orders (
     order_id INT PRIMARY KEY,
-    customer_id INT REFERENCES customers(customer_id),
+    customer_id INT REFERENCES customers (customer_id),
     order_date DATE
 );
 
 CREATE TABLE order_items (
     item_id INT PRIMARY KEY,
-    order_id INT REFERENCES orders(order_id),
+    order_id INT REFERENCES orders (order_id),
     product_name VARCHAR(100),
     quantity INT
 );
@@ -66,7 +66,7 @@ CREATE TABLE order_details_violation (
     customer_id INT,
     customer_name VARCHAR(100), -- Depends only on customer_id, not the full key
     quantity INT,
-    unit_price DECIMAL(10,2),
+    unit_price DECIMAL(10, 2),
     PRIMARY KEY (order_id, product_id)
 );
 
@@ -74,12 +74,12 @@ CREATE TABLE order_details_violation (
 CREATE TABLE products (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(100),
-    unit_price DECIMAL(10,2)
+    unit_price DECIMAL(10, 2)
 );
 
 CREATE TABLE order_details (
     order_id INT,
-    product_id INT REFERENCES products(product_id),
+    product_id INT REFERENCES products (product_id),
     quantity INT,
     PRIMARY KEY (order_id, product_id)
 );
@@ -93,7 +93,8 @@ CREATE TABLE employees_violation (
     employee_name VARCHAR(100),
     department_id INT,
     department_name VARCHAR(100), -- Depends on department_id, not employee_id
-    department_location VARCHAR(100) -- Depends on department_id, not employee_id
+    -- Depends on department_id, not employee_id
+    department_location VARCHAR(100)
 );
 
 -- Normalized tables (3NF)
@@ -106,7 +107,7 @@ CREATE TABLE departments (
 CREATE TABLE employees (
     employee_id INT PRIMARY KEY,
     employee_name VARCHAR(100),
-    department_id INT REFERENCES departments(department_id)
+    department_id INT REFERENCES departments (department_id)
 );
 
 -- Insert sample data
@@ -120,12 +121,12 @@ INSERT INTO employees VALUES
 (3, 'Carol Davis', 2);
 
 -- Query to demonstrate normalization benefits
-SELECT 
+SELECT
     e.employee_name,
     d.department_name,
     d.department_location
-FROM employees e
-JOIN departments d ON e.department_id = d.department_id;
+FROM employees AS e
+INNER JOIN departments AS d ON e.department_id = d.department_id;
 
 -- Clean up
 DROP TABLE IF EXISTS unnormalized_orders CASCADE;
@@ -137,4 +138,4 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS order_details CASCADE;
 DROP TABLE IF EXISTS employees_violation CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
-DROP TABLE IF EXISTS employees CASCADE; 
+DROP TABLE IF EXISTS employees CASCADE;

@@ -75,106 +75,129 @@ INSERT INTO product_inventory VALUES
 
 -- Example 1: Array Element Filtering and Selection
 -- Filter array elements based on conditions
-SELECT 
+SELECT
     id,
-    product_data->>'name' as product_name,
-    product_data->'tags' as all_tags,
-    (SELECT jsonb_agg(tag) 
-     FROM jsonb_array_elements_text(product_data->'tags') as tag 
-     WHERE tag LIKE '%gaming%' OR tag LIKE '%audio%') as filtered_tags,
-    (SELECT jsonb_agg(variant) 
-     FROM jsonb_array_elements(product_data->'variants') as variant 
-     WHERE (variant->>'in_stock')::BOOLEAN = true) as available_variants
+    product_data ->> 'name' AS product_name,
+    product_data -> 'tags' AS all_tags,
+    (
+        SELECT jsonb_agg(tag)
+        FROM jsonb_array_elements_text(product_data -> 'tags') AS tag
+        WHERE tag LIKE '%gaming%' OR tag LIKE '%audio%'
+    ) AS filtered_tags,
+    (
+        SELECT jsonb_agg(variant)
+        FROM jsonb_array_elements(product_data -> 'variants') AS variant
+        WHERE (variant ->> 'in_stock')::BOOLEAN = true
+    ) AS available_variants
 FROM product_inventory
 ORDER BY id;
 
 -- Example 2: Array Aggregation and Analysis
 -- Analyze array contents and perform aggregations
-SELECT 
+SELECT
     id,
-    product_data->>'name' as product_name,
-    jsonb_array_length(product_data->'tags') as tag_count,
-    jsonb_array_length(product_data->'reviews') as review_count,
-    jsonb_array_length(product_data->'variants') as variant_count,
-    (SELECT AVG((review->>'rating')::INT) 
-     FROM jsonb_array_elements(product_data->'reviews') as review) as avg_rating,
-    (SELECT COUNT(*) 
-     FROM jsonb_array_elements(product_data->'variants') as variant 
-     WHERE (variant->>'in_stock')::BOOLEAN = true) as available_variants_count
+    product_data ->> 'name' AS product_name,
+    jsonb_array_length(product_data -> 'tags') AS tag_count,
+    jsonb_array_length(product_data -> 'reviews') AS review_count,
+    jsonb_array_length(product_data -> 'variants') AS variant_count,
+    (
+        SELECT avg((review ->> 'rating')::INT)
+        FROM jsonb_array_elements(product_data -> 'reviews') AS review
+    ) AS avg_rating,
+    (
+        SELECT count(*)
+        FROM jsonb_array_elements(product_data -> 'variants') AS variant
+        WHERE (variant ->> 'in_stock')::BOOLEAN = true
+    ) AS available_variants_count
 FROM product_inventory
 ORDER BY id;
 
 -- Example 3: Array Transformation and Mapping
 -- Transform array data using various functions
-SELECT 
+SELECT
     id,
-    product_data->>'name' as product_name,
+    product_data ->> 'name' AS product_name,
     (SELECT jsonb_agg(
         jsonb_build_object(
             'tag', tag,
-            'tag_length', LENGTH(tag),
-            'is_short', CASE WHEN LENGTH(tag) <= 6 THEN true ELSE false END
+            'tag_length', length(tag),
+            'is_short', coalesce(length(tag) <= 6, FALSE)
         )
-    ) FROM jsonb_array_elements_text(product_data->'tags') as tag) as transformed_tags,
+    ) FROM jsonb_array_elements_text(product_data -> 'tags') AS tag)
+        AS transformed_tags,
     (SELECT jsonb_agg(
         jsonb_build_object(
-            'region', price->>'region',
-            'amount_formatted', '$' || (price->>'amount')::DECIMAL(10,2),
-            'is_expensive', CASE WHEN (price->>'amount')::DECIMAL(10,2) > 1000 THEN true ELSE false END
+            'region', price ->> 'region',
+            'amount_formatted', '$' || (price ->> 'amount')::DECIMAL(10, 2),
+            'is_expensive',
+            coalesce((price ->> 'amount')::DECIMAL(10, 2) > 1000, FALSE)
         )
-    ) FROM jsonb_array_elements(product_data->'prices') as price) as transformed_prices
+    ) FROM jsonb_array_elements(product_data -> 'prices') AS price)
+        AS transformed_prices
 FROM product_inventory
 ORDER BY id;
 
 -- Example 4: Complex Array Operations
 -- Perform complex operations on nested arrays
-SELECT 
+SELECT
     id,
-    product_data->>'name' as product_name,
+    product_data ->> 'name' AS product_name,
     (SELECT jsonb_agg(
         jsonb_build_object(
-            'reviewer', review->>'user',
-            'rating', review->>'rating',
-            'comment_length', LENGTH(review->>'comment'),
-            'is_positive', CASE WHEN (review->>'rating')::INT >= 4 THEN true ELSE false END
+            'reviewer', review ->> 'user',
+            'rating', review ->> 'rating',
+            'comment_length', length(review ->> 'comment'),
+            'is_positive',
+            coalesce((review ->> 'rating')::INT >= 4, FALSE)
         )
-    ) FROM jsonb_array_elements(product_data->'reviews') as review) as analyzed_reviews,
+    ) FROM jsonb_array_elements(product_data -> 'reviews') AS review)
+        AS analyzed_reviews,
     (SELECT jsonb_agg(
         jsonb_build_object(
-            'color', variant->>'color',
-            'stock_status', CASE 
-                WHEN (variant->>'in_stock')::BOOLEAN = true THEN 'Available'
+            'color', variant ->> 'color',
+            'stock_status', CASE
+                WHEN (variant ->> 'in_stock')::BOOLEAN = true THEN 'Available'
                 ELSE 'Out of Stock'
             END,
-            'quantity_level', CASE 
-                WHEN (variant->>'quantity')::INT > 20 THEN 'High'
-                WHEN (variant->>'quantity')::INT > 10 THEN 'Medium'
+            'quantity_level', CASE
+                WHEN (variant ->> 'quantity')::INT > 20 THEN 'High'
+                WHEN (variant ->> 'quantity')::INT > 10 THEN 'Medium'
                 ELSE 'Low'
             END
         )
-    ) FROM jsonb_array_elements(product_data->'variants') as variant) as analyzed_variants
+    ) FROM jsonb_array_elements(product_data -> 'variants') AS variant)
+        AS analyzed_variants
 FROM product_inventory
 ORDER BY id;
 
 -- Example 5: Array Filtering with Complex Conditions
 -- Filter arrays based on multiple conditions
-SELECT 
+SELECT
     id,
-    product_data->>'name' as product_name,
-    (SELECT jsonb_agg(review) 
-     FROM jsonb_array_elements(product_data->'reviews') as review 
-     WHERE (review->>'rating')::INT >= 4 
-       AND LENGTH(review->>'comment') > 10) as high_quality_reviews,
-    (SELECT jsonb_agg(price) 
-     FROM jsonb_array_elements(product_data->'prices') as price 
-     WHERE (price->>'amount')::DECIMAL(10,2) < 1000 
-       AND price->>'currency' = 'USD') as affordable_us_prices,
-    (SELECT jsonb_agg(variant) 
-     FROM jsonb_array_elements(product_data->'variants') as variant 
-     WHERE (variant->>'in_stock')::BOOLEAN = true 
-       AND (variant->>'quantity')::INT > 10) as well_stocked_variants
+    product_data ->> 'name' AS product_name,
+    (
+        SELECT jsonb_agg(review)
+        FROM jsonb_array_elements(product_data -> 'reviews') AS review
+        WHERE
+            (review ->> 'rating')::INT >= 4
+            AND length(review ->> 'comment') > 10
+    ) AS high_quality_reviews,
+    (
+        SELECT jsonb_agg(price)
+        FROM jsonb_array_elements(product_data -> 'prices') AS price
+        WHERE
+            (price ->> 'amount')::DECIMAL(10, 2) < 1000
+            AND price ->> 'currency' = 'USD'
+    ) AS affordable_us_prices,
+    (
+        SELECT jsonb_agg(variant)
+        FROM jsonb_array_elements(product_data -> 'variants') AS variant
+        WHERE
+            (variant ->> 'in_stock')::BOOLEAN = true
+            AND (variant ->> 'quantity')::INT > 10
+    ) AS well_stocked_variants
 FROM product_inventory
 ORDER BY id;
 
 -- Clean up
-DROP TABLE IF EXISTS product_inventory CASCADE; 
+DROP TABLE IF EXISTS product_inventory CASCADE;

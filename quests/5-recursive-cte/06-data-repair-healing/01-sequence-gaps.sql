@@ -32,31 +32,33 @@ INSERT INTO sequence_data VALUES
 -- Fill gaps in sequence using recursive CTE
 WITH RECURSIVE sequence_gaps AS (
     -- Base case: find the range of sequence numbers
-    SELECT 
-        MIN(sequence_number) as min_seq,
-        MAX(sequence_number) as max_seq
+    SELECT
+        MIN(sequence_number) AS min_seq,
+        MAX(sequence_number) AS max_seq
     FROM sequence_data
-    
+
     UNION ALL
-    
+
     -- Recursive case: generate missing numbers
-    SELECT 
+    SELECT
         min_seq + 1,
         max_seq
     FROM sequence_gaps
     WHERE min_seq < max_seq
 ),
+
 missing_sequences AS (
-    SELECT min_seq as missing_number
+    SELECT min_seq AS missing_number
     FROM sequence_gaps
     WHERE min_seq NOT IN (SELECT sequence_number FROM sequence_data)
 )
-SELECT 
+
+SELECT
     missing_number,
-    'Missing' as status,
-    'Gap in sequence' as description
+    'Missing' AS status,
+    'Gap in sequence' AS description
 FROM missing_sequences
 ORDER BY missing_number;
 
 -- Clean up
-DROP TABLE IF EXISTS sequence_data CASCADE; 
+DROP TABLE IF EXISTS sequence_data CASCADE;

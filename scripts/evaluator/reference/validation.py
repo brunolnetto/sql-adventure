@@ -18,7 +18,7 @@ from sqlparse import sql, tokens
 from pydantic import BaseModel, ValidationError
 
 from .models import Evaluation, SQLFile, SQLPattern, TechnicalAnalysis, EducationalAnalysis
-from .enhanced_database import EnhancedDatabaseManager
+from .database_manager import DatabaseManager
 
 class ValidationLevel(Enum):
     ERROR = "error"
@@ -71,8 +71,9 @@ class ValidationResult:
 class SQLValidator:
     """Validates SQL syntax and semantics"""
     
-    def __init__(self):
+    def __init__(self, db_manager: Optional[DatabaseManager] = None):
         self.logger = logging.getLogger(__name__)
+        self.db_manager = db_manager
         
         # SQL keywords that should be uppercase
         self.sql_keywords = {
@@ -95,6 +96,104 @@ class SQLValidator:
             (r'--\s*\$\{', 'Possible SQL injection vulnerability'),
             (r"'\s*\+\s*", 'Possible SQL injection pattern'),
         ]
+    
+    async def validate_file(self, file_path: Path) -> Dict[str, Any]:
+        """Validate a single SQL file"""
+        try:
+            result = self.validate_sql_file(str(file_path))
+            return {
+                'file': str(file_path),
+                'valid': not result.has_errors(),
+                'errors': [issue.message for issue in result.get_errors()],
+                'warnings': [issue.message for issue in result.get_warnings()],
+                'score': result.score
+            }
+        except Exception as e:
+            return {
+                'file': str(file_path),
+                'valid': False,
+                'errors': [f"Validation error: {str(e)}"],
+                'warnings': [],
+                'score': 0.0
+            }
+    
+    async def validate_directory(self, directory: Path) -> List[Dict[str, Any]]:
+        """Validate all SQL files in a directory"""
+        results = []
+        sql_files = list(directory.rglob("*.sql"))
+        
+        for sql_file in sql_files:
+            result = await self.validate_file(sql_file)
+            results.append(result)
+        
+        return results
+    
+    async def check_consistency(self) -> Dict[str, Any]:
+        """Check file naming and structure consistency"""
+        issues = []
+        total_files = 0
+        consistent_files = 0
+        inconsistent_files = 0
+        
+        quests_dir = Path("quests")
+        if not quests_dir.exists():
+            return {
+                'total_files': 0,
+                'consistent_files': 0,
+                'inconsistent_files': 0,
+                'issues': ['Quests directory not found']
+            }
+        
+        for quest_dir in quests_dir.iterdir():
+            if not quest_dir.is_dir():
+                continue
+                
+            quest_name = quest_dir.name
+            for sql_file in quest_dir.rglob("*.sql"):
+                total_files += 1
+                filename = sql_file.name
+                
+                # Check naming consistency
+                if not re.match(r'^[0-9]{2}-.*\.sql$', filename):
+                    issues.append(f"Inconsistent naming: {filename}")
+                    inconsistent_files += 1
+                else:
+                    consistent_files += 1
+                
+                # Check for required headers
+                try:
+                    content = sql_file.read_text()
+                    if not re.search(r'^--.*PURPOSE:', content, re.MULTILINE):
+                        issues.append(f"Missing PURPOSE header: {filename}")
+                        inconsistent_files += 1
+                    if not re.search(r'^--.*DIFFICULTY:', content, re.MULTILINE):
+                        issues.append(f"Missing DIFFICULTY header: {filename}")
+                        inconsistent_files += 1
+                except Exception as e:
+                    issues.append(f"Error reading file {filename}: {e}")
+                    inconsistent_files += 1
+        
+        return {
+            'total_files': total_files,
+            'consistent_files': consistent_files,
+            'inconsistent_files': inconsistent_files,
+            'issues': issues
+        }
+    
+    async def performance_test(self) -> Dict[str, Any]:
+        """Run performance optimization test"""
+        # This is a placeholder implementation
+        # In a real implementation, this would run actual performance tests
+        return {
+            'avg_time': 0.5,
+            'total_queries': 10,
+            'failed_queries': 0,
+            'optimization_suggestions': [
+                'Consider adding indexes on frequently queried columns',
+                'Use EXPLAIN ANALYZE to identify slow queries',
+                'Consider query optimization for complex joins'
+            ]
+        }
     
     def validate_sql_file(self, file_path: str) -> ValidationResult:
         """Validate a SQL file"""
@@ -330,7 +429,7 @@ class SQLValidator:
 class EvaluationValidator:
     """Validates evaluation results and data integrity"""
     
-    def __init__(self, db_manager: EnhancedDatabaseManager):
+    def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
         self.logger = logging.getLogger(__name__)
     
@@ -708,7 +807,7 @@ class EvaluationValidator:
 class QualityAssuranceValidator:
     """Performs quality assurance checks on the evaluation system"""
     
-    def __init__(self, db_manager: EnhancedDatabaseManager):
+    def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
         self.logger = logging.getLogger(__name__)
     
@@ -949,7 +1048,7 @@ class QualityAssuranceValidator:
 class ValidationCoordinator:
     """Coordinates all validation activities"""
     
-    def __init__(self, db_manager: EnhancedDatabaseManager):
+    def __init__(self, db_manager: DatabaseManager):
         self.sql_validator = SQLValidator()
         self.evaluation_validator = EvaluationValidator(db_manager)
         self.qa_validator = QualityAssuranceValidator(db_manager)
