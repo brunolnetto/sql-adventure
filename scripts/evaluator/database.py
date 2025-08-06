@@ -107,235 +107,168 @@ class DatabaseManager:
             print(f"⚠️  Could not ensure database exists: {e}")
     
     def _initialize_data(self):
-        """Initialize reference data (quests, subcategories, patterns)"""
+        """Seed database using dynamic discovery. Safe to run multiple times (idempotent)."""
         if not self.SessionLocal:
             return
-        
+
+        # Import here to avoid circular deps
+        from init_database import (
+            discover_quests_from_filesystem,
+            discover_sql_patterns_from_filesystem,
+        )
+
         try:
             session = self.SessionLocal()
-            
-            # Initialize quests if not exists
-            if session.query(Quest).count() == 0:
-                self._init_quest_data(session)
-            
-            # Initialize SQL patterns if not exists
-            if session.query(SQLPattern).count() == 0:
-                self._init_pattern_data(session)
-            
+
+            quests_data = discover_quests_from_filesystem()
+            self._upsert_quests(session, quests_data)
+
+            patterns_data = discover_sql_patterns_from_filesystem()
+            self._upsert_patterns(session, patterns_data)
+
             session.commit()
-            session.close()
-            
+
         except Exception as e:
-            print(f"⚠️  Error initializing reference data: {e}")
             session.rollback()
+            print(f"❌ Failed to initialize data: {e}")
+            raise
+
+        finally:
             session.close()
-    
-    def _init_quest_data(self, session: Session):
-        """Initialize quest and subcategory data"""
-        quests_data = [
-            {
-                'name': '1-data-modeling',
-                'display_name': 'Data Modeling',
-                'description': 'Database design principles, normalization patterns, and schema optimization',
-                'difficulty_level': 'Beginner',
-                'order_index': 1,
-                'subcategories': [
-                    ('00-basic-concepts', 'Basic Concepts', 'Beginner', 0),
-                    ('01-normalization-patterns', 'Normalization Patterns', 'Intermediate', 1),
-                    ('02-denormalization-strategies', 'Denormalization Strategies', 'Advanced', 2),
-                    ('03-schema-design-principles', 'Schema Design Principles', 'Intermediate', 3),
-                    ('04-real-world-applications', 'Real World Applications', 'Advanced', 4),
-                ]
-            },
-            {
-                'name': '2-performance-tuning',
-                'display_name': 'Performance Tuning',
-                'description': 'Query optimization, indexing strategies, and performance analysis',
-                'difficulty_level': 'Intermediate',
-                'order_index': 2,
-                'subcategories': [
-                    ('00-indexing-basics', 'Indexing Basics', 'Beginner', 0),
-                    ('01-query-optimization', 'Query Optimization', 'Intermediate', 1),
-                    ('02-execution-plans', 'Execution Plans', 'Advanced', 2),
-                    ('03-advanced-techniques', 'Advanced Techniques', 'Expert', 3),
-                ]
-            },
-            {
-                'name': '3-window-functions',
-                'display_name': 'Window Functions',
-                'description': 'Advanced analytics and ranking operations using window functions',
-                'difficulty_level': 'Advanced',
-                'order_index': 3,
-                'subcategories': [
-                    ('00-ranking-functions', 'Ranking Functions', 'Intermediate', 0),
-                    ('01-aggregate-functions', 'Aggregate Functions', 'Intermediate', 1),
-                    ('02-navigation-functions', 'Navigation Functions', 'Advanced', 2),
-                    ('03-complex-analytics', 'Complex Analytics', 'Expert', 3),
-                ]
-            },
-            {
-                'name': '4-json-operations',
-                'display_name': 'JSON Operations',
-                'description': 'Modern PostgreSQL JSON features and operations',
-                'difficulty_level': 'Advanced',
-                'order_index': 4,
-                'subcategories': [
-                    ('00-json-basics', 'JSON Basics', 'Intermediate', 0),
-                    ('01-json-queries', 'JSON Queries', 'Advanced', 1),
-                    ('02-json-aggregation', 'JSON Aggregation', 'Advanced', 2),
-                    ('03-json-indexing', 'JSON Indexing', 'Expert', 3),
-                ]
-            },
-            {
-                'name': '5-recursive-cte',
-                'display_name': 'Recursive CTEs',
-                'description': 'Hierarchical data and recursive query patterns',
-                'difficulty_level': 'Expert',
-                'order_index': 5,
-                'subcategories': [
-                    ('00-cte-basics', 'CTE Basics', 'Intermediate', 0),
-                    ('01-simple-recursion', 'Simple Recursion', 'Advanced', 1),
-                    ('02-complex-hierarchies', 'Complex Hierarchies', 'Expert', 2),
-                    ('03-advanced-patterns', 'Advanced Patterns', 'Expert', 3),
-                ]
-            }
-        ]
-        
+
+    # ------------------------------------------------------------------
+    # Dynamic upsert helpers
+    # ------------------------------------------------------------------
+    def _upsert_quests(self, session: Session, quests_data: List[Dict[str, Any]]):
+        """Insert or update quests & subcategories from discovered dataset."""
         for quest_data in quests_data:
-            subcategories_data = quest_data.pop('subcategories')
-            
-            quest = Quest(**quest_data)
-            session.add(quest)
-            session.flush()  # Get the quest ID
-            
-            for subcat_name, subcat_display, subcat_difficulty, subcat_order in subcategories_data:
-                subcategory = Subcategory(
+            subcategories = quest_data.pop('subcategories', [])
+
+            quest = session.query(Quest).filter_by(name=quest_data['name']).first()
+            if not quest:
+                quest = Quest(**quest_data)
+                session.add(quest)
+                session.flush()
+            else:
+                for k, v in quest_data.items():
+                    setattr(quest, k, v)
+
+            # Upsert subcategories
+            for sub_name, sub_display, sub_difficulty, sub_order in subcategories:
+                subcat = session.query(Subcategory).filter_by(
                     quest_id=quest.id,
-                    name=subcat_name,
-                    display_name=subcat_display,
-                    difficulty_level=subcat_difficulty,
-                    order_index=subcat_order
+                    name=sub_name
+                ).first()
+
+                if not subcat:
+                    subcat = Subcategory(
+                        quest_id=quest.id,
+                        name=sub_name,
+                        display_name=sub_display,
+                        difficulty_level=sub_difficulty,
+                        order_index=sub_order,
+                    )
+                    session.add(subcat)
+                else:
+                    subcat.display_name = sub_display
+                    subcat.difficulty_level = sub_difficulty
+                    subcat.order_index = sub_order
+
+    def _upsert_patterns(self, session: Session, patterns_data: List[Tuple[str, str, str, str, str]]):
+        """Insert or update SQL pattern catalogue."""
+        for pattern_name, display_name, category, complexity, regex in patterns_data:
+            pattern = session.query(SQLPattern).filter_by(name=pattern_name).first()
+            if not pattern:
+                pattern = SQLPattern(
+                    name=pattern_name,
+                    display_name=display_name,
+                    category=category,
+                    complexity_level=complexity,
+                    detection_regex=regex,
                 )
-                session.add(subcategory)
-    
-    def _init_pattern_data(self, session: Session):
-        """Initialize SQL pattern definitions"""
-        patterns_data = [
-            # DDL Patterns
-            ('table_creation', 'Table Creation', 'CREATE TABLE statements', 'DDL', 'Basic', r'CREATE\s+TABLE'),
-            ('table_alteration', 'Table Alteration', 'ALTER TABLE statements', 'DDL', 'Intermediate', r'ALTER\s+TABLE'),
-            ('index_creation', 'Index Creation', 'CREATE INDEX statements', 'DDL', 'Intermediate', r'CREATE\s+INDEX'),
-            ('view_creation', 'View Creation', 'CREATE VIEW statements', 'DDL', 'Intermediate', r'CREATE\s+VIEW'),
-            
-            # DML Patterns
-            ('data_insertion', 'Data Insertion', 'INSERT INTO statements', 'DML', 'Basic', r'INSERT\s+INTO'),
-            ('data_update', 'Data Update', 'UPDATE statements', 'DML', 'Basic', r'UPDATE\s+\w+\s+SET'),
-            ('data_deletion', 'Data Deletion', 'DELETE statements', 'DML', 'Basic', r'DELETE\s+FROM'),
-            ('bulk_operations', 'Bulk Operations', 'Bulk insert/update operations', 'DML', 'Intermediate', r'VALUES\s*\(.*\),\s*\('),
-            
-            # DQL Patterns
-            ('basic_select', 'Basic Select', 'Simple SELECT statements', 'DQL', 'Basic', r'SELECT\s+\*?\s+FROM'),
-            ('complex_select', 'Complex Select', 'Complex SELECT with multiple clauses', 'DQL', 'Intermediate', r'SELECT.*WHERE.*ORDER BY'),
-            ('subqueries', 'Subqueries', 'Nested SELECT statements', 'DQL', 'Intermediate', r'SELECT.*\(.*SELECT'),
-            ('joins', 'Table Joins', 'JOIN operations', 'DQL', 'Intermediate', r'(INNER|LEFT|RIGHT|FULL)\s+JOIN'),
-            
-            # Aggregation and Analytics
-            ('grouping', 'Grouping', 'GROUP BY operations', 'DQL', 'Intermediate', r'GROUP\s+BY'),
-            ('aggregation', 'Aggregation', 'Aggregate functions', 'ANALYTICS', 'Intermediate', r'(COUNT|SUM|AVG|MIN|MAX)\s*\('),
-            ('window_functions', 'Window Functions', 'Window function operations', 'ANALYTICS', 'Advanced', r'OVER\s*\('),
-            ('ranking', 'Ranking Functions', 'ROW_NUMBER, RANK, DENSE_RANK', 'ANALYTICS', 'Advanced', r'(ROW_NUMBER|RANK|DENSE_RANK)\s*\('),
-            
-            # Advanced Patterns
-            ('cte_basic', 'Common Table Expressions', 'WITH clauses', 'DQL', 'Advanced', r'WITH\s+\w+\s+AS'),
-            ('recursive_cte', 'Recursive CTEs', 'Recursive WITH clauses', 'RECURSIVE', 'Expert', r'WITH\s+RECURSIVE'),
-            ('json_operations', 'JSON Operations', 'JSON functions and operators', 'JSON', 'Advanced', r'(JSON_|->|->|#>|#>>|\?\||\?&)'),
-            ('json_path', 'JSON Path', 'JSON path expressions', 'JSON', 'Expert', r'jsonb_path_'),
-            
-            # Performance Patterns
-            ('explain_analyze', 'Query Analysis', 'EXPLAIN ANALYZE statements', 'DCL', 'Intermediate', r'EXPLAIN\s+(ANALYZE\s+)?'),
-            ('index_hints', 'Index Hints', 'Index usage hints', 'DCL', 'Advanced', r'USING\s+INDEX'),
-            
-            # Transaction Control
-            ('transactions', 'Transactions', 'BEGIN/COMMIT/ROLLBACK', 'TCL', 'Basic', r'(BEGIN|COMMIT|ROLLBACK)'),
-            ('savepoints', 'Savepoints', 'SAVEPOINT operations', 'TCL', 'Intermediate', r'SAVEPOINT'),
-        ]
-        
-        for name, display_name, description, category, complexity, regex in patterns_data:
-            pattern = SQLPattern(
-                name=name,
-                display_name=display_name,
-                description=description,
-                category=category,
-                complexity_level=complexity,
-                detection_regex=regex
-            )
-            session.add(pattern)
+                session.add(pattern)
+            else:
+                pattern.display_name = display_name
+                pattern.category = category
+                pattern.complexity_level = complexity
+                pattern.detection_regex = regex
     
     def get_or_create_sql_file(self, file_path: str) -> Optional[SQLFile]:
-        """Get existing SQL file record or create new one"""
+        """Return a SQLFile row, inserting/updating metadata as required."""
         if not self.SessionLocal:
             return None
-        
+
         try:
             session = self.SessionLocal()
-            
-            # Check if file already exists
+
+            file_hash = self._calculate_file_hash(file_path)
             sql_file = session.query(SQLFile).filter(SQLFile.file_path == file_path).first()
-            
+
             if sql_file:
-                # Update last_modified
-                sql_file.last_modified = datetime.utcnow()
+                # If the hash changed we need to refresh metadata & patterns
+                if sql_file.content_hash != file_hash:
+                    sql_file.content_hash = file_hash
+                    sql_file.last_modified = datetime.utcnow()
+
+                    # Clear existing associations
+                    session.query(SQLFilePattern).filter_by(sql_file_id=sql_file.id).delete()
+                    self._detect_and_associate_patterns(session, sql_file, file_path)
+
                 session.commit()
-                session.close()
                 return sql_file
-            
-            # Create new file record
+
+            # New file – derive quest & subcategory
             path_obj = Path(file_path)
             filename = path_obj.name
-            
-            # Extract quest and subcategory from path
-            parts = path_obj.parts
-            if len(parts) >= 3 and parts[-3].startswith(('1-', '2-', '3-', '4-', '5-')):
-                quest_name = parts[-3]
-                subcategory_name = parts[-2]
-                
-                # Find quest and subcategory
-                quest = session.query(Quest).filter(Quest.name == quest_name).first()
-                if quest:
-                    subcategory = session.query(Subcategory).filter(
-                        and_(Subcategory.quest_id == quest.id, Subcategory.name == subcategory_name)
-                    ).first()
-                    
-                    if subcategory:
-                        # Calculate content hash
-                        content_hash = self._calculate_file_hash(file_path)
-                        
-                        sql_file = SQLFile(
-                            subcategory_id=subcategory.id,
-                            filename=filename,
-                            file_path=file_path,
-                            display_name=self._generate_display_name(filename),
-                            content_hash=content_hash
-                        )
-                        
-                        session.add(sql_file)
-                        session.commit()
-                        
-                        # Detect and associate patterns
-                        self._detect_and_associate_patterns(session, sql_file, file_path)
-                        
-                        session.commit()
-                        session.close()
-                        return sql_file
-            
-            session.close()
-            return None
-            
+
+            quest_name = None
+            subcategory_name = None
+
+            import re as _re
+            for idx, part in enumerate(path_obj.parts):
+                if _re.match(r'^\d+-', part):
+                    quest_name = part
+                    if idx + 1 < len(path_obj.parts):
+                        subcategory_name = path_obj.parts[idx + 1]
+                    break
+
+            if not quest_name or not subcategory_name:
+                raise ValueError(f"Could not determine quest/subcategory for file path: {file_path}")
+
+            quest = session.query(Quest).filter_by(name=quest_name).first()
+            if not quest:
+                raise ValueError(f"Quest '{quest_name}' not found in DB. Seed first.")
+
+            subcategory = session.query(Subcategory).filter(
+                and_(Subcategory.quest_id == quest.id, Subcategory.name == subcategory_name)
+            ).first()
+
+            if not subcategory:
+                raise ValueError(f"Subcategory '{subcategory_name}' not found for quest '{quest_name}'")
+
+            sql_file = SQLFile(
+                subcategory_id=subcategory.id,
+                filename=filename,
+                file_path=file_path,
+                display_name=self._generate_display_name(filename),
+                content_hash=file_hash,
+            )
+
+            session.add(sql_file)
+            session.flush()  # Get id for associations
+
+            self._detect_and_associate_patterns(session, sql_file, file_path)
+
+            session.commit()
+            return sql_file
+
         except Exception as e:
-            print(f"❌ Error creating SQL file record: {e}")
-            session.rollback()
-            session.close()
-            return None
+            print(f"❌ Error creating/updating SQL file record: {e}")
+            raise
+
+        finally:
+            if 'session' in locals():
+                session.close()
     
     def _calculate_file_hash(self, file_path: str) -> str:
         """Calculate SHA-256 hash of file content"""

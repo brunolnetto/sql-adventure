@@ -8,6 +8,7 @@ Uses discovery features to avoid hardcoded maintenance
 import os
 import sys
 import re
+from urllib.parse import quote_plus
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
@@ -23,8 +24,8 @@ def get_connection_string(separate_db: bool = True) -> str:
     """Get database connection string from environment"""
     host = os.getenv('DB_HOST', 'localhost')
     port = os.getenv('DB_PORT', '5432')
-    user = os.getenv('DB_USER', 'postgres')
-    password = os.getenv('DB_PASSWORD', 'postgres')
+    user = quote_plus(os.getenv('DB_USER', 'postgres'))
+    password = quote_plus(os.getenv('DB_PASSWORD', 'postgres'))
     
     if separate_db:
         database = os.getenv('EVALUATOR_DB_NAME', 'sql_adventure_db')
@@ -45,13 +46,12 @@ def ensure_database_exists(connection_string: str):
             
             # Check if database exists
             db_name = connection_string.split('/')[-1]
-            result = conn.execute(text(
-                f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'"
-            ))
+            result = conn.execute(text("SELECT 1 FROM pg_database WHERE datname = :dbname").bindparams(dbname=db_name))
             
             if not result.fetchone():
-                conn.execute(text(f"CREATE DATABASE {db_name}"))
-                print(f"✅ Created evaluator database: {db_name}")
+                safe_db = db_name.replace('"', '')
+                conn.execute(text(f'CREATE DATABASE "{safe_db}"'))
+                print(f"✅ Created evaluator database: {safe_db}")
             else:
                 print(f"✅ Evaluator database already exists: {db_name}")
         
