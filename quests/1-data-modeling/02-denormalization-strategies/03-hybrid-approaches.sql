@@ -288,8 +288,10 @@ SELECT
         WHEN SUM(o.total_amount) >= 100 THEN 'Standard'
         ELSE 'Basic'
     END AS customer_segment,
-    COALESCE(MAX(o.order_date) >= CURRENT_DATE - INTERVAL '90 days',
-    FALSE) AS is_active
+    COALESCE(
+        MAX(o.order_date) >= CURRENT_DATE - INTERVAL '90 days',
+        false
+    ) AS is_active
 FROM customers_oltp AS c
 LEFT JOIN
     customer_addresses_oltp AS ca
@@ -314,7 +316,7 @@ SELECT
     SUM(oi.quantity * oi.unit_price) AS total_revenue,
     SUM(oi.quantity * (oi.unit_price - p.cost_price)) AS total_profit,
     ROUND(AVG(oi.quantity), 2) AS avg_order_quantity,
-    COALESCE(SUM(oi.quantity) >= 10, FALSE) AS is_bestseller
+    COALESCE(SUM(oi.quantity) >= 10, false) AS is_bestseller
 FROM products_oltp AS p
 LEFT JOIN categories_oltp AS c ON p.category_id = c.category_id
 LEFT JOIN categories_oltp AS pc ON c.parent_category_id = pc.category_id

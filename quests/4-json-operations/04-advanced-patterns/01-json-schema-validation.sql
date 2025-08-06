@@ -409,13 +409,13 @@ SELECT
     ) AS schema_analysis,
     JSONB_BUILD_OBJECT(
         'has_migration_rules',
-        COALESCE(sv.migration_rules != '{}', FALSE),
+        COALESCE(sv.migration_rules != '{}', false),
         'migration_count',
         JSONB_ARRAY_LENGTH(JSONB_BUILD_ARRAY('field_rename', 'type_change')),
         'is_latest_version', COALESCE(sv.version_number = (
             SELECT MAX(version_number) FROM schema_versions AS sv2
             WHERE sv2.schema_name = sv.schema_name
-        ), FALSE)
+        ), false)
     ) AS version_metadata
 FROM schema_versions AS sv
 ORDER BY sv.schema_name, sv.version_number;

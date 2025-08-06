@@ -362,9 +362,14 @@ SELECT
             'critical_queries', COUNT(*) FILTER (WHERE execution_time_ms > 100)
         ),
         'performance_alerts', JSONB_BUILD_OBJECT(
-            'slow_query_alert', COALESCE(COUNT(*) FILTER (WHERE execution_time_ms > 50) > 0, FALSE),
-            'critical_query_alert', COALESCE(COUNT(*) FILTER (WHERE execution_time_ms > 100) > 0, FALSE),
-            'index_missing_alert', COALESCE(COUNT(*) FILTER (WHERE index_used = 'none') > 0, FALSE)
+            'slow_query_alert',
+            COALESCE(COUNT(*) FILTER (WHERE execution_time_ms > 50) > 0, false),
+            'critical_query_alert',
+            COALESCE(
+                COUNT(*) FILTER (WHERE execution_time_ms > 100) > 0, false
+            ),
+            'index_missing_alert',
+            COALESCE(COUNT(*) FILTER (WHERE index_used = 'none') > 0, false)
         ),
         'performance_trends', JSONB_BUILD_OBJECT(
             'avg_execution_time', ROUND(AVG(execution_time_ms), 2),
@@ -422,12 +427,16 @@ SELECT
             'efficient_queries', COUNT(*) FILTER (WHERE execution_time_ms < 20)
         ),
         'storage_best_practices', JSONB_BUILD_OBJECT(
-            'avg_object_size_optimal', COALESCE(AVG((ptd.metadata ->> 'data_size_bytes')::INT) < 1000, FALSE),
+            'avg_object_size_optimal',
+            COALESCE(
+                AVG((ptd.metadata ->> 'data_size_bytes')::INT) < 1000, false
+            ),
             'large_objects_count',
             COUNT(*) FILTER (
                 WHERE (ptd.metadata ->> 'data_size_bytes')::INT > 1000
             ),
-            'complexity_distribution_healthy', COALESCE(AVG((ptd.metadata ->> 'complexity_score')::INT) < 8, FALSE)
+            'complexity_distribution_healthy',
+            COALESCE(AVG((ptd.metadata ->> 'complexity_score')::INT) < 8, false)
         ),
         'recommendations', JSONB_BUILD_OBJECT(
             'add_indexes_for',

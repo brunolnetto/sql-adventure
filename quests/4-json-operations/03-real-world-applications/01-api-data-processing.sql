@@ -218,8 +218,14 @@ SELECT
         ELSE 'Other Error'
     END AS error_category,
     JSONB_BUILD_OBJECT(
-        'is_retryable', COALESCE(response_data -> 'error' ->> 'code' IN ('500', '502', '503'), FALSE),
-        'requires_user_action', COALESCE(response_data -> 'error' ->> 'code' IN ('400', '401', '403'), FALSE)
+        'is_retryable',
+        COALESCE(
+            response_data -> 'error' ->> 'code' IN ('500', '502', '503'), FALSE
+        ),
+        'requires_user_action',
+        COALESCE(
+            response_data -> 'error' ->> 'code' IN ('400', '401', '403'), FALSE
+        )
     ) AS error_analysis
 FROM api_responses
 WHERE response_data ->> 'status' = 'error'
@@ -241,7 +247,7 @@ SELECT
     CASE
         WHEN api_response ->> 'status' = 'success'
             THEN JSONB_BUILD_OBJECT(
-                'data_extracted', true,
+                'data_extracted', TRUE,
                 'response_size', JSONB_ARRAY_LENGTH(api_response -> 'data'),
                 'has_metadata',
                 COALESCE(api_response ? 'meta', FALSE)

@@ -81,12 +81,18 @@ SELECT
         WHEN
             AVG(daily_sales)
                 OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)
-            > AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING)
+            > AVG(daily_sales)
+                OVER (
+                    ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING
+                )
             THEN 'Upward Trend'
         WHEN
             AVG(daily_sales)
                 OVER (ORDER BY date_id ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)
-            < AVG(daily_sales) OVER (ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING)
+            < AVG(daily_sales)
+                OVER (
+                    ORDER BY date_id ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING
+                )
             THEN 'Downward Trend'
         ELSE 'Sideways Trend'
     END AS overall_trend

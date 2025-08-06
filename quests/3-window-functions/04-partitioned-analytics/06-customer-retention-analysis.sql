@@ -128,10 +128,14 @@ WITH customer_retention AS (
         CASE
             WHEN
                 COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
-                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.8 THEN 'High Retention'
+                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+                * 0.8
+                THEN 'High Retention'
             WHEN
                 COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
-                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date)) * 0.5 THEN 'Medium Retention'
+                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+                * 0.5
+                THEN 'Medium Retention'
             ELSE 'Low Retention'
         END AS retention_level
     FROM customer_transactions AS ct

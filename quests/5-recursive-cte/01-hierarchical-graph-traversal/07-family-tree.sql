@@ -103,12 +103,12 @@ SELECT
     CASE
         WHEN death_date IS NULL
             THEN
-                CAST (EXTRACT(
+                CAST(EXTRACT(
                     YEAR FROM AGE(CURRENT_DATE, birth_date)
                 ) AS VARCHAR)
                 || ' years'
         ELSE
-            CAST (EXTRACT(YEAR FROM AGE(death_date, birth_date)) AS VARCHAR)
+            CAST(EXTRACT(YEAR FROM AGE(death_date, birth_date)) AS VARCHAR)
             || ' years (deceased)'
     END AS age
 FROM unique_family_tree

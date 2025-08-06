@@ -259,11 +259,11 @@ SELECT
     END AS timeout_validation,
     JSONB_BUILD_OBJECT(
         'has_ssl',
-        COALESCE(ac.config_data -> 'database' ->> 'ssl' = 'true', FALSE),
+        COALESCE(ac.config_data -> 'database' ->> 'ssl' = 'true', false),
         'has_rate_limit',
-        COALESCE(ac.config_data -> 'api' ? 'rate_limit', FALSE),
+        COALESCE(ac.config_data -> 'api' ? 'rate_limit', false),
         'debug_enabled',
-        COALESCE(ac.config_data -> 'features' ->> 'debug_mode' = 'true', FALSE)
+        COALESCE(ac.config_data -> 'features' ->> 'debug_mode' = 'true', false)
     ) AS feature_flags
 FROM app_configurations AS ac
 ORDER BY ac.app_name, ac.environment;
@@ -374,8 +374,10 @@ SELECT
                     'host', cv.config_data -> 'database' ->> 'host',
                     'port', cv.config_data -> 'database' ->> 'port',
                     'ssl_enabled',
-                    COALESCE(cv.config_data -> 'database' ->> 'ssl' = 'true',
-                    FALSE)
+                    COALESCE(
+                        cv.config_data -> 'database' ->> 'ssl' = 'true',
+                        false
+                    )
                 )
         END,
         'api_config', CASE
@@ -384,7 +386,7 @@ SELECT
                     'timeout', cv.config_data -> 'api' ->> 'timeout',
                     'retries', cv.config_data -> 'api' ->> 'retries',
                     'has_rate_limit',
-                    COALESCE(cv.config_data -> 'api' ? 'rate_limit', FALSE)
+                    COALESCE(cv.config_data -> 'api' ? 'rate_limit', false)
                 )
         END
     ) AS configuration_summary

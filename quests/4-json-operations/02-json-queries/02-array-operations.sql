@@ -121,7 +121,7 @@ SELECT
         jsonb_build_object(
             'tag', tag,
             'tag_length', length(tag),
-            'is_short', coalesce(length(tag) <= 6, FALSE)
+            'is_short', coalesce(length(tag) <= 6, false)
         )
     ) FROM jsonb_array_elements_text(product_data -> 'tags') AS tag)
         AS transformed_tags,
@@ -130,7 +130,7 @@ SELECT
             'region', price ->> 'region',
             'amount_formatted', '$' || (price ->> 'amount')::DECIMAL(10, 2),
             'is_expensive',
-            coalesce((price ->> 'amount')::DECIMAL(10, 2) > 1000, FALSE)
+            coalesce((price ->> 'amount')::DECIMAL(10, 2) > 1000, false)
         )
     ) FROM jsonb_array_elements(product_data -> 'prices') AS price)
         AS transformed_prices
@@ -148,7 +148,7 @@ SELECT
             'rating', review ->> 'rating',
             'comment_length', length(review ->> 'comment'),
             'is_positive',
-            coalesce((review ->> 'rating')::INT >= 4, FALSE)
+            coalesce((review ->> 'rating')::INT >= 4, false)
         )
     ) FROM jsonb_array_elements(product_data -> 'reviews') AS review)
         AS analyzed_reviews,

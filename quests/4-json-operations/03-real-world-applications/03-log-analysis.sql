@@ -205,7 +205,7 @@ SELECT
     END AS severity_category,
     jsonb_build_object(
         'has_metadata',
-        coalesce(log_data ? 'metadata', FALSE),
+        coalesce(log_data ? 'metadata', false),
         'metadata_keys', CASE
             WHEN log_data ? 'metadata'
                 THEN jsonb_build_array('login_method', 'two_factor', 'location')
@@ -315,7 +315,10 @@ SELECT
         'last_activity', max(timestamp),
         'activity_frequency', round(
             count(*)::DECIMAL
-            / greatest(extract(EPOCH FROM (max(timestamp) - min(timestamp))) / 3600, 1), 2
+            / greatest(
+                extract(EPOCH FROM (max(timestamp) - min(timestamp))) / 3600, 1
+            ),
+            2
         ),
         'service_usage', jsonb_build_object(
             'user_service', count(*) FILTER (WHERE service = 'user-service'),

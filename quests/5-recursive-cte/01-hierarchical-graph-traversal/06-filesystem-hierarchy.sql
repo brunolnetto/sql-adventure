@@ -91,7 +91,7 @@ SELECT
     END AS type,
     CASE
         WHEN is_directory THEN 'N/A'
-        ELSE CAST (size_bytes AS VARCHAR) || ' bytes'
+        ELSE CAST(size_bytes AS VARCHAR) || ' bytes'
     END AS size
 FROM filesystem_tree
 ORDER BY full_path;
