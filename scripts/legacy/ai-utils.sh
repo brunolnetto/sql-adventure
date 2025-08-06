@@ -82,50 +82,44 @@ save_cache() {
     echo "$content" > "$cache_file"
 }
 
-# Function to process files in parallel
+# Function to process files sequentially (changed from parallel to avoid conflicts)
 process_files_parallel() {
-    local files_array=("$@")
-    local quiet_mode="${2:-true}"  # Default to quiet mode for parallel processing
-    local max_jobs=$(get_perf_config "parallel")
-    local current_jobs=0
-    local pids=()
-    local results=()
+    local all_args=("$@")
+    local files_array=()
+    local quiet_mode="false"
+    local max_jobs=4
+    
+    # Parse arguments: files come first, then options
+    local i=0
+    while [ $i -lt ${#all_args[@]} ]; do
+        local arg="${all_args[$i]}"
+        if [ "$arg" = "true" ] || [ "$arg" = "false" ]; then
+            quiet_mode="$arg"
+        elif [[ "$arg" =~ ^[0-9]+$ ]]; then
+            max_jobs="$arg"
+        else
+            files_array+=("$arg")
+        fi
+        i=$((i + 1))
+    done
+    
     local total_files=${#files_array[@]}
     local completed_files=0
     
-    print_status "⚡ Starting parallel processing with $max_jobs jobs for $total_files files..."
+    print_status "⚡ Processing $total_files files sequentially for better isolation..."
     
     for file in "${files_array[@]}"; do
-        # Wait if we've reached max parallel jobs
-        while [ $current_jobs -ge $max_jobs ]; do
-            for i in "${!pids[@]}"; do
-                if ! kill -0 "${pids[$i]}" 2>/dev/null; then
-                    unset pids[$i]
-                    current_jobs=$((current_jobs - 1))
-                    completed_files=$((completed_files + 1))
-                    
-                    # Show progress every 20 files or when complete (less verbose)
-                    if [ $((completed_files % 20)) -eq 0 ] || [ $completed_files -eq $total_files ]; then
-                        print_status "📊 Progress: $completed_files/$total_files files processed"
-                    fi
-                fi
-            done
-            sleep 0.1
-        done
-        
-        # Start new job
-        process_single_file "$file" "$quiet_mode" &
-        pids+=($!)
-        current_jobs=$((current_jobs + 1))
-    done
-    
-    # Wait for remaining jobs to complete
-    for pid in "${pids[@]}"; do
-        wait "$pid"
+        # Process files sequentially to avoid database conflicts
+        process_single_file "$file" "$quiet_mode"
         completed_files=$((completed_files + 1))
+        
+        # Show progress
+        if [ $((completed_files % 5)) -eq 0 ] || [ $completed_files -eq $total_files ]; then
+            print_status "📊 Progress: $completed_files/$total_files files processed"
+        fi
     done
     
-    print_success "✅ Parallel processing completed: $completed_files/$total_files files"
+    print_success "✅ Sequential processing completed: $completed_files/$total_files files"
 }
 
 # Function to process a single file (for parallel execution)
@@ -154,7 +148,8 @@ run_ai_evaluation() {
             
             local total_files=0 total_processed=0 total_passed=0 total_failed=0 total_needs_review=0
             
-            for sql_file in "$target"/*/*.sql; do
+            # Try both patterns: direct files and subdirectory files
+            for sql_file in "$target"/*.sql "$target"/*/*.sql; do
                 [ ! -f "$sql_file" ] && continue
                 
                 total_files=$((total_files + 1))
@@ -204,7 +199,8 @@ run_ai_evaluation() {
             
             print_status "Processing quest: $quest_name"
             
-            for sql_file in "$quest_dir"/*/*.sql; do
+            # Try both patterns: direct files and subdirectory files
+            for sql_file in "$quest_dir"/*.sql "$quest_dir"/*/*.sql; do
                 [ ! -f "$sql_file" ] && continue
                 
                 total_files=$((total_files + 1))
@@ -728,14 +724,18 @@ execute_and_capture() {
     local output_content=""
     local execution_success=false
     
+    # Create unique temporary file for this execution
+    local temp_output_file="/tmp/sql_output_$(basename "$file" .sql)_$$"
+    
     if [ "$quiet_mode" != "true" ]; then
         print_status "🔍 Executing: $filename"
     fi
     
+    # Use transaction isolation instead of separate databases
     if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -f "$file" > /tmp/sql_output 2>&1; then
+        -c "BEGIN; $(cat "$file"); ROLLBACK;" > "$temp_output_file" 2>&1; then
         
-        output_content=$(cat /tmp/sql_output)
+        output_content=$(cat "$temp_output_file")
         execution_success=true
         
         if [ "$quiet_mode" != "true" ]; then
@@ -745,7 +745,7 @@ execute_and_capture() {
         # Analyze output
         local output_lines=$(clean_number "$(echo "$output_content" | wc -l)")
         local has_errors=$(count_matches "$output_content" "ERROR\|error")
-        local has_results=$(count_matches "$output_content" "rows\?$")
+        local has_results=$(count_matches "$output_content" "\([0-9]\+ rows\?\)")
         local has_warnings=$(count_matches "$output_content" "WARNING\|warning")
         
         if [ "$quiet_mode" != "true" ]; then
@@ -756,10 +756,11 @@ execute_and_capture() {
             "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
             "$output_lines" "$has_errors" "$has_warnings" "$has_results" "$json_file" "$quiet_mode"
         
-        rm -f /tmp/sql_output
+        # Cleanup
+        rm -f "$temp_output_file"
         return 0
     else
-        output_content=$(cat /tmp/sql_output 2>/dev/null || echo "")
+        output_content=$(cat "$temp_output_file" 2>/dev/null || echo "")
         
         if [ "$quiet_mode" != "true" ]; then
             print_error "❌ Failed to execute: $filename"
@@ -769,7 +770,8 @@ execute_and_capture() {
             "$expected_results" "$learning_outcomes" "$sql_patterns" "$output_content" \
             "0" "1" "0" "0" "$json_file" "$quiet_mode"
         
-        rm -f /tmp/sql_output
+        # Cleanup
+        rm -f "$temp_output_file"
         return 1
     fi
 }
@@ -803,7 +805,7 @@ analyze_intent_with_llm() {
     local response=$(call_llm_api "$system_prompt" "$user_prompt" "$model" "$temperature" "$max_tokens")
     
     if [ $? -ne 0 ]; then
-        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\"}"
+        echo "{\"error\": \"Failed to analyze intent\", \"details\": \"API call failed\", \"fallback\": \"Using basic analysis\"}"
         return
     fi
     

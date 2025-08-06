@@ -4,7 +4,7 @@
 # Extracted from validate.sh for better organization
 
 # Source AI utilities for LLM functions
-source "$(dirname "$0")/ai-utils.sh"
+source "$(dirname "$0")/utils/ai-utils.sh"
 
 # Performance optimization settings for reports
 REPORT_PERF_CONFIG() {
@@ -1178,8 +1178,8 @@ create_consolidated_json() {
                 learning_value: "Demonstrates intended SQL patterns",
                 quality: "Output is clear and readable"
             },
-            llm_analysis: ($llm_analysis | fromjson? // {"error": "Failed to parse LLM analysis"}),
-            enhanced_intent: ($enhanced_intent | fromjson? // {"error": "Failed to parse enhanced intent"})
+            llm_analysis: {"status": "disabled", "note": "LLM analysis temporarily disabled - using basic evaluation"},
+            enhanced_intent: {"status": "disabled", "note": "Enhanced intent temporarily disabled - using basic intent"}
         }' > "$json_file" 2>/dev/null
     
     if [ "$quiet_mode" != "true" ]; then

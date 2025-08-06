@@ -6,7 +6,7 @@
 set -e
 
 # Source print utility functions
-source "$(dirname "$0")/print-utils.sh"
+source "$(dirname "$0")/utils/print-utils.sh"
 
 # Function to check if we're in a git repository
 check_git_repo() {
