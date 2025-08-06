@@ -15,8 +15,6 @@ import asyncpg
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from openai import AsyncOpenAI
-
 # Handle relative imports
 evaluator_dir = Path(__file__).parent
 sys.path.insert(0, str(evaluator_dir))
@@ -71,19 +69,20 @@ class SQLEvaluator:
     """AI-powered SQL evaluation system with database connection pooling"""
     
     def __init__(self, api_key: str):
-        self.client = AsyncOpenAI(api_key=api_key)
+        self.model_name = os.getenv('MODEL_NAME', 'gpt-4o-mini')
+
         self.agents = {
             "intent_analyst": Agent(
-                config=self.config,
+                self.model_name,
                 system_prompt="You are an expert in educational content analysis and curriculum design."
             ),
             "content_analyst": Agent(
-                config=self.config,
+                self.model_name,
                 system_prompt="You are an expert SQL instructor and educational content analyst."
             )
         }
-        self.model = "gpt-4o-mini"
         self._db_pool = None
+
         # Initialize database manager for persistence
         self.db_manager = DatabaseManager()
     
@@ -179,7 +178,7 @@ class SQLEvaluator:
         """
         
         try:
-            return await self.agents["intent_analyst"].run(prompt, response_model=EnhancedIntent)
+            return await self.agents["intent_analyst"].run(prompt, output_type=EnhancedIntent)
         except Exception as e:
             print(f"Error in intent analysis: {e}")
             # Fallback
@@ -218,7 +217,7 @@ class SQLEvaluator:
         """
         
         try:
-            result = await self.llm_agent.run(prompt, response_model=LLMAnalysis)
+            result = await self.agents["content_analysis"].run(prompt, output_type=LLMAnalysis)
             return result
         except Exception as e:
             print(f"Error in output analysis: {e}")
@@ -404,7 +403,7 @@ class SQLEvaluator:
             "04-performance-basics": "Intermediate",
             "05-advanced-optimization": "Expert"
         }
-        
+
         subdir = file_path.parts[-2] if len(file_path.parts) >= 2 else "unknown"
         return difficulty_map.get(subdir, "Beginner")
     
@@ -502,9 +501,7 @@ async def main():
         print(f"Found {len(sql_files)} SQL files to evaluate")
         
         # Evaluate each file
-        for sql_file in sql_files:  # Start with one file for testing
-            print(f"Evaluating: {sql_file}")
-            
+        for sql_file in sql_files:  # Start with one file for testing           
             try:
                 result = await evaluator.evaluate_sql_file(sql_file)
                 

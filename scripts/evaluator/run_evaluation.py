@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any, Set
 from dataclasses import dataclass
 
-from sql_evaluator import SimpleSQLEvaluator
+from sql_evaluator import SQLEvaluator
 
 @dataclass
 class EvaluationConfig:
@@ -29,7 +29,7 @@ class QuestEvaluator:
     """Unified evaluator with quest-level parallelism and caching"""
     
     def __init__(self, api_key: str, config: EvaluationConfig):
-        self.evaluator = SimpleSQLEvaluator(api_key)
+        self.evaluator = SQLEvaluator(api_key)
         self.config = config
         self.cache_dir = Path("evaluation-cache")
         self.cache_dir.mkdir(exist_ok=True)
@@ -231,7 +231,7 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
         print("🚀 Starting complete evaluation with quest-level parallelism")
         return await evaluator.evaluate_all_parallel()
     
-    elif target_path.is_dir()
+    elif target_path.is_dir():
         print("🚀 Starting quest evaluation with quest-level parallelism")
         return await evaluator.evaluate_quest_parallel(target_path)
     

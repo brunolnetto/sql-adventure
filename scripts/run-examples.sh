@@ -101,29 +101,6 @@ run_python_evaluator() {
     esac
 }
 
-# Function to run legacy examples (deprecated)
-run_legacy_examples() {
-    local mode="$1"
-    local target="$2"
-    
-    print_warning "⚠️  Legacy mode detected. Consider using 'examples' mode instead."
-    print_status "🔄 Converting to Python evaluator..."
-    
-    case "$mode" in
-        "run")
-            run_python_evaluator "examples" "$target"
-            ;;
-        "test")
-            run_python_evaluator "validate" "$target"
-            ;;
-        *)
-            print_error "❌ Unknown legacy mode: $mode"
-            show_usage
-            exit 1
-            ;;
-    esac
-}
-
 # Main script logic
 main() {
     # Load environment variables
@@ -157,14 +134,6 @@ fi
             exit 1
         fi
             run_python_evaluator "$mode" "$target" "$options"
-            ;;
-        "run"|"test")
-            if [ -z "$target" ]; then
-                print_error "❌ Target required for mode: $mode"
-                show_usage
-            exit 1
-        fi
-            run_legacy_examples "$mode" "$target"
             ;;
         "help"|*)
             show_usage

@@ -102,6 +102,32 @@ run_python_evaluator() {
     fi
 }
 
+run_init_database(){
+    local python_evaluator="scripts/evaluator/init_database.py"
+    
+    # Check if Python evaluator exists
+    if [ ! -f "$python_evaluator" ]; then
+        print_error "❌ Python evaluator not found: $python_evaluator"
+        print_error "   Make sure you're in the project root directory"
+        return 1
+    fi
+    
+    # Build command
+    local cmd="python3 $python_evaluator"
+    
+    # Run evaluation
+    print_status "Running Database initializer..."
+    print_status "Command: $cmd"
+    
+    if eval "$cmd"; then
+        print_success "✅ Evaluation completed successfully"
+        return 0
+    else
+        print_error "❌ Evaluation failed"
+        return 1
+    fi
+}
+
 run_basic_validation() {
     local target="$1"
 
@@ -115,23 +141,23 @@ run_basic_validation() {
             print_warning "⚠️  File is empty"
             return 1
         fi
-        print_success "✅ File exists and has content ($size bytes)"
+        print_success "File exists and has content ($size bytes)"
 
         # 2) Statement presence
         if ! grep -iqE "CREATE|SELECT|INSERT|UPDATE|DELETE|WITH" "$target"; then
-            print_warning "⚠️  No recognizable SQL statements found"
+            print_warning "No recognizable SQL statements found"
         else
-            print_success "✅ Contains SQL statements"
+            print_success "Contains SQL statements"
         fi
 
         # 3) Line‐length check
         local long_lines
         long_lines=$(awk 'length($0)>120 { printf("   • line %d: %d chars\n", NR, length($0)) }' "$target")
         if [ -n "$long_lines" ]; then
-            print_warning "⚠️  Lines exceeding 120 chars:"
+            print_warning "Lines exceeding 120 chars:"
             echo "$long_lines"
         else
-            print_success "✅ All lines ≤120 chars"
+            print_success "All lines ≤120 chars"
         fi
 
         # 4) Naming convention: simple regex on CREATE TABLE names
@@ -149,9 +175,9 @@ run_basic_validation() {
         done <<< "$raw_names"
 
         if (( ${#bad[@]} )); then
-            print_warning "⚠️  Bad table names (must be lower_snake_case): ${bad[*]}"
+            print_warning "Bad table names (must be lower_snake_case): ${bad[*]}"
         else
-            print_success "✅ Table naming convention OK"
+            print_success "Table naming convention OK"
         fi
 
         return 0
@@ -162,7 +188,7 @@ run_basic_validation() {
         mapfile -t files < <(find "$target" -type f -name '*.sql' | sort)
         print_status "Found ${#files[@]} .sql files in $target"
         if [ "${#files[@]}" -eq 0 ]; then
-            print_warning "⚠️  No .sql files found in $target"
+            print_warning "No .sql files found in $target"
             return 1
         fi
 
@@ -172,10 +198,8 @@ run_basic_validation() {
             run_basic_validation "$file"
             rc=$?
             if [ $rc -eq 0 ]; then
-                echo "✅ OK: $file"
                 ((ok_count++))
             else
-                echo "❌ FAIL: $file"
                 ((fail_count++))
             fi
         done <<< "$(printf '%s\n' "${files[@]}")"
@@ -227,6 +251,7 @@ SQL Adventure Validation Script - Python Wrapper
 Usage: $0 [COMMAND] [TARGET] [OPTIONS]
 
 Commands:
+  init-database             Initialize the database (run once)
   basic <file>              Basic validation of a SQL file
   ai-fast <target>          Fast AI evaluation (default mode)
   ai-batch <target>         Comprehensive AI evaluation
@@ -245,6 +270,7 @@ Options:
   --output-dir DIR          Custom output directory
 
 Examples:
+  $0 init-database
   $0 basic quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql
   $0 ai-fast quests/1-data-modeling/00-basic-concepts
   $0 ai-batch all --max-concurrent 5
@@ -271,6 +297,10 @@ main() {
     local extra_args="$*"
     
     case "$command" in
+        "init-database")
+            print_header "Initializing Database"
+            run_init_database
+            ;;
         "basic")
             if [ -z "$target" ]; then
                 print_error "Target file required for basic validation"
