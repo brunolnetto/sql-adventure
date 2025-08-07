@@ -16,7 +16,7 @@ load_env() {
     if [ -f "$env_file" ]; then
         print_status "Loading configuration from $env_file"
         set -a
-        source .env
+        source "$env_file" 2>/dev/null || true
         set +a
     else
         print_warning "No .env file found, using defaults"
@@ -31,10 +31,10 @@ load_env() {
     
     # Check OPENAI_API_KEY
     if [ -z "$OPENAI_API_KEY" ]; then
-        print_warning "⚠️  OPENAI_API_KEY not found in environment"
+        print_warning "  OPENAI_API_KEY not found in environment"
         print_warning "   Some features may not work without API key"
     else
-        print_status "✅ OPENAI_API_KEY loaded successfully"
+        print_status "OPENAI_API_KEY loaded successfully"
     fi
 }
 
@@ -45,15 +45,15 @@ test_database_connection() {
     if command -v psql >/dev/null 2>&1; then
         if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
             -c "SELECT 1;" > /dev/null 2>&1; then
-            print_success "✅ Database connection successful"
+            print_success "Database connection successful"
             return 0
         else
-            print_error "❌ Database connection failed"
+            print_error "Database connection failed"
             print_error "   Check Docker containers: docker-compose up -d"
             return 1
         fi
     else
-        print_warning "⚠️  psql not found, skipping database test"
+        print_warning "psql not found, skipping database test"
         return 0
     fi
 }
@@ -61,14 +61,13 @@ test_database_connection() {
 # Function to call Python evaluator
 run_python_evaluator() {
     local target="$1"
-    local mode="${2:-fast}"
-    local extra_args="${@:3}"
+    local extra_args="${@:2}"
     
     local python_evaluator="scripts/evaluator/run_evaluation.py"
     
     # Check if Python evaluator exists
     if [ ! -f "$python_evaluator" ]; then
-        print_error "❌ Python evaluator not found: $python_evaluator"
+        print_error "Python evaluator not found: $python_evaluator"
         print_error "   Make sure you're in the project root directory"
         return 1
     fi
@@ -78,10 +77,6 @@ run_python_evaluator() {
     
     if [ -n "$target" ]; then
         cmd="$cmd $target"
-    fi
-    
-    if [ "$mode" = "comprehensive" ]; then
-        cmd="$cmd --mode comprehensive"
     fi
     
     # Add extra arguments
@@ -94,37 +89,37 @@ run_python_evaluator() {
     print_status "Command: $cmd"
     
     if eval "$cmd"; then
-        print_success "✅ Evaluation completed successfully"
+        print_success "Evaluation completed successfully"
         return 0
     else
-        print_error "❌ Evaluation failed"
+        print_error "Evaluation failed"
         return 1
     fi
 }
 
 run_init_database(){
     local python_evaluator="scripts/evaluator/init_database.py"
-    
+
     # Check if Python evaluator exists
     if [ ! -f "$python_evaluator" ]; then
         print_error "❌ Python evaluator not found: $python_evaluator"
         print_error "   Make sure you're in the project root directory"
         return 1
     fi
-    
+
     # Build command
     local cmd="python3 $python_evaluator"
-    
+
     # Run evaluation
     print_status "Running Database initializer..."
     print_status "Command: $cmd"
-    
+
     if eval "$cmd"; then
         print_success "✅ Evaluation completed successfully"
         return 0
     else
-        print_error "❌ Evaluation failed"
-        return 1
+       print_error "Evaluation failed"
+       return 1
     fi
 }
 
@@ -138,14 +133,14 @@ run_basic_validation() {
         local size
         size=$(stat -f%z "$target" 2>/dev/null || stat -c%s "$target" 2>/dev/null || echo "0")
         if [ "$size" -eq 0 ]; then
-            print_warning "⚠️  File is empty"
+            print_warning "File is empty"
             return 1
         fi
         print_success "File exists and has content ($size bytes)"
 
         # 2) Statement presence
         if ! grep -iqE "CREATE|SELECT|INSERT|UPDATE|DELETE|WITH" "$target"; then
-            print_warning "No recognizable SQL statements found"
+            print_warning " No recognizable SQL statements found"
         else
             print_success "Contains SQL statements"
         fi
@@ -198,8 +193,10 @@ run_basic_validation() {
             run_basic_validation "$file"
             rc=$?
             if [ $rc -eq 0 ]; then
+                echo "✅ OK: $file"
                 ((ok_count++))
             else
+                echo "❌ FAIL: $file"
                 ((fail_count++))
             fi
         done <<< "$(printf '%s\n' "${files[@]}")"
@@ -220,7 +217,7 @@ run_basic_validation() {
         return 0
 
     else
-        print_error "❌ Invalid target for basic validation: $target"
+        print_error "Invalid target for basic validation: $target"
         return 1
     fi
 }
@@ -230,16 +227,16 @@ run_basic_validation() {
 generate_summary() {
     print_header "Generating Summary Report"
     
-    local summary_script="scripts/evaluator/evaluation_summary.py"
+    local summary_script="scripts/evaluator/run_summary.py"
     if [ -f "$summary_script" ]; then
         print_status "Generating evaluation summary..."
         if python3 "$summary_script"; then
-            print_success "✅ Summary report generated"
+            print_success "Summary report generated"
         else
-            print_warning "⚠️  Summary generation failed"
+            print_warning " Summary generation failed"
         fi
     else
-        print_warning "⚠️  Summary script not found"
+        print_warning "Summary script not found"
     fi
 }
 
@@ -251,11 +248,10 @@ SQL Adventure Validation Script - Python Wrapper
 Usage: $0 [COMMAND] [TARGET] [OPTIONS]
 
 Commands:
+  test-db                   Test database connection
   init-database             Initialize the database (run once)
   basic <file>              Basic validation of a SQL file
-  ai-fast <target>          Fast AI evaluation (default mode)
-  ai-batch <target>         Comprehensive AI evaluation
-  test-db                   Test database connection
+  ai <target>          Fast AI evaluation
   summary                   Generate evaluation summary report
   
 Targets:
@@ -270,11 +266,10 @@ Options:
   --output-dir DIR          Custom output directory
 
 Examples:
+  $0 test-db
   $0 init-database
   $0 basic quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql
-  $0 ai-fast quests/1-data-modeling/00-basic-concepts
-  $0 ai-batch all --max-concurrent 5
-  $0 test-db
+  $0 ai quests/1-data-modeling/00-basic-concepts
   $0 summary
 
 Advanced Usage:
@@ -297,6 +292,9 @@ main() {
     local extra_args="$*"
     
     case "$command" in
+        "test-db")
+            test_database_connection
+            ;;
         "init-database")
             print_header "Initializing Database"
             run_init_database
@@ -309,24 +307,13 @@ main() {
             fi
             run_basic_validation "$target"
             ;;
-        "ai-fast")
+        "ai")
             if [ -z "$target" ]; then
                 print_error "Target required for AI evaluation"
                 show_usage
                 exit 1
             fi
-            run_python_evaluator "$target" "fast" "$extra_args"
-            ;;
-        "ai-batch")
-            if [ -z "$target" ]; then
-                print_error "Target required for batch evaluation"
-                show_usage
-                exit 1
-            fi
-            run_python_evaluator "$target" "comprehensive" "$extra_args"
-            ;;
-        "test-db")
-            test_database_connection
+            run_python_evaluator "$target" "$extra_args"
             ;;
         "summary")
             generate_summary

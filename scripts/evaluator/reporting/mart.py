@@ -6,11 +6,8 @@ Provides comprehensive reporting and analysis capabilities
 
 from sqlalchemy import text
 from typing import Dict, Any, List
-try:
-    from ..core.database_manager import DatabaseManager
-except ImportError:
-    # Fallback for direct execution
-    from core.database_manager import DatabaseManager
+
+from database.manager import DatabaseManager
 
 class AnalyticsViewManager:
     """Manages database views and analytics functions"""
@@ -637,7 +634,7 @@ class AnalyticsViewManager:
                 'period_days': days,
                 'quest_filter': quest_name,
                 'score_distribution': [dict(row._mapping) for row in score_distribution],
-                'pattern_trends': [dict(row._mapping) for row in pattern_trends],
+                'pattern_trends': [dict(row._mappinag) for row in pattern_trends],
                 'performance_trends': [dict(row._mapping) for row in performance_trends]
             }
             
