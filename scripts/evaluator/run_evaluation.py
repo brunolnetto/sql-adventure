@@ -44,24 +44,23 @@ class QuestEvaluator:
         return self.cache_dir / f"{file_path.stem}_{self._get_file_hash(file_path)[:8]}.json"
     
     def _is_cached_valid(self, file_path: Path) -> bool:
-        """Check if cached result is valid and up-to-date"""
+        """Return True if cache exists and is newer than the SQL file."""
         if not self.config.cache_enabled or not self.config.skip_unchanged:
             return False
-        
+
         cache_path = self._get_cache_path(file_path)
         if not cache_path.exists():
             return False
-        
-        # Check if cache is recent (within 24 hours)
-        cache_age = (Path.cwd().stat().st_mtime - cache_path.stat().st_mtime) / 3600
-        return cache_age < 24
+
+        return cache_path.stat().st_mtime >= file_path.stat().st_mtime
     
     def _load_cached_result(self, file_path: Path) -> Optional[Dict[str, Any]]:
-        """Load cached evaluation result"""
+        """Load cached evaluation result and raise if corrupted."""
         cache_path = self._get_cache_path(file_path)
         try:
             return json.loads(cache_path.read_text())
-        except Exception:
+        except Exception as e:
+            print(f"⚠️  Corrupted cache for {file_path}: {e}")
             return None
     
     def _save_cached_result(self, file_path: Path, result: Dict[str, Any]):
