@@ -10,6 +10,15 @@ class SQLPattern(BaseModel):
     confidence: confloat(ge=0, le=1) = Field(..., description="Confidence score between 0 and 1")
     description: str = Field(..., description="Brief description of the pattern")
 
+class Intent(BaseModel):
+    """
+    Represents the intent of the SQL code.
+    """
+    detailed_purpose: str = Field(..., description="Detailed learning objective")
+    educational_context: str = Field(..., description="Context in which this SQL is used")
+    real_world_applicability: str = Field(..., description="Real-world relevance of the code")
+    specific_skills: List[str] = Field(default_factory=list, description="Skills that learners will develop")
+
 
 class TechnicalAnalysis(BaseModel):
     """
@@ -58,16 +67,6 @@ class LLMAnalysis(BaseModel):
     educational_analysis: EducationalAnalysis
     assessment: Assessment
     recommendations: List[Recommendation] = Field(default_factory=list, description="Improvement suggestions")
-
-
-class Intent(BaseModel):
-    """
-    Represents the intent of the SQL code.
-    """
-    detailed_purpose: str = Field(..., description="Detailed learning objective")
-    educational_context: str = Field(..., description="Context in which this SQL is used")
-    real_world_applicability: str = Field(..., description="Real-world relevance of the code")
-    specific_skills: List[str] = Field(default_factory=list, description="Skills that learners will develop")
 
 class ExecutionResult(BaseModel):
     success: bool
