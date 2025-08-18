@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 
 class ProjectFolderConfig(BaseSettings):
@@ -12,7 +13,7 @@ class ProjectFolderConfig(BaseSettings):
     cache_dir: Path = Field(default_factory=lambda: Path(".evaluations-cache"))
     evaluations_dir: Path = Field(default_factory=lambda: Path("ai-evaluations"))
 
-    @validator("quests_dir", "cache_dir", "evaluations_dir", pre=True)
+    @field_validator("quests_dir", "cache_dir", "evaluations_dir", pre=True)
     def expand_and_create_dirs(cls, v):
         path = Path(v)
         # expand user and make absolute
@@ -34,7 +35,7 @@ class EvaluationConfig(BaseSettings):
     skip_unchanged: bool = Field(True, description="Skip files unchanged since last evaluation")
     output_dir: Optional[Path] = Field(None, description="Custom output directory for evaluations")
 
-    @validator("output_dir", pre=True, always=True)
+    @field_validator("output_dir", pre=True, always=True)
     def default_output_dir(cls, v):
         if v is None:
             # default to evaluations_dir from ProjectFolderConfig

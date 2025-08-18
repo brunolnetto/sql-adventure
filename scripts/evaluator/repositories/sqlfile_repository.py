@@ -1,7 +1,15 @@
-from .base_repository import BaseRepository
-from tables import SQLFile
 from pathlib import Path
 import hashlib
+from typing import Optional
+from datetime import datetime
+from sqlalchemy import and_
+
+from ..database.tables import SQLFile, Quest, Subcategory
+from .base_repository import BaseRepository
+from ..database.tables import (
+    SQLPattern, 
+    SQLFilePattern,
+)
 
 class SQLFileRepository(BaseRepository[SQLFile]):
     def __init__(self, session):
@@ -33,7 +41,7 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                                 pattern_id=pattern.id,
                                 confidence_score=0.9  # Basic regex detection confidence
                             )
-                            session.add(file_pattern)
+                            self.session.add(file_pattern)
         
         except Exception as e:
             print(f"⚠️  Error detecting patterns: {e}")
@@ -58,11 +66,13 @@ class SQLFileRepository(BaseRepository[SQLFile]):
         """Get existing SQL file record or create new one"""
         try:            
             # Check if file already exists
-            sql_file = self.session.query(SQLFile).filter(SQLFile.file_path == file_path).first()
+            sql_file = self.session \
+                .query(SQLFile)\
+                .filter(SQLFile.file_path == file_path).first()
             
             if sql_file:
                 # Update last_modified
-                sql_file.last_modified = datetime.utcnow()
+                sql_file.last_modified = datetime.now()
                 self.session.commit()
                 self.session.close()
                 return sql_file
@@ -99,7 +109,7 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                         self.session.commit()
                         
                         # Detect and associate patterns
-                        self._detect_and_associate_patterns(session, sql_file, file_path)
+                        self._detect_and_associate_patterns(self.session, sql_file, file_path)
                         
                         self.session.commit()
                         self.session.close()
@@ -108,3 +118,5 @@ class SQLFileRepository(BaseRepository[SQLFile]):
             self.session.close()
             return None
 
+        except Exception as e:
+            print(f"⚠️  Error getting or creating SQL file: {e}")

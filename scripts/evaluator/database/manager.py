@@ -14,7 +14,6 @@ class DatabaseManager:
     def __init__(self, base, connection_string: Optional[str] = None):
         self.connection_string = connection_string
         self.base = base
-        self.separate_db = separate_db
         self.engine = None
         self.SessionLocal = None
         self._db_pool = None

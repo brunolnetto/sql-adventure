@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from sqlalchemy.orm import Session
-from database.models import SQLPattern
+from ..core.models import SQLPattern
+from .base_repository import BaseRepository
 
 class SQLPatternRepository(BaseRepository[SQLPattern]):
     def __init__(self, session: Session):
@@ -10,10 +11,10 @@ class SQLPatternRepository(BaseRepository[SQLPattern]):
         """
         super().__init__(session, SQLPattern)
 
-    def upsert(self, patterns_data: List[Tuple[str, str, str, str, str]]s):
+    def upsert(self, patterns_data: List[Tuple[str, str, str, str, str]]):
         """Initialize SQL pattern catalog from discovered data"""
         for pattern_name, display_name, category, complexity, regex in patterns_data:
-            existing_pattern = session.query(SQLPattern).filter_by(name=pattern_name).first()
+            existing_pattern = self.session.query(SQLPattern).filter_by(name=pattern_name).first()
             if not existing_pattern:
                 pattern = SQLPattern(
                     name=pattern_name,
@@ -22,5 +23,5 @@ class SQLPatternRepository(BaseRepository[SQLPattern]):
                     complexity_level=complexity,
                     detection_regex=regex
                 )
-                session.add(pattern)
+                self.session.add(pattern)
                 print(f"✅ Added pattern: {display_name}")

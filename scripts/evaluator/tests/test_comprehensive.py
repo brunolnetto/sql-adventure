@@ -10,8 +10,7 @@ from pathlib import Path
 # Add the current directory to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core.validation import SQLValidator
-from core.ai_evaluator import SQLEvaluator
+from ..core.evaluators import SQLEvaluator, SQLValidator
 
 async def test_comprehensive_evaluation():
     """Test comprehensive evaluation functionality with a real SQL file"""

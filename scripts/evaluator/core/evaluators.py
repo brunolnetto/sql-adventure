@@ -16,22 +16,29 @@ import asyncpg
 from pydantic_ai import Agent
 from models import (
     EvaluationResult, Intent, LLMAnalysis, TechnicalAnalysis,
-    EducationalAnalysis, Assessment
+    EducationalAnalysis, Assessment, Recommendation
 )
-from agents import intent_agent, sql_instructor_agent, quality_assessor_agent
-from discovery import MetadataExtractor
-from utils.cache import (
-    _get_cache_path, _load_cached_result, _save_cached_result
+from agents import (
+    intent_agent, 
+    sql_instructor_agent, 
+    quality_assessor_agent
+)
+from ..utils.discovery import MetadataExtractor, detect_sql_patterns
+from ..utils.cache import (
+    _is_cached_valid, 
+    _get_cache_path, 
+    _load_cached_result, 
+    _save_cached_result
 )
 
-from repositories.evaluation_repository import EvaluationRepository
-from repositories.sqlfile_repository import SQLFileRepository
+from ..repositories.evaluation_repository import EvaluationRepository
+from ..repositories.sqlfile_repository import SQLFileRepository
 
 # Handle relative imports
 evaluator_dir = Path(__file__).parent
 sys.path.insert(0, str(evaluator_dir))
 
-from database import DatabaseManager
+from database.manager import DatabaseManager
 from config import ProjectFolderConfig, EvaluationConfig
 
 
@@ -42,7 +49,7 @@ class SQLEvaluator:
         self.model_name = os.getenv('MODEL_NAME', 'gpt-4o-mini')
 
         self.agents = {
-            "intent_analyst": intent_analyst,
+            "intent_analyst": intent_agent,
             "instructor": sql_instructor_agent,
             "quality_assessor": quality_assessor_agent
         }
@@ -54,16 +61,22 @@ class SQLEvaluator:
     async def analyze_sql_intent(self, sql_metadata: dict) -> Intent:
         """Analyze educational intent using OpenAI"""
         
+        quest_name=sql_metadata['quest_name']
+        purpose=sql_metadata['purpose']
+        concepts=sql_metadata['concepts']
+        difficulty=sql_metadata['difficulty']
+        sql_content=sql_metadata['sql_content']
+
         prompt = f"""
         Analyze this SQL exercise for educational intent:
         
-        Quest: {sql_metadata[]'quest_name']}
-        Basic Purpose: {sql_metadata['purpose']} 
-        Basic Concepts: {sql_metadata['concepts']}
-        Basic Difficulty: {sql_metadata['difficulty']}
+        Quest: {quest_name}
+        Initial Purpose: {purpose}
+        Initial Concepts: {concepts}
+        Initial Difficulty: {difficulty}
         
         SQL Code:
-        {sql_metadata['sql_content']}
+        {sql_content}
         
         Provide a comprehensive analysis of the educational intent, including:
         - Detailed learning objectives
@@ -78,10 +91,10 @@ class SQLEvaluator:
             print(f"Error in intent analysis: {e}")
             # Fallback
             return Intent(
-                detailed_purpose=basic_purpose,
+                detailed_purpose=purpose,
                 educational_context=f"SQL exercise in {quest_name}",
                 real_world_applicability="Database design and management",
-                specific_skills=basic_concepts.split(", ")
+                specific_skills=concepts.split(", ")
             )
     
     async def analyze_sql_output(self, sql_content: str, quest_name: str,
@@ -199,14 +212,16 @@ class SQLEvaluator:
         execution_result = await self.execute_sql_file(file_path)        
         sql_context["execution_result"] = execution_result
 
+        sql_content = sql_context["sql_content" ]
+
         # Detect patterns
         sql_patterns = detect_sql_patterns(sql_content)
         pattern_names = [p.pattern_name for p in sql_patterns]
         sql_context["pattern_names"] = pattern_names
 
         # Analyze with AI
-        sql_intent = await self.analyze_sql_intent(parsed_data)
-        llm_analysis = await self.analyze_sql_output(sql_context)
+        sql_intent: Intent = await self.analyze_sql_intent(sql_context)
+        llm_analysis: LLMAnalysis = await self.analyze_sql_output(sql_context)
 
         # Create basic evaluation
         score = llm_analysis.assessment.score
@@ -248,7 +263,7 @@ class SQLEvaluator:
                 "quality": "Output is clear and readable"
             },
             llm_analysis=llm_analysis,
-            enhanced_intent=enhanced_intent
+            enhanced_intent=sql_intent
         )
         
         # Persist to database
@@ -256,7 +271,7 @@ class SQLEvaluator:
         
         return result
     
-async def _save_to_database(self, file_path: Path, result: EvaluationResult):
+    async def _save_to_database(self, file_path: Path, result: EvaluationResult):
         """Save evaluation result to database"""
         try:
             # Convert pydantic result to dict for database saving
@@ -270,7 +285,7 @@ async def _save_to_database(self, file_path: Path, result: EvaluationResult):
             session = self.db_manager.SessionLocal()
             try:
                 # Get or create SQL file within the same session
-                from models import SQLFile, Quest, Subcategory
+                from ..database.tables import SQLFile, Quest, Subcategory
                 
                 sql_file_repository = SQLFileRepository(session)
                 sql_file = sql_file_repository.get_or_create(str(file_path))
@@ -286,7 +301,7 @@ async def _save_to_database(self, file_path: Path, result: EvaluationResult):
                     session.rollback()
                     print(f"⚠️  Failed to create SQL file record for {file_path}")
             except Exception as e:
-                session.rollback()
+                self.session.rollback()
                 print(f"❌ Error saving evaluation for {file_path}: {e}")
                     
             finally:
@@ -308,38 +323,30 @@ class QuestEvaluator:
         self.evaluator = SQLEvaluator()
         self.config = EvaluationConfig()
         self.folder_config = ProjectFolderConfig()
-
-    def _is_cached_valid(self, file_path: Path) -> bool:
-        """Check if cached result is valid and up-to-date"""
-        if not self.config.cache_enabled or not self.config.skip_unchanged:
-            return False
-        
-        cache_path = _get_cache_path(self.folder_config.cache_dir, file_path)
-        if not cache_path.exists():
-            return False
-        
-        # Check if cache is recent (within 24 hours)
-        cache_age = (Path.cwd().stat().st_mtime - cache_path.stat().st_mtime) / 3600
-        return cache_age < 24
     
     async def evaluate_subcategory(self, file_path: Path) -> Dict[str, Any]:
         """Evaluate a single SQL file with caching"""
         print(f"Evaluating: {file_path}")
         
         # Check cache first
-        if self._is_cached_valid(file_path):
+        is_cache_enabled_or_changed=not self.config.cache_enabled or not self.config.skip_unchanged
+
+        if self._is_cached_valid(file_path) and is_cache_enabled_or_changed:
             cached_result = _load_cached_result(self.folder_config.cache_dir, file_path)
             if cached_result:
                 print(f"📋 Using cached result for {file_path.name}")
                 return cached_result
-        
+
         try:
             # Perform evaluation
             result = await self.evaluator.evaluate_sql_file(file_path)
             result_dict = result.model_dump()
             
-            # Cache the result
-            _save_cached_result(self.folder_config.cache_dir, file_path, result_dict)
+            if self.config.cache_enabled:
+                # Cache the result
+                _save_cached_result(
+                    self.folder_config.cache_dir, file_path, result_dict
+                )
             
             return result_dict
             

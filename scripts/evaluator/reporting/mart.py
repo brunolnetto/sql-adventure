@@ -7,7 +7,7 @@ Provides comprehensive reporting and analysis capabilities
 from sqlalchemy import text
 from typing import Dict, Any, List
 
-from database.manager import DatabaseManager
+from ..database.manager import DatabaseManager
 
 class AnalyticsViewManager:
     """Manages database views and analytics functions"""
@@ -432,8 +432,12 @@ class AnalyticsViewManager:
         $$ LANGUAGE plpgsql;
         """
         
-        conn.execute(text(trend_function_sql % (days_param, days_param * 2, days_param)))
-        
+        conn.execute(
+            text(
+                trend_function_sql % (days_param, days_param * 2, days_param)
+            )
+        )
+
         # Function to get improvement opportunities
         improvement_function_sql = """
         CREATE OR REPLACE FUNCTION get_improvement_opportunities(score_threshold INTEGER DEFAULT 6)

@@ -186,6 +186,29 @@ def determine_subcategory_difficulty(
 ) -> str:
     return infer_difficulty(subcategory_path, default)
 
+def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, int]]) -> str:
+    """Generate quest description based on subcategories"""
+    quest_keywords = {
+        'data-modeling': 'Database design principles, normalization patterns, and schema optimization',
+        'performance-tuning': 'Query optimization, indexing strategies, and performance analysis',
+        'window-functions': 'Advanced analytics and ranking operations using window functions',
+        'json-operations': 'Working with JSON data in PostgreSQL',
+        'recursive-cte': 'Hierarchical data and recursive queries',
+        'stored-procedures': 'Database programming with stored procedures and functions',
+        'triggers': 'Automated database actions with triggers',
+        'transactions': 'Data consistency and transaction management'
+    }
+    
+    # Extract quest type from name
+    quest_type = '-'.join(quest_name.split('-')[1:])
+    
+    if quest_type in quest_keywords:
+        return quest_keywords[quest_type]
+    
+    # Fallback: generate description from subcategories
+    subcategory_names = [display_name for _, display_name, _, _ in subcategories]
+    return f"Comprehensive coverage of {', '.join(subcategory_names[:3])} and related concepts"
+
 def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
     """Discover quests and subcategories from the quests directory"""
     quests_data = []
@@ -296,7 +319,7 @@ def detect_sql_patterns(sql_content: str) -> PatternType:
     patterns_data = []
     content_upper = sql_content.upper()
 
-    for pattern_name, (display_name, category, complexity, regex) in pattern_definitions.items():
+    for pattern_name, (display_name, category, complexity, regex) in PATTERN_DEFINITIONS.items():
         if re.search(regex, content_upper, re.IGNORECASE):
             patterns_data.append((pattern_name, display_name, category, complexity, regex))
 
@@ -312,7 +335,7 @@ def discover_sql_patterns_from_filesystem() -> :
         return patterns_data
 
     sql_files = list(quests_dir.rglob("*.sql"))
-    pattern_usage = {pattern_name: 0 for pattern_name in pattern_definitions.keys()}
+    pattern_usage = {pattern_name: 0 for pattern_name in PATTERN_DEFINITIONS.keys()}
 
     for sql_file in sql_files:
         try:
@@ -325,7 +348,7 @@ def discover_sql_patterns_from_filesystem() -> :
 
     for pattern_name, usage_count in pattern_usage.items():
         if usage_count > 0:
-            display_name, category, complexity, regex = pattern_definitions[pattern_name]
+            display_name, category, complexity, regex = PATTERN_DEFINITIONS[pattern_name]
             patterns_data.append((pattern_name, display_name, category, complexity, regex))
             print(f"🔍 Discovered pattern: {display_name} (used in {usage_count} files)")
 

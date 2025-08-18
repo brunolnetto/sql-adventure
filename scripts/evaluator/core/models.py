@@ -1,13 +1,15 @@
 from pydantic import BaseModel, Field, conint, confloat
 from typing import List, Optional, Dict, Any, Literal
 
+from datetime import datetime
+
 
 class SQLPattern(BaseModel):
     """
     Represents a detected SQL pattern with metadata.
     """
     pattern_name: str = Field(..., description="Name of the SQL pattern detected")
-    confidence: confloat(ge=0, le=1) = Field(..., description="Confidence score between 0 and 1")
+    confidence: float = Field(..., ge=0, le=1, description="Confidence score between 0 and 1")
     description: str = Field(..., description="Brief description of the pattern")
 
 class Intent(BaseModel):
@@ -46,7 +48,7 @@ class Assessment(BaseModel):
     Assessment of the SQL code quality and educational value.
     """
     grade: Literal["A", "B", "C", "D", "E", "F"] = Field(..., description="Letter grade")
-    score: conint(ge=1, le=10) = Field(..., description="Numeric score from 1 to 10")
+    score: float = Field(..., ge=0, le=1, description="Numeric score from 1 to 10")
     overall_assessment: Literal["PASS", "FAIL", "NEEDS_REVIEW"] = Field(..., description="Final assessment verdict")
 
 

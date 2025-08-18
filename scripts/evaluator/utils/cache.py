@@ -10,13 +10,10 @@ def _get_file_hash(file_path: Path) -> str:
 
 def _get_cache_path(cache_dir: Path, file_path: Path) -> Path:
     """Get cache file path for a SQL file"""
-    return cache_dir / f"{file_path.stem}_{self._get_file_hash(file_path)[:8]}.json"
+    return cache_dir / f"{file_path.stem}_{_get_file_hash(file_path)[:8]}.json"
 
 def _is_cached_valid(cache_dir: Path, file_path: Path) -> bool:
-    """Check if cached result is valid and up-to-date"""
-    if not self.config.cache_enabled or not self.config.skip_unchanged:
-        return False
-    
+    """Check if cached result is valid and up-to-date"""    
     cache_path = _get_cache_path(file_path)
     if not cache_path.exists():
         return False
@@ -33,11 +30,10 @@ def _load_cached_result(cache_dir: Path, file_path: Path) -> Optional[Dict[str, 
     except Exception:
         return None
 
-def _save_cached_result(cache_dir: Path, file_path: Path, result: Dict[str, Any]):
-    """Save evaluation result to cache"""
-    if not self.config.cache_enabled:
-        return
-    
+def _save_cached_result(
+    cache_dir: Path, file_path: Path, result: Dict[str, Any]
+):
+    """Save evaluation result to cache"""    
     cache_path = _get_cache_path(cache_dir, file_path)
     try:
         cache_path.write_text(json.dumps(result, indent=2))

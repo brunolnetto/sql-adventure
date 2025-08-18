@@ -1,5 +1,21 @@
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta
+from sqlalchemy import func
+
 from .base_repository import BaseRepository
-from tables import Evaluation, ExecutionDetail, EvaluationPattern, Recommendation
+from ..core.models import (
+    TechnicalAnalysis,
+    EducationalAnalysis,
+    SQLPattern
+)
+from ..database.tables import (
+    SQLFile,
+    Quest,
+    Evaluation, 
+    ExecutionDetail, 
+    EvaluationPattern, 
+    Recommendation
+)
 
 from config import EvaluationConfig
 
@@ -9,9 +25,11 @@ class EvaluationRepository(BaseRepository[Evaluation]):
 
     def add_from_data(self, sql_file_id: int, evaluation_data: dict):
         try:
+            # Retrieve sql_file from database
+            sql_file: SQLFile = self.session.query(SQLFile).filter(SQLFile.id == sql_file_id).first()
             # Create main evaluation record
             evaluation = Evaluation(
-                sql_file_id=sql_file.id,
+                sql_file_id=sql_file_id,
                 quest_id=sql_file.subcategory.quest_id,
                 evaluator_model=evaluation_data.get('evaluator_model', EvaluationConfig().model_name),
                 overall_assessment=evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('overall_assessment', 'UNKNOWN'),
@@ -42,7 +60,7 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                     quality_score=self._extract_score_from_text(tech_analysis.get('code_quality', '')),
                     performance_score=self._extract_score_from_text(tech_analysis.get('performance_notes', ''))
                 )
-                session.add(technical)
+                self.session.add(technical)
                 
             # Save educational analysis
             edu_analysis = evaluation_data.get('llm_analysis', {}).get('educational_analysis', {})
@@ -57,7 +75,7 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                     real_world_applicability=evaluation_data.get('enhanced_intent', {}).get('real_world_applicability', ''),
                     clarity_score=self._extract_score_from_text(edu_analysis.get('learning_value', ''))
                 )
-                session.add(educational)
+                self.session.add(educational)
             
             # Save execution details
             stmt_results = evaluation_data.get('execution', {}).get('statement_results', [])
@@ -73,12 +91,12 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                     error_message=stmt_data.get('error_message'),
                     warning_message=stmt_data.get('warning_message')
                 )
-                session.add(execution_detail)
+                self.session.add(execution_detail)
             
             # Save pattern evaluations
             detected_patterns = evaluation_data.get('intent', {}).get('sql_patterns', [])
             for pattern_name in detected_patterns:
-                pattern = session.query(SQLPattern).filter(SQLPattern.name == pattern_name).first()
+                pattern = self.session.query(SQLPattern).filter(SQLPattern.name == pattern_name).first()
                 if pattern:
                     eval_pattern = EvaluationPattern(
                         evaluation_id=evaluation.id,
@@ -86,7 +104,7 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                         confidence_score=0.8,  # Default confidence
                         usage_quality='Good'   # Default quality assessment
                     )
-                    session.add(eval_pattern)
+                    self.session.add(eval_pattern)
             
             # Save recommendations
             recommendations = evaluation_data.get('llm_analysis', {}).get('recommendations', [])
@@ -99,7 +117,7 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                     implementation_effort='Medium',
                     expected_impact='Medium'
                 )
-                session.add(recommendation)
+                self.session.add(recommendation)
             
             self.session.commit()
             print(f"✅ Enhanced evaluation saved: {sql_file.filename}")

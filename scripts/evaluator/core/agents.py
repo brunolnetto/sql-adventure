@@ -1,5 +1,5 @@
 from pydantic_ai import Agent
-from scripts.evaluator.config import EvaluationConfig
+from ..config import EvaluationConfig
 
 config = EvaluationConfig()
 

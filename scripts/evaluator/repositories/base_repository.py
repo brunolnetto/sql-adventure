@@ -2,9 +2,12 @@ from sqlalchemy.orm import Session
 from typing import TypeVar, Generic, Type
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+class BaseModel:
+    pass
 
-ModelType = TypeVar("ModelType", bound=Base)
+Base = declarative_base(cls=BaseModel)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
 
 class BaseRepository(Generic[ModelType]):
     def __init__(self, session: Session, model: Type[ModelType]):

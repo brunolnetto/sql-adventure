@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any, Set
 from dataclasses import dataclass
 
-from evaluators import QuestEvaluator
+from core.evaluators import QuestEvaluator
 from config import ProjectFolderConfig, EvaluationConfig
 
 
