@@ -8,7 +8,7 @@ set -e
 shopt -s globstar nullglob
 
 # Source print utilities
-source "$(dirname "$0")/utils/print-utils.sh"
+source "$(dirname "$0")/print-utils.sh"
 
 # Function to load environment variables
 load_env() {
@@ -43,7 +43,7 @@ test_database_connection() {
     print_status "Testing database connection..."
     
     if command -v psql >/dev/null 2>&1; then
-        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+        if PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_NAME" \
             -c "SELECT 1;" > /dev/null 2>&1; then
             print_success "Database connection successful"
             return 0
