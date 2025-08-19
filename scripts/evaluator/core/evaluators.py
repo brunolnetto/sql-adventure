@@ -14,11 +14,11 @@ from datetime import datetime
 import asyncpg
 
 from pydantic_ai import Agent
-from models import (
+from .models import (
     EvaluationResult, Intent, LLMAnalysis, TechnicalAnalysis,
     EducationalAnalysis, Assessment, Recommendation
 )
-from agents import (
+from .agents import (
     intent_agent, 
     sql_instructor_agent, 
     quality_assessor_agent
@@ -35,7 +35,7 @@ from ..repositories.evaluation_repository import EvaluationRepository
 from ..repositories.sqlfile_repository import SQLFileRepository
 
 # Handle relative imports
-evaluator_dir = Path(__file__).parent
+evaluator_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(evaluator_dir))
 
 from database.manager import DatabaseManager
@@ -293,10 +293,8 @@ class SQLEvaluator:
                 if sql_file:
                     # Save evaluation with the same session
                     evaluation_repository = EvaluationRepository(session)
-                    sqlfile_repository = SQLFileRepository(session)
                     
-                    sqlfile_repository.get_or_create(str(file_path))
-                    evaluation_repository.add_from_data(sql_file_id, evaluation_data)
+                    evaluation_repository.add_from_data(sql_file.id, evaluation_data)
                 else:
                     session.rollback()
                     print(f"⚠️  Failed to create SQL file record for {file_path}")

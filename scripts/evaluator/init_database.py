@@ -20,7 +20,7 @@ sys.path.insert(0, str(evaluator_dir))
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from core.models import Base, Quest, Subcategory, SQLPattern
+from database.tables import Quest, Subcategory, SQLPattern
 from utils.discovery import (
     discover_sql_patterns_from_filesystem,
     discover_quests_from_filesystem,
