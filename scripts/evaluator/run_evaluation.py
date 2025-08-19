@@ -48,7 +48,7 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
         if config.output_dir:
             output_path = Path(config.output_dir)
         else:
-            output_path = self.evaluations_dir / target_path.parts[-3] / target_path.parts[-2]
+            output_path = config.output_dir / target_path.parts[-3] / target_path.parts[-2]
         
         output_path.mkdir(parents=True, exist_ok=True)
         output_file = output_path / f"{target_path.stem}.json"

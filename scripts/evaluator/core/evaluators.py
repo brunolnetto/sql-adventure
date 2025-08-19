@@ -331,7 +331,7 @@ class QuestEvaluator:
         # Check cache first
         is_cache_enabled_or_changed=not self.config.cache_enabled or not self.config.skip_unchanged
 
-        if self._is_cached_valid(file_path) and is_cache_enabled_or_changed:
+        if _is_cached_valid(file_path) and is_cache_enabled_or_changed:
             cached_result = _load_cached_result(self.folder_config.cache_dir, file_path)
             if cached_result:
                 print(f"📋 Using cached result for {file_path.name}")
@@ -405,10 +405,10 @@ class QuestEvaluator:
             # Create proper subdirectory structure
             if len(quest_path.parts) >= 3:
                 # For subdirectories like quests/1-data-modeling/00-basic-concepts
-                output_path = self.evaluations_dir / quest_path.parts[-2] / quest_path.parts[-1]
+                output_path = self.config.output_dir / quest_path.parts[-2] / quest_path.parts[-1]
             else:
                 # For main quest directories
-                output_path = self.evaluations_dir / quest_path.name
+                output_path = self.config.output_dir / quest_path.name
         
         output_path.mkdir(parents=True, exist_ok=True)
         

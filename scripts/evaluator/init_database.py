@@ -42,25 +42,38 @@ def main():
     
     try:
         # Get connection string
-        database_name = os.getenv('DB_NAME', 'sql_adventure_db')
+        database_name = os.getenv('POSTGRES_DB_NAME', 'sql_adventure_db')
         
         connection_string = get_connection_string(database=database_name)
         database_manager = DatabaseManager(EvaluationBase, connection_string)
         
         print(f"📡 Using connection: {connection_string.split('@')[1]}")
         
-        # Discover and initialize quest data
-        print("📚 Discovering quests from filesystem...")
-        quests_dir  = Path("quests")
-        quests_data = discover_quests_from_filesystem(quests_dir)
-        quest_repo = QuestRepository(database_manager.session)
-        init_quest_data(quests_data)
+        # Create a session for database operations
+        session = database_manager.SessionLocal()
         
-        # Discover and initialize pattern data
-        print("🔍 Discovering SQL patterns from filesystem...")
-        patterns_data = discover_sql_patterns_from_filesystem()
-        pattern_repo = SQLPatternRepository(database_manager.session)
-        pattern_repo.upsert(patterns_data)
+        try:
+            # Discover and initialize quest data
+            print("📚 Discovering quests from filesystem...")
+            quests_dir  = Path("quests")
+            quests_data = discover_quests_from_filesystem(quests_dir)
+            quest_repo = QuestRepository(session)
+            quest_repo.upsert(quests_data)
+        
+            # Discover and initialize pattern data
+            print("🔍 Discovering SQL patterns from filesystem...")
+            patterns_data = discover_sql_patterns_from_filesystem()
+            pattern_repo = SQLPatternRepository(session)
+            pattern_repo.upsert(patterns_data)
+            
+            # Commit the session
+            session.commit()
+            
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
         
         print("🗃️ Creating database views...")
         analytics_view_manager = AnalyticsViewManager(database_manager)
