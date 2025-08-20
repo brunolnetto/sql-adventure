@@ -51,10 +51,3 @@ services:
 volumes:
   postgres-data:
   pgadmin-data:
-
-# Database Architecture Notes:
-# - Single PostgreSQL instance hosts multiple databases:
-#   * sql_adventure_quests: For SQL learning exercises and practice
-#   * sql_adventure_evaluator: For evaluation metadata storage (created by evaluator)
-# - Evaluator system uses separate configuration in scripts/evaluator/.env
-# - Both databases can be managed through pgAdmin interface
