@@ -54,9 +54,47 @@ This directory contains comprehensive documentation for the SQL Adventure projec
 - **Markdown** - Documentation and guides
 
 ### Scripts
-- **`scripts/validate.sh`** - Quest-agnostic SQL validation with AI-powered pattern detection and evaluation
-- **`scripts/run-examples.sh`** - Execute examples with progress tracking
+- **`scripts/evaluator/task_runner.sh`** - Unified interface for all operations (setup, evaluation, validation)
+- **`scripts/evaluator/setup_wizard.py`** - Interactive configuration setup
 - **`scripts/commit.sh`** - Simplified git workflow
+
+## 🚀 Quick Start (Updated)
+
+### 1. Setup (One-time)
+```bash
+# Interactive setup wizard
+./scripts/evaluator/task_runner.sh setup
+
+# Start database
+./scripts/evaluator/task_runner.sh docker-up
+
+# Initialize database  
+./scripts/evaluator/task_runner.sh init-db
+```
+
+### 2. Evaluate SQL Files
+```bash
+# Evaluate entire quest
+./scripts/evaluator/task_runner.sh evaluate quests/1-data-modeling
+
+# Evaluate single file
+./scripts/evaluator/task_runner.sh evaluate quests/1-data-modeling/01-basic-table.sql
+
+# Basic validation only
+./scripts/evaluator/task_runner.sh basic file.sql
+```
+
+### 3. Development
+```bash
+# Run tests
+./scripts/evaluator/task_runner.sh test
+
+# Clean cache
+./scripts/evaluator/task_runner.sh clean
+
+# View logs
+./scripts/evaluator/task_runner.sh logs
+```
 
 ## 🤝 Contributing
 
@@ -79,7 +117,7 @@ We welcome contributions! Here's how you can help:
 
 ### 🔧 Code Contributions
 - Follow existing code style
-- Use `scripts/validate.sh` for SQL validation
+- Use `scripts/evaluator/task_runner.sh basic` for SQL validation
 - Use `scripts/commit.sh` for git workflow
 - Update documentation
 
