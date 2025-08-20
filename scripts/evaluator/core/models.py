@@ -153,4 +153,9 @@ class EvaluationResult(BaseModel):
     intent: Intent = Field(..., description="Intent analysis of the SQL code")
     llm_analysis: LLMAnalysis = Field(..., description="AI-powered technical and educational analysis")
     evaluated_at: datetime = Field(default_factory=datetime.now)
+    
+    @property
+    def success(self) -> bool:
+        """Convenience property to access execution success status."""
+        return self.execution.success
 

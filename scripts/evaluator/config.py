@@ -29,9 +29,7 @@ class ProjectFolderConfig(BaseSettings):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 class EvaluatorDatabaseConfig(BaseSettings):
@@ -114,10 +112,10 @@ class EvaluationConfig(BaseSettings):
     skip_unchanged: bool = Field(True, description="Skip files unchanged since last evaluation")
     output_dir: Optional[Path] = Field(None, description="Custom output directory for evaluations")
 
-    class Config:
-        # Don't auto-load .env files since we handle this with env_loader
-        env_file_encoding = 'utf-8'
-        extra = "ignore"  # Ignore extra environment variables from root .env
+    model_config = {
+        "env_file_encoding": "utf-8", 
+        "extra": "ignore"  # Ignore extra environment variables from root .env
+    }
 
     def validate_setup(self) -> tuple[bool, list[str]]:
         """
@@ -286,5 +284,4 @@ def validate_config_or_exit():
             
         return True
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env"}

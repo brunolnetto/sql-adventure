@@ -36,7 +36,7 @@ async def generate_quest_description_ai(aggregated_content: str) -> str:
         """
         
         result = await quest_summary_agent.run(prompt)
-        return result.data.strip()
+        return result.output.strip()
     except Exception as e:
         print(f"⚠️  AI quest summarization failed: {e}")
         return generate_quest_description_fallback(aggregated_content)
@@ -129,7 +129,7 @@ async def generate_subcategory_description_ai(subcategory_path: Path) -> str:
         description = await subcategory_summary_agent.run(
             f"Analyze this SQL subcategory and generate a concise description:\n\n{context}"
         )
-        return description.data.strip()
+        return description.output.strip()
         
     except Exception as e:
         print(f"⚠️  AI subcategory description generation failed: {e}")

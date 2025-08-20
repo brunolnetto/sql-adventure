@@ -70,6 +70,21 @@ class SQLEvaluator:
         # Quests database: execution sandbox only, no schema needed
         self.sql_execution_manager = DatabaseManager(None, database_type="quests")
     
+    @property
+    def intent_agent(self):
+        """Direct access to intent analysis agent for testing"""
+        return self.agents["intent_analyst"]
+    
+    @property
+    def sql_instructor_agent(self):
+        """Direct access to SQL instructor agent for testing"""
+        return self.agents["sql_instructor"]
+    
+    @property
+    def quality_assessor_agent(self):
+        """Direct access to quality assessor agent for testing"""
+        return self.agents["quality_assessor"]
+    
     async def analyze_sql_intent(self, sql_metadata: dict) -> Intent:
         """Analyze educational intent using OpenAI"""
         
@@ -99,7 +114,7 @@ class SQLEvaluator:
         
         try:
             result = await self.agents["intent_analyst"].run(prompt, output_type=Intent)
-            return result.data  # Extract the actual data from AgentRunResult
+            return result.output  # Extract the actual data from AgentRunResult
         except Exception as e:
             print(f"Error in intent analysis: {e}")
             # Fallback
@@ -116,57 +131,94 @@ class SQLEvaluator:
         """Analyze SQL output using OpenAI"""
         
         prompt = f"""
-        Analyze this SQL exercise and its execution output:
+        Analyze this SQL exercise and provide a structured evaluation:
         
         Quest: {quest_name}
         Purpose: {purpose}
         Difficulty: {difficulty}
         Concepts: {concepts}
-        SQL Patterns: {', '.join(sql_patterns)}
+        SQL Patterns Detected: {', '.join(sql_patterns)}
         
         Execution Output:
         {output_content}
         
-        Note: The execution output above contains the complete SQL code and results.
+        Please provide your analysis in the following EXACT JSON structure:
         
-        Provide a comprehensive analysis with separate technical and educational reasoning:
+        {{
+          "analysis": {{
+            "overall_feedback": "comprehensive feedback combining technical and educational aspects",
+            "difficulty_level": "Beginner" | "Intermediate" | "Advanced" | "Expert",
+            "time_estimate": "estimated time like '5 min' or '10-15 min'",
+            "technical_reasoning": {{
+              "score": 1-10,
+              "explanation": "detailed technical analysis",
+              "strengths": ["list", "of", "strengths"],
+              "weaknesses": ["list", "of", "weaknesses"],
+              "syntax_quality": "assessment of SQL syntax",
+              "performance_considerations": "performance analysis"
+            }},
+            "educational_reasoning": {{
+              "score": 1-10,
+              "explanation": "detailed educational analysis",
+              "learning_objectives": ["list", "of", "objectives"],
+              "skill_development": ["list", "of", "skills"],
+              "real_world_relevance": "real-world applicability",
+              "pedagogical_value": "teaching effectiveness assessment"
+            }},
+            "detected_patterns": [
+              {{
+                "name": "pattern_name_from_detected_list",
+                "confidence": 0.0-1.0,
+                "quality": "Excellent" | "Good" | "Fair" | "Poor",
+                "description": "brief pattern description"
+              }}
+            ]
+          }},
+          "assessment": {{
+            "grade": "A" | "B" | "C" | "D" | "E" | "F",
+            "score": 1-10,
+            "overall_assessment": "PASS" | "FAIL" | "NEEDS_REVIEW"
+          }},
+          "recommendations": [
+            {{
+              "priority": "High" | "Medium" | "Low",
+              "implementation_effort": "Low" | "Medium" | "High",
+              "recommendation_text": "improvement suggestion"
+            }}
+          ]
+        }}
         
-        TECHNICAL REASONING: Provide detailed analysis of:
-        - Score (1-10): Overall technical quality assessment
-        - Explanation: Detailed technical analysis covering syntax, logic, and implementation quality
-        - Strengths: List specific technical strengths identified
-        - Weaknesses: List technical issues or areas for improvement  
-        - Syntax Quality: Assessment of SQL syntax and structure
-        - Performance Considerations: Performance implications and optimizations
-        
-        EDUCATIONAL REASONING: Provide detailed analysis of:
-        - Score (1-10): Educational value and learning effectiveness
-        - Explanation: Detailed educational analysis covering learning objectives and pedagogical value
-        - Learning Objectives: Specific learning objectives this exercise addresses
-        - Skill Development: Skills that learners will develop through this exercise
-        - Real World Relevance: How this applies to real-world database scenarios
-        - Pedagogical Value: Assessment of teaching/learning effectiveness
-        
-        OVERALL ASSESSMENT:
-        - Overall feedback combining technical and educational aspects
-        - Difficulty level (Beginner/Intermediate/Advanced/Expert)
-        - Time estimate (e.g., "5 min", "10-15 min")
-        - Detected patterns with quality assessment
-        - Final grade and score
-        - Actionable recommendations for improvement
+        IMPORTANT: 
+        - Only include patterns from this list: {', '.join(sql_patterns)}
+        - Use EXACT literal values for difficulty_level, quality, grade, overall_assessment, priority, implementation_effort
+        - Provide numeric scores as integers (1-10)
+        - Provide confidence as decimal (0.0-1.0)
+        - Focus on the actual SQL execution results shown above
         """
         
         try:
             result = await self.agents["sql_instructor"].run(prompt, output_type=LLMAnalysis)
-            return result.data  # Extract the actual data from AgentRunResult
+            return result.output  # Extract the actual data from AgentRunResult
         except Exception as e:
             print(f"Error in output analysis: {e}")
-            # Fallback with simplified structure
+            # Fallback with simplified structure - PRESERVE detected patterns
             from core.models import TechnicalReasoning, EducationalReasoning
+            
+            # Convert pattern names to SQLPatternDetection objects for the fallback
+            pattern_detections = []
+            for pattern_name in sql_patterns:
+                from core.models import SQLPatternDetection
+                pattern_detections.append(SQLPatternDetection(
+                    name=pattern_name,
+                    confidence=0.8,  # Default confidence for detected patterns
+                    quality="Good",  # Default quality 
+                    description=f"Pattern detected: {pattern_name}"
+                ))
+            
             return LLMAnalysis(
                 analysis=ComprehensiveAnalysis(
                     overall_feedback="Analysis failed due to technical error",
-                    difficulty_level=difficulty,
+                    difficulty_level="Beginner",  # Use valid fallback instead of undefined metadata
                     time_estimate="10 min",
                     technical_reasoning=TechnicalReasoning(
                         score=5,
@@ -184,7 +236,7 @@ class SQLEvaluator:
                         real_world_relevance="Unable to assess due to technical error",
                         pedagogical_value="Unable to assess due to technical error"
                     ),
-                    detected_patterns=[]
+                    detected_patterns=pattern_detections  # Use actual detected patterns
                 ),
                 assessment=Assessment(
                     grade="C",

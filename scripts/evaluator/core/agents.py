@@ -10,22 +10,30 @@ if config.openai_api_key and not os.getenv("OPENAI_API_KEY"):
 
 intent_agent =  Agent(
     config.model_name,
-    system_prompt="You are an expert in educational content analysis and curriculum design."
+    system_prompt="You are an expert in educational content analysis and curriculum design.",
+    retries=3,
+    output_retries=5
 )
 
 sql_instructor_agent = Agent(
     config.model_name,
-    system_prompt="You are an expert SQL instructor and educational content analyst."
+    system_prompt="You are an expert SQL instructor and educational content analyst.",
+    retries=3,
+    output_retries=5
 )
 
 quality_assessor_agent = Agent(
     config.model_name,
-    system_prompt="You are an expert in educational content quality assessment and improvement."
+    system_prompt="You are an expert in educational content quality assessment and improvement.",
+    retries=3,
+    output_retries=5
 )
 
 quest_summary_agent = Agent(
     config.model_name,
     output_type=str,
+    retries=3,
+    output_retries=5,
     system_prompt="""
     You are an expert SQL instructor. Your task is to analyze aggregated quest content 
     and generate a succinct but elucidative description of what the quest covers.
@@ -42,6 +50,8 @@ quest_summary_agent = Agent(
 subcategory_summary_agent = Agent(
     config.model_name,
     output_type=str,
+    retries=3,
+    output_retries=5,
     system_prompt="""
     You are an expert SQL instructor. Your task is to analyze SQL files from a subcategory 
     and generate a concise, informative description of what this subcategory teaches.
@@ -59,6 +69,8 @@ subcategory_summary_agent = Agent(
 pattern_description_agent = Agent(
     config.model_name,
     output_type=str,
+    retries=3,
+    output_retries=5,
     system_prompt="""
     You are an expert SQL educator and pattern analyst. Your task is to analyze SQL patterns 
     and create comprehensive, educational descriptions that help learners understand:

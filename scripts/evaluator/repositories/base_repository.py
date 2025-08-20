@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import TypeVar, Generic, Type, List, Optional
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 class BaseModel:
     pass
