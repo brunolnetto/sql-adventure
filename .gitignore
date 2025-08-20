@@ -1,6 +1,7 @@
 *pycache*
 reports/
 .env
+ai-evaluations/
 
 # Logs
 logs
