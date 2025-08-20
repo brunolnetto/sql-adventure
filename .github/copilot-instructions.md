@@ -11,16 +11,34 @@
 
 ## Development Workflows
 
-### Evaluation Pipeline
+### Primary Interface: Task Runner
 ```bash
-# AI-powered evaluation (run from project root)
+# Unified command interface (preferred approach)
+scripts/task_runner.sh evaluate quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql
+scripts/task_runner.sh evaluate quests/1-data-modeling  # Full quest
+scripts/task_runner.sh setup     # Interactive configuration wizard
+scripts/task_runner.sh init-db   # Database initialization
+scripts/task_runner.sh test      # Run test suite
+
+# Direct Python calls (legacy, still supported)
 python3 scripts/evaluator/run_evaluation.py quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql
+```
 
-# Full quest evaluation
-python3 scripts/evaluator/run_evaluation.py quests/1-data-modeling
+### Alternative Interface: Justfile
+```bash
+# Modern task runner with just
+just eval quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql
+just eval-quest 1-data-modeling  # Quest by number
+just setup && just init-db        # Chain commands
+```
 
-# Database initialization (evaluator schema only)
-python3 scripts/evaluator/init_database.py
+### Docker Setup
+```bash
+# Start PostgreSQL instance (hosts both databases)
+docker-compose up -d postgres
+
+# Access pgAdmin at localhost:8080
+docker-compose up -d pgadmin
 ```
 
 ### Database Architecture (Critical)
@@ -32,13 +50,21 @@ python3 scripts/evaluator/init_database.py
 - Root `.env`: Quest database configuration for Docker/main project
 - `scripts/evaluator/.env`: Complete evaluator configuration with both database connections
 
-### Docker Setup
+### Test Organization (Recently Restructured)
 ```bash
-# Start PostgreSQL instance (hosts both databases)
-docker-compose up -d postgres
+# Test structure follows standard patterns
+scripts/evaluator/tests/
+├── smoke/      # Basic system health checks (6 tests)
+├── unit/       # Isolated component tests  
+├── integration/ # Full pipeline tests
+├── conftest.py # Shared test configuration
+└── helpers.py  # Test utilities with dual format support
 
-# Access pgAdmin at localhost:8080
-docker-compose up -d pgadmin
+# Run specific test categories
+python3 -m pytest scripts/evaluator/tests/smoke/ -v      # Quick health check
+python3 -m pytest scripts/evaluator/tests/unit/ -v       # Component tests
+python3 -m pytest scripts/evaluator/tests/integration/ -v # End-to-end tests
+scripts/task_runner.sh test  # Run all tests via task runner
 ```
 
 ## Project-Specific Patterns
@@ -103,6 +129,12 @@ class EvaluationPattern(EvaluationBase):
 - **Pattern Detection**: Identifies SQL patterns (table_creation, joins, window_functions, etc.)
 - **No Hardcoded Mappings**: System adapts to quest structure changes automatically
 
+### Test Infrastructure (100% Pass Rate)
+- **Enhanced TestHelpers**: Support both dict and Pydantic model formats
+- **Pydantic Compatibility**: All deprecation warnings resolved with `model_config` pattern
+- **Organized Structure**: Proper smoke/unit/integration test separation
+- **Dual Format Support**: Handles legacy dict results and modern Pydantic models
+
 ### Execution Sandbox Cleanup
 ```python
 # Domain logic: Clean sandbox before each SQL file execution
@@ -141,11 +173,19 @@ from .models import EvaluationResult
 - Connection pooling with `asyncpg` for SQL execution
 - Session management with SQLAlchemy for persistence
 
-### Type Hints
+### Type Hints & Pydantic Patterns
 ```python
 # Use Annotated for Pydantic field constraints
 score: Annotated[int, Field(ge=1, le=10)]
 confidence: Annotated[float, Field(ge=0, le=1)]
+
+# Modern Pydantic configuration (v2+ style)
+class MyModel(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        str_strip_whitespace=True
+    )
+    # NOT: class Config: ... (deprecated)
 ```
 
 ## Key Architectural Decisions
