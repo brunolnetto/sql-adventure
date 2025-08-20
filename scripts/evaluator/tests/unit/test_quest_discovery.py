@@ -1,20 +1,90 @@
 #!/usr/bin/env python3
 """
-Test Script for Dynamic Quest Discovery System
-Demonstrates how quests are automatically discovered from the file system
+Test Script for Quest Discovery System
+Tests the filesystem-based quest discovery functionality
 """
 
 import sys
 import asyncio
+import pytest
 from pathlib import Path
 
-# Add the current directory to the path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add the evaluator directory to the path for proper imports
+evaluator_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(evaluator_dir))
 
-from core.quest_discovery import QuestDiscoveryManager
-from core.database_manager import DatabaseManager
-from core.config import get_config
+from utils.discovery import discover_quests_from_filesystem
 
+@pytest.mark.asyncio
+async def test_quest_discovery():
+    """Test the quest discovery system"""
+    print("🔍 Testing Quest Discovery System")
+    print("=" * 50)
+    
+    try:
+        # Test quest discovery from filesystem
+        print("📚 Discovering quests from filesystem...")
+        quests_dir = Path("../../../quests")
+        
+        if not quests_dir.exists():
+            print(f"❌ Quests directory not found: {quests_dir}")
+            return False
+            
+        quests_data = discover_quests_from_filesystem(quests_dir)
+        
+        if not quests_data:
+            print("❌ No quests discovered!")
+            return False
+        
+        print(f"✅ Successfully discovered {len(quests_data)} quests")
+        
+        # Show quest details
+        print("\n📋 Quest details:")
+        for quest_data in quests_data:
+            name = quest_data.get('name', 'Unknown')
+            directory = quest_data.get('directory', 'Unknown')
+            subcategories = quest_data.get('subcategories', [])
+            
+            print(f"   📚 {name}")
+            print(f"      Directory: {directory}")
+            print(f"      Subcategories: {len(subcategories)}")
+            
+            # Show some subcategories
+            for subcat in subcategories[:3]:  # Show first 3
+                subcat_name = subcat.get('name', 'Unknown')
+                files = subcat.get('sql_files', [])
+                print(f"        📂 {subcat_name}: {len(files)} files")
+            
+            if len(subcategories) > 3:
+                print(f"        ... and {len(subcategories) - 3} more")
+            print()
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Quest discovery test failed: {e}")
+        return False
+
+async def main():
+    """Run the quest discovery test"""
+    print("🚀 Quest Discovery System Test")
+    print("=" * 50)
+    
+    # Test quest discovery
+    success = await test_quest_discovery()
+    
+    if success:
+        print("\n🎉 Quest discovery test passed!")
+    else:
+        print("\n❌ Quest discovery test failed!")
+        
+    return success
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    asyncio.run(main())
+
+@pytest.mark.asyncio
 async def test_quest_discovery():
     """Test the quest discovery system"""
     print("🔍 Testing Dynamic Quest Discovery System")
@@ -96,6 +166,7 @@ async def test_quest_discovery():
         if 'db_manager' in locals():
             db_manager.close()
 
+@pytest.mark.asyncio
 async def test_extensibility():
     """Test the extensibility of the quest discovery system"""
     print("\n🔌 Testing Quest Discovery Extensibility")

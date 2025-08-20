@@ -5,13 +5,16 @@ Test AI evaluation with an actual SQL file
 
 import sys
 import asyncio
+import pytest
 from pathlib import Path
 
-# Add the current directory to the path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add the evaluator directory to the path for proper imports
+evaluator_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(evaluator_dir))
 
-from ..core.evaluators import SQLEvaluator
+from core.evaluators import SQLEvaluator
 
+@pytest.mark.asyncio
 async def test_ai_evaluation():
     """Test AI evaluation with a real SQL file"""
     
