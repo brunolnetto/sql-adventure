@@ -136,6 +136,7 @@ class LLMAnalysis(BaseModel):
 
 class ExecutionResult(BaseModel):
     success: bool
+    execution_time_ms: int
     output_content: str
     output_lines: int
     result_sets: int

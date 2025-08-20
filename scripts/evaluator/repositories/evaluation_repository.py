@@ -102,6 +102,7 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                 exec_metadata.result_sets = exec_data.get('result_sets', 0)
                 exec_metadata.error_count = exec_data.get('error_count', 0)
                 exec_metadata.warning_count = exec_data.get('warning_count', 0)
+                exec_metadata.execution_output = exec_data.get('execution_output', '')
                 exec_metadata.updated_at = datetime.now()
             else:
                 # Create new execution metadata
@@ -112,7 +113,8 @@ class EvaluationRepository(BaseRepository[Evaluation]):
                     output_lines=exec_data.get('output_lines', 0),
                     result_sets=exec_data.get('result_sets', 0),
                     error_count=exec_data.get('error_count', 0),
-                    warning_count=exec_data.get('warning_count', 0)
+                    warning_count=exec_data.get('warning_count', 0),
+                    execution_output=exec_data.get('execution_output', '')
                 )
                 self.session.add(exec_metadata)
             
@@ -588,9 +590,9 @@ class EvaluationRepository(BaseRepository[Evaluation]):
         effort_lower = effort.lower() if effort else 'medium'
         
         if effort_lower in ['low', 'easy', 'simple']:
-            return 'Easy'
+            return 'Low'
         elif effort_lower in ['high', 'hard', 'difficult', 'complex']:
-            return 'Hard'
+            return 'High'
         else:
             return 'Medium'
     

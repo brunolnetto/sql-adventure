@@ -290,6 +290,18 @@ class SQLEvaluator:
         score = llm_analysis.assessment.score
         assessment = llm_analysis.assessment.overall_assessment
         
+        # Create execution result model
+        from core.models import ExecutionResult
+        execution_model = ExecutionResult(
+            success=execution_result.get("success", False),
+            execution_time_ms=execution_result.get("execution_time_ms", 0),
+            output_content=sql_context["output_content"],
+            output_lines=execution_result.get("output_lines", 0),
+            result_sets=execution_result.get("result_sets", 0),
+            errors=execution_result.get("errors", 0),
+            warnings=execution_result.get("warnings", 0)
+        )
+        
         # Create result
         result = EvaluationResult(
             metadata={
@@ -298,15 +310,7 @@ class SQLEvaluator:
                 "full_path": str(file_path)
             },
             intent=sql_intent,
-            execution={
-                "success": execution_result.get("success", False),
-                "output_content": sql_context["output_content"],
-                "output_lines": execution_result.get("output_lines", 0),
-                "errors": execution_result.get("errors", 0),
-                "warnings": execution_result.get("warnings", 0),
-                "result_sets": execution_result.get("result_sets", 0),
-                "raw_output": sql_context["output_content"]
-            },
+            execution=execution_model,
             basic_evaluation={
                 "overall_assessment": assessment,
                 "score": score,
@@ -346,30 +350,44 @@ class SQLEvaluator:
                 from database.tables import SQLFile, Quest, Subcategory
                 from repositories.sqlfile_repository import SQLFileRepository
                 
+                # Convert absolute path to relative path as stored in database
+                # Database stores paths like: "1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"
+                file_path_str = str(file_path)
+                if "quests/" in file_path_str:
+                    # Extract the part after "quests/" (remove "quests/" prefix)
+                    quests_index = file_path_str.find("quests/") + len("quests/")
+                    relative_path = file_path_str[quests_index:]
+                    lookup_path = relative_path
+                    print(f"🔍 Using relative path for database lookup: {relative_path}")
+                else:
+                    lookup_path = file_path_str
+                
                 sql_file_repository = SQLFileRepository(session)
-                sql_file = sql_file_repository.get_by_path(str(file_path))
+                sql_file = sql_file_repository.get_by_path(lookup_path)
                 
                 if sql_file:
                     # Save evaluation with the existing SQL file
                     print(f"✅ Found SQL file (ID: {sql_file.id}) for path: {file_path}")
-                    from repositories.enhanced_evaluation_repository import EnhancedEvaluationRepository
-                    evaluation_repository = EnhancedEvaluationRepository(session)
+                    from repositories.evaluation_repository import EvaluationRepository
+                    evaluation_repository = EvaluationRepository(session)
                     
                     # Add file_path to evaluation_data for the EvaluationRepository
                     evaluation_data_with_path = evaluation_data.copy()
+                    evaluation_data_with_path['file_path'] = lookup_path
                     
-                    # Convert absolute path to relative path as stored in database
-                    # Database stores paths like: "quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"
-                    file_path_str = str(file_path)
-                    if "quests/" in file_path_str:
-                        # Extract the part starting from "quests/"
-                        relative_path = file_path_str[file_path_str.find("quests/"):]
-                        evaluation_data_with_path['file_path'] = relative_path
-                        print(f"🔍 Using relative path for database lookup: {relative_path}")
-                    else:
-                        evaluation_data_with_path['file_path'] = file_path_str
+                    # Extract execution metadata separately for proper database storage
+                    execution_metadata = {
+                        "execution_success": evaluation_data.get('execution', {}).get('success', False),
+                        "execution_time_ms": evaluation_data.get('execution', {}).get('execution_time_ms'),
+                        "output_lines": evaluation_data.get('execution', {}).get('output_lines', 0),
+                        "result_sets": evaluation_data.get('execution', {}).get('result_sets', 0),
+                        "rows_affected": evaluation_data.get('execution', {}).get('rows_affected', 0),
+                        "error_count": evaluation_data.get('execution', {}).get('errors', 0),
+                        "warning_count": evaluation_data.get('execution', {}).get('warnings', 0),
+                        "execution_output": evaluation_data.get('execution', {}).get('output_content', '')
+                    }
                     
-                    evaluation_repository.upsert_evaluation(evaluation_data_with_path)
+                    evaluation_repository.upsert_evaluation(evaluation_data_with_path, execution_metadata)
                     session.commit()
                     print(f"✅ Successfully saved evaluation for {file_path}")
                 else:
