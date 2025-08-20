@@ -27,11 +27,12 @@ class QuestRepository(BaseRepository[Quest]):
                 self.session.flush()  # Get the quest ID
                 
                 # Add subcategories
-                for sub_name, sub_display, sub_difficulty, sub_order in quest_data['subcategories']:
+                for sub_name, sub_display, sub_difficulty, sub_description, sub_order in quest_data['subcategories']:
                     subcategory = Subcategory(
                         quest_id=quest.id,
                         name=sub_name,
                         display_name=sub_display,
+                        description=sub_description,
                         difficulty_level=sub_difficulty,
                         order_index=sub_order
                     )

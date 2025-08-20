@@ -147,23 +147,41 @@ class DatabaseManager:
                     detail = _init_detail(idx, stmt, self.detailed)
                     stmt_start = datetime.now() if self.detailed else None
                     try:
-                        # Check if this is a SELECT statement
-                        is_select = stmt.strip().upper().startswith('SELECT')
+                        # Check if this is a SELECT statement (more robust detection)
+                        stmt_clean = stmt.strip().upper()
+                        is_select = (stmt_clean.startswith('SELECT') or 
+                                   ('SELECT' in stmt_clean and stmt_clean.find('SELECT') < stmt_clean.find(';') if ';' in stmt_clean else True))
                         
                         if is_select:
-                            result = await conn.fetch(stmt)
-                            count = len(result)
-                            if count > 0:
+                            try:
+                                result = await conn.fetch(stmt)
+                                count = len(result)
                                 summary['result_sets'] += 1
                                 # Capture actual query results for SELECT statements
                                 result_text = _format_query_results(stmt, result)
                                 summary['output_content'].append(result_text)
                                 if self.detailed:
                                     detail['rows_returned'] = count
+                            except Exception as select_error:
+                                # If SELECT fails, treat as regular statement
+                                print(f"⚠️  SELECT execution failed, treating as regular statement: {select_error}")
+                                result = await conn.execute(stmt)
+                                summary['output_content'].append(f"Statement executed: {stmt.strip()}")
                         else:
-                            # For non-SELECT statements, use execute instead of fetch
-                            await conn.execute(stmt)
-                            summary['output_content'].append(f"Statement executed: {stmt.strip()[:50]}...")
+                            # For non-SELECT statements, get affected rows count
+                            result = await conn.execute(stmt)
+                            # Extract affected rows count from result string (format: "INSERT 0 5")
+                            affected_rows = 0
+                            if hasattr(result, 'split'):
+                                parts = result.split()
+                                if len(parts) >= 2 and parts[-1].isdigit():
+                                    affected_rows = int(parts[-1])
+                            summary['rows_affected'] += affected_rows
+                            
+                            # Show full SQL statement for technical analysis
+                            summary['output_content'].append(f"Statement executed: {stmt.strip()}")
+                            if affected_rows > 0:
+                                summary['output_content'].append(f"Rows affected: {affected_rows}")
                             
                         if self.detailed:
                             detail['execution_time_ms'] = _elapsed_ms(stmt_start)
@@ -196,7 +214,10 @@ class DatabaseManager:
                     else:
                         affected = result.rowcount or 0
                         summary['rows_affected'] += affected
-                        summary['output_content'].append(f"Statement executed: {stmt.strip()[:50]}... (Rows affected: {affected})")
+                        # Show full SQL statement for technical analysis
+                        summary['output_content'].append(f"Statement executed: {stmt.strip()}")
+                        if affected > 0:
+                            summary['output_content'].append(f"Rows affected: {affected}")
                         if self.detailed:
                             detail['rows_affected'] = affected
                     if self.detailed:
@@ -218,8 +239,11 @@ class DatabaseManager:
         # Format the complete output content
         if summary['output_content']:
             summary['output_content'] = '\n\n'.join(summary['output_content'])
+            # Count actual output lines
+            summary['output_lines'] = len(summary['output_content'].split('\n'))
         else:
             summary['output_content'] = 'No output generated'
+            summary['output_lines'] = 0
             
         return summary
 

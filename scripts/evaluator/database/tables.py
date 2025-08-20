@@ -86,9 +86,9 @@ class SQLFile(EvaluationBase):
         Index('idx_sql_file_subcategory', 'subcategory_id'),
     )
 
-# SIMPLIFIED: Single evaluation table with UPSERT logic
+# NORMALIZED: Clean evaluation table focused on core assessment
 class Evaluation(EvaluationBase):
-    """Current evaluation state for each SQL file (UPSERT model)"""
+    """Core evaluation record for each SQL file (UPSERT model)"""
     __tablename__ = 'evaluations'
     
     id = Column(Integer, primary_key=True)
@@ -104,22 +104,15 @@ class Evaluation(EvaluationBase):
     numeric_score = Column(Integer, nullable=False)  # 1-10
     letter_grade = Column(String(2), nullable=False)  # A, B, C, D, F
     
-    # Current execution results (no history)
-    execution_success = Column(Boolean, nullable=False, default=False)
-    execution_time_ms = Column(Integer)
-    output_lines = Column(Integer, default=0)
-    result_sets = Column(Integer, default=0)
-    rows_affected = Column(Integer, default=0)
-    error_count = Column(Integer, default=0)
-    warning_count = Column(Integer, default=0)
-    execution_output = Column(Text)  # Store current output for quick access
+    # Detected patterns as JSONB (simplified from junction table)
+    detected_patterns = Column(JSON)  # [{"name": "table_creation", "confidence": 0.9, "quality": "Good"}, ...]
     
     # Relationships
     sql_file = relationship("SQLFile", back_populates="evaluation")
     quest = relationship("Quest", back_populates="evaluations")
+    execution_metadata = relationship("ExecutionMetadata", back_populates="evaluation", uselist=False, cascade="all, delete-orphan")
     analysis = relationship("Analysis", back_populates="evaluation", uselist=False, cascade="all, delete-orphan")
     recommendations = relationship("Recommendation", back_populates="evaluation", cascade="all, delete-orphan")
-    patterns = relationship("EvaluationPattern", back_populates="evaluation", cascade="all, delete-orphan")
     
     __table_args__ = (
         CheckConstraint("overall_assessment IN ('PASS', 'FAIL', 'NEEDS_REVIEW')", name='valid_assessment'),
@@ -131,22 +124,55 @@ class Evaluation(EvaluationBase):
         Index('idx_evaluation_assessment', 'overall_assessment'),
     )
 
-# SIMPLIFIED: Core analysis with minimal fields
+# SEPARATED: Execution metadata in its own table
+class ExecutionMetadata(EvaluationBase):
+    """SQL execution results and performance metrics"""
+    __tablename__ = 'execution_metadata'
+    
+    id = Column(Integer, primary_key=True)
+    evaluation_id = Column(Integer, ForeignKey('evaluations.id'), nullable=False, unique=True)
+    
+    # Execution results
+    execution_success = Column(Boolean, nullable=False, default=False)
+    execution_time_ms = Column(Integer)
+    output_lines = Column(Integer, default=0)
+    result_sets = Column(Integer, default=0)
+    rows_affected = Column(Integer, default=0)
+    error_count = Column(Integer, default=0)
+    warning_count = Column(Integer, default=0)
+    execution_output = Column(Text)  # Store current output for quick access
+    
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Relationships
+    evaluation = relationship("Evaluation", back_populates="execution_metadata")
+    
+    __table_args__ = (
+        Index('idx_execution_evaluation', 'evaluation_id'),
+        Index('idx_execution_success', 'execution_success'),
+    )
+
+# ENHANCED: Analysis with proper reasoning structure
 class Analysis(EvaluationBase):
-    """Simplified analysis with core metrics only"""
+    """Comprehensive analysis with technical and educational reasoning"""
     __tablename__ = 'analyses'
     
     id = Column(Integer, primary_key=True)
     evaluation_id = Column(Integer, ForeignKey('evaluations.id'), nullable=False, unique=True)
     
-    # Core analysis fields (simplified)
+    # Overall assessment
     overall_feedback = Column(Text)  # Combined technical + educational feedback
     difficulty_level = Column(String(20), nullable=False)
     estimated_time_minutes = Column(Integer)
     
-    # Simplified scoring
-    technical_score = Column(Integer)    # 1-10 (overall technical quality)
-    educational_score = Column(Integer)  # 1-10 (learning value)
+    # Technical reasoning and scoring
+    technical_score = Column(Integer, nullable=False)    # 1-10 (overall technical quality)
+    technical_reasoning = Column(Text, nullable=False)   # Detailed technical analysis
+    
+    # Educational reasoning and scoring  
+    educational_score = Column(Integer, nullable=False)  # 1-10 (learning value)
+    educational_reasoning = Column(Text, nullable=False) # Detailed educational analysis
     
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -161,29 +187,8 @@ class Analysis(EvaluationBase):
         CheckConstraint("estimated_time_minutes > 0", name='valid_time_estimate'),
     )
 
-# NORMALIZED: Pattern detection as separate relationship
-class EvaluationPattern(EvaluationBase):
-    """Junction table linking evaluations to detected SQL patterns"""
-    __tablename__ = 'evaluation_patterns'
-    
-    id = Column(Integer, primary_key=True)
-    evaluation_id = Column(Integer, ForeignKey('evaluations.id'), nullable=False)
-    pattern_id = Column(Integer, ForeignKey('sql_patterns.id'), nullable=False)
-    confidence_score = Column(Float, default=1.0)  # 0.0-1.0 confidence in detection
-    usage_quality = Column(String(20), default='Good')  # Quality of pattern usage
-    created_at = Column(DateTime, default=datetime.now)
-    
-    # Relationships
-    evaluation = relationship("Evaluation", back_populates="patterns")
-    pattern = relationship("SQLPattern", back_populates="evaluations")
-    
-    __table_args__ = (
-        UniqueConstraint('evaluation_id', 'pattern_id', name='unique_evaluation_pattern'),
-        CheckConstraint("confidence_score >= 0.0 AND confidence_score <= 1.0", name='valid_confidence'),
-        CheckConstraint("usage_quality IN ('Excellent', 'Good', 'Fair', 'Poor')", name='valid_usage_quality'),
-        Index('idx_evaluation_pattern_eval', 'evaluation_id'),
-        Index('idx_evaluation_pattern_pattern', 'pattern_id'),
-    )
+# REMOVED: EvaluationPattern junction table (replaced with JSONB in Evaluation)
+# Pattern data will be stored as: detected_patterns = [{"name": "table_creation", "confidence": 0.9, "quality": "Good"}, ...]
 
 # KEEP: Recommendations for Copilot learning
 class Recommendation(EvaluationBase):
@@ -196,7 +201,7 @@ class Recommendation(EvaluationBase):
     category = Column(String(50), nullable=False)  # Performance, Syntax, Best Practices, etc.
     priority = Column(String(10), nullable=False)  # High, Medium, Low
     recommendation_text = Column(Text, nullable=False)
-    implementation_effort = Column(String(20))  # Easy, Medium, Hard
+    implementation_effort = Column(String(20))  # Low, Medium, High
     expected_impact = Column(String(20))  # High, Medium, Low
     
     created_at = Column(DateTime, default=datetime.now)
@@ -207,14 +212,14 @@ class Recommendation(EvaluationBase):
     
     __table_args__ = (
         CheckConstraint("priority IN ('High', 'Medium', 'Low')", name='valid_priority'),
-        CheckConstraint("implementation_effort IN ('Easy', 'Medium', 'Hard')", name='valid_effort'),
+        CheckConstraint("implementation_effort IN ('Low', 'Medium', 'High')", name='valid_effort'),
         CheckConstraint("expected_impact IN ('High', 'Medium', 'Low')", name='valid_impact'),
         Index('idx_recommendation_evaluation', 'evaluation_id'),
         Index('idx_recommendation_priority', 'priority'),
         Index('idx_recommendation_category', 'category'),
     )
 
-# OPTIONAL: Keep pattern catalog for reference (but no complex relationships)
+# SIMPLIFIED: Pattern catalog for reference only (no relationships needed with JSONB approach)
 class SQLPattern(EvaluationBase):
     """Simple catalog of SQL patterns for reference"""
     __tablename__ = 'sql_patterns'
@@ -226,8 +231,7 @@ class SQLPattern(EvaluationBase):
     category = Column(String(50), nullable=False)  # DDL, DML, DQL, etc.
     complexity_level = Column(String(20), nullable=False)
     
-    # Relationships
-    evaluations = relationship("EvaluationPattern", back_populates="pattern")
+    # No relationships needed with JSONB pattern storage
     
     __table_args__ = (
         CheckConstraint("category IN ('DDL', 'DML', 'DQL', 'DCL', 'TCL', 'ANALYTICS', 'JSON', 'RECURSIVE')", name='valid_pattern_category'),

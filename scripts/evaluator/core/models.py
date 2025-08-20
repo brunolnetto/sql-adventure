@@ -1,20 +1,45 @@
 from pydantic import BaseModel, Field, conint, confloat, field_validator
 from typing import List, Optional, Dict, Any, Literal, Annotated
-
 from datetime import datetime
 
 
-class SQLPattern(BaseModel):
+class SQLPatternDetection(BaseModel):
     """
-    Represents a detected SQL pattern with metadata.
+    Represents a detected SQL pattern with quality assessment.
     """
-    pattern_name: str = Field(..., description="Name of the SQL pattern detected")
+    name: str = Field(..., description="Name of the SQL pattern detected")
     confidence: Annotated[float, Field(ge=0, le=1)] = Field(..., description="Confidence score between 0 and 1")
-    description: str = Field(..., description="Brief description of the pattern")
+    quality: Literal["Excellent", "Good", "Fair", "Poor"] = Field(..., description="Quality of pattern usage")
+    description: Optional[str] = Field(None, description="Brief description of the pattern usage")
+
+
+class TechnicalReasoning(BaseModel):
+    """
+    Detailed technical analysis with reasoning.
+    """
+    score: Annotated[int, Field(ge=1, le=10)] = Field(..., description="Technical quality score (1-10)")
+    explanation: str = Field(..., description="Detailed explanation of technical aspects")
+    strengths: List[str] = Field(default_factory=list, description="Technical strengths identified")
+    weaknesses: List[str] = Field(default_factory=list, description="Technical issues or areas for improvement")
+    syntax_quality: str = Field(..., description="Assessment of SQL syntax and structure")
+    performance_considerations: str = Field(..., description="Performance implications of the SQL code")
+
+
+class EducationalReasoning(BaseModel):
+    """
+    Detailed educational analysis with reasoning.
+    """
+    score: Annotated[int, Field(ge=1, le=10)] = Field(..., description="Educational value score (1-10)")
+    explanation: str = Field(..., description="Detailed explanation of educational aspects")
+    learning_objectives: List[str] = Field(default_factory=list, description="Learning objectives addressed")
+    skill_development: List[str] = Field(default_factory=list, description="Skills that learners will develop")
+    real_world_relevance: str = Field(..., description="Real-world applicability and context")
+    pedagogical_value: str = Field(..., description="Assessment of teaching/learning value")
+
 
 class Intent(BaseModel):
     """
-    Represents the intent of the SQL code.
+    Represents the intent and purpose of the SQL code.
     """
     detailed_purpose: str = Field(..., description="Detailed learning objective")
     educational_context: str = Field(..., description="Context in which this SQL is used")
@@ -22,17 +47,23 @@ class Intent(BaseModel):
     specific_skills: List[str] = Field(default_factory=list, description="Skills that learners will develop")
 
 
-class SimplifiedAnalysis(BaseModel):
+class ComprehensiveAnalysis(BaseModel):
     """
-    Simplified analysis combining technical and educational aspects.
+    Enhanced analysis with separate technical and educational reasoning.
     """
     overall_feedback: str = Field(..., description="Combined technical and educational feedback")
     difficulty_level: Literal["Beginner", "Intermediate", "Advanced", "Expert"] = Field(
         ..., description="Difficulty level")
     time_estimate: str = Field(..., description="Estimated completion time (e.g., '5 min', '10-15 min')")
-    technical_score: int = Field(..., ge=1, le=10, description="Technical quality score (1-10)")
-    educational_score: int = Field(..., ge=1, le=10, description="Educational value score (1-10)")
-    detected_patterns: List[str] = Field(default_factory=list, description="List of detected SQL pattern names")
+    
+    # Technical analysis with reasoning
+    technical_reasoning: TechnicalReasoning = Field(..., description="Detailed technical analysis")
+    
+    # Educational analysis with reasoning  
+    educational_reasoning: EducationalReasoning = Field(..., description="Detailed educational analysis")
+    
+    # Pattern detection as structured objects
+    detected_patterns: List[SQLPatternDetection] = Field(default_factory=list, description="Detected SQL patterns with quality assessment")
     
     @field_validator('difficulty_level', mode='before')
     def clean_difficulty_level(cls, v):
@@ -91,15 +122,15 @@ class Recommendation(BaseModel):
     Improvement suggestions for the SQL code.
     """
     priority: Literal["High", "Medium", "Low"] = Field(..., description="Recommendation priority")
-    implementation_effort: Literal["High", "Medium", "Low"] = Field(..., description="Estimated effort to implement")
+    implementation_effort: Literal["Low", "Medium", "High"] = Field(..., description="Estimated effort to implement")
     recommendation_text: str = Field(..., description="Description of the improvement suggestion")
 
 
 class LLMAnalysis(BaseModel):
     """
-    AI-powered analysis of the SQL code - simplified structure.
+    AI-powered analysis of the SQL code with enhanced reasoning structure.
     """
-    analysis: SimplifiedAnalysis
+    analysis: ComprehensiveAnalysis
     assessment: Assessment
     recommendations: List[Recommendation] = Field(default_factory=list, description="Improvement suggestions")
 

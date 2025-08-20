@@ -5,6 +5,11 @@ Returns structured data for database sync or evaluation
 """
 
 import re
+import statistics
+from pathlib import Path
+from typing import List, Dict, Tuple, Any
+
+import re
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
 
@@ -91,9 +96,9 @@ def determine_quest_difficulty(
             continue
 
     # 2) Aggregate from subcategories
-    subcats: List[Tuple[str, str, str, int]] = discover_subcategories_from_filesystem(quest_dir, quest_dir.name)
+    subcats: List[Tuple[str, str, str, str, int]] = discover_subcategories_from_filesystem(quest_dir, quest_dir.name)
     levels: List[int] = []
-    for sub_name, _, _, _ in subcats:
+    for sub_name, _, _, _, _ in subcats:
         sub_dir = quest_dir / sub_name
         for sql_file in sub_dir.rglob('*.sql'):
             lvl_str = infer_difficulty(sql_file, default)
@@ -108,7 +113,7 @@ def determine_quest_difficulty(
     
     # Collect level strings for modal analysis
     level_strings = []
-    for sub_name, _, _, _ in subcats:
+    for sub_name, _, _, _, _ in subcats:
         sub_dir = quest_dir / sub_name
         for sql_file in sub_dir.rglob('*.sql'):
             lvl_str = infer_difficulty(sql_file, default)
@@ -139,15 +144,37 @@ def determine_quest_difficulty(
 def determine_subcategory_difficulty(
     subcategory_path: Path, default: str = 'Intermediate'
 ) -> str:
-    """Determine subcategory difficulty from its content."""
-    return infer_difficulty(subcategory_path, default)
+    """Determine subcategory difficulty from its SQL files."""
+    if not subcategory_path.is_dir():
+        return default
+    
+    # Collect difficulty levels from all SQL files in the subcategory
+    difficulty_levels = []
+    for sql_file in subcategory_path.glob('*.sql'):
+        file_difficulty = infer_difficulty(sql_file, default)
+        level_score = LEVEL_ORDER.get(file_difficulty, LEVEL_ORDER[default])
+        difficulty_levels.append(level_score)
+    
+    if not difficulty_levels:
+        return default
+    
+    # Use the most common difficulty, or average if tied
+    import statistics
+    avg_level = statistics.mean(difficulty_levels)
+    
+    # Map back to difficulty string
+    for level_name, level_value in LEVEL_ORDER.items():
+        if abs(level_value - avg_level) < 0.5:
+            return level_name
+    
+    return default
 
-def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, int]]) -> str:
+def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, str, int]]) -> str:
     """
     Generate quest description using AI agent if available, fallback to content-based method otherwise.
     """
     try:
-        from .quest_summary import generate_quest_description_ai, generate_quest_description_fallback
+        from utils.summarizers import generate_quest_description_ai, generate_quest_description_fallback
         import asyncio
         
         # Aggregate all quest content into a single text
@@ -156,8 +183,8 @@ def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, s
         # Add subcategory information
         if subcategories:
             aggregated_content += "Subcategories:\n"
-            for sub_name, display_name, difficulty, order in subcategories:
-                aggregated_content += f"- {display_name} ({difficulty})\n"
+            for sub_name, display_name, difficulty, description, order in subcategories:
+                aggregated_content += f"- {display_name} ({difficulty}): {description}\n"
         
         # Try AI description first
         try:
@@ -173,7 +200,7 @@ def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, s
         if not subcategories:
             quest_type = '-'.join(quest_name.split('-')[1:])
             return f"SQL {quest_type.replace('-', ' ')} exercises and concepts"
-        subcategory_names = [display_name for _, display_name, _, _ in subcategories]
+        subcategory_names = [display_name for _, display_name, _, _, _ in subcategories]
         if len(subcategory_names) == 1:
             return f"Focused training on {subcategory_names[0].lower()}"
         elif len(subcategory_names) <= 3:
@@ -184,7 +211,7 @@ def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, s
             return f"In-depth exploration of {', '.join(primary_topics).lower()} and {remaining_count} additional topics"
 
 
-def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> List[Tuple[str, str, str, int]]:
+def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> List[Tuple[str, str, str, str, int]]:
     """Discover subcategories within a quest directory"""
     subcategories = []
     
@@ -199,10 +226,19 @@ def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> 
         # Extract display name
         display_name = ' '.join(word.capitalize() for word in subcategory_name.split('-')[1:])
         
-        # Determine difficulty based on subcategory name and content
+        # Determine difficulty based on SQL files in subcategory
         difficulty_level = determine_subcategory_difficulty(subcategory_dir)
         
-        subcategories.append((subcategory_name, display_name, difficulty_level, subcategory_number))
+        # Generate description using AI summarization
+        try:
+            from utils.summarizers import generate_subcategory_description
+            description = generate_subcategory_description(subcategory_dir)
+        except Exception as e:
+            print(f"⚠️  Error generating description for {subcategory_name}: {e}")
+            # Fallback description
+            description = f"Training exercises focused on {display_name.lower()}"
+        
+        subcategories.append((subcategory_name, display_name, difficulty_level, description, subcategory_number))
     
     return subcategories
 
@@ -321,8 +357,8 @@ def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
             
             # Convert subcategory tuples to the format expected by repository
             subcategories_list = []
-            for sub_index, (sub_name, sub_display, sub_difficulty, _) in enumerate(subcategories_tuples):
-                subcategories_list.append((sub_name, sub_display, sub_difficulty, sub_index))
+            for sub_index, (sub_name, sub_display, sub_difficulty, sub_description, _) in enumerate(subcategories_tuples):
+                subcategories_list.append((sub_name, sub_display, sub_difficulty, sub_description, sub_index))
             
             # Determine quest difficulty based on subcategories
             difficulty = determine_quest_difficulty(quest_path)
@@ -343,3 +379,192 @@ def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
             print(f"🎯 Discovered quest: {quest_title} ({len(subcategories_list)} subcategories, {difficulty} difficulty)")
     
     return quests_data
+
+
+# =============================================================================
+# ENHANCED PATTERN DISCOVERY WITH AI DESCRIPTIONS
+# =============================================================================
+
+async def generate_enhanced_sql_patterns() -> List[Dict[str, Any]]:
+    """Generate enhanced SQL patterns with AI-powered descriptions"""
+    import asyncio
+    from core.agents import pattern_description_agent
+    
+    # Enhanced pattern definitions with context for AI analysis
+    pattern_contexts = {
+        'table_creation': {
+            'base_description': 'CREATE TABLE statements with column definitions, data types, and constraints',
+            'examples': ['CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50))', 'CREATE TABLE products (product_id SERIAL, price DECIMAL(10,2))'],
+            'category': 'DDL',
+            'complexity': 'Basic'
+        },
+        'index_creation': {
+            'base_description': 'CREATE INDEX statements for query performance optimization',
+            'examples': ['CREATE INDEX idx_user_email ON users(email)', 'CREATE UNIQUE INDEX idx_product_sku ON products(sku)'],
+            'category': 'DDL', 
+            'complexity': 'Intermediate'
+        },
+        'constraint_definition': {
+            'base_description': 'Table constraints including PRIMARY KEY, FOREIGN KEY, UNIQUE, CHECK, NOT NULL',
+            'examples': ['ALTER TABLE orders ADD CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customers(id)', 'CHECK (price > 0)'],
+            'category': 'DDL',
+            'complexity': 'Intermediate'
+        },
+        'view_creation': {
+            'base_description': 'CREATE VIEW statements for virtual tables and data abstraction',
+            'examples': ['CREATE VIEW active_users AS SELECT * FROM users WHERE is_active = true', 'CREATE OR REPLACE VIEW customer_summary AS...'],
+            'category': 'DDL',
+            'complexity': 'Intermediate'
+        },
+        'data_insertion': {
+            'base_description': 'INSERT INTO statements for adding new records to tables',
+            'examples': ['INSERT INTO users (name, email) VALUES (\'John\', \'john@email.com\')', 'INSERT INTO products SELECT * FROM temp_products'],
+            'category': 'DML',
+            'complexity': 'Basic'
+        },
+        'data_update': {
+            'base_description': 'UPDATE statements for modifying existing records',
+            'examples': ['UPDATE users SET email = \'new@email.com\' WHERE id = 1', 'UPDATE products SET price = price * 1.1 WHERE category = \'electronics\''],
+            'category': 'DML',
+            'complexity': 'Basic'
+        },
+        'simple_select': {
+            'base_description': 'Basic SELECT statements with WHERE, ORDER BY, LIMIT clauses',
+            'examples': ['SELECT name, email FROM users WHERE is_active = true', 'SELECT * FROM products ORDER BY price DESC LIMIT 10'],
+            'category': 'DQL',
+            'complexity': 'Basic'
+        },
+        'join_operations': {
+            'base_description': 'INNER, LEFT, RIGHT, FULL OUTER, and CROSS JOIN operations',
+            'examples': ['SELECT u.name, o.total FROM users u JOIN orders o ON u.id = o.user_id', 'LEFT JOIN products p ON oi.product_id = p.id'],
+            'category': 'DQL',
+            'complexity': 'Intermediate'
+        },
+        'aggregation': {
+            'base_description': 'GROUP BY, HAVING, and aggregate functions (COUNT, SUM, AVG, MAX, MIN)',
+            'examples': ['SELECT category, AVG(price) FROM products GROUP BY category', 'SELECT user_id, COUNT(*) FROM orders GROUP BY user_id HAVING COUNT(*) > 5'],
+            'category': 'DQL',
+            'complexity': 'Intermediate'
+        },
+        'window_functions': {
+            'base_description': 'OVER clause with ROW_NUMBER, RANK, LEAD, LAG, and partition operations',
+            'examples': ['SELECT name, salary, ROW_NUMBER() OVER (ORDER BY salary DESC) FROM employees', 'LAG(price) OVER (PARTITION BY category ORDER BY date)'],
+            'category': 'ANALYTICS',
+            'complexity': 'Advanced'
+        },
+        'common_table_expressions': {
+            'base_description': 'WITH clauses for temporary named result sets and query organization',
+            'examples': ['WITH high_value_customers AS (SELECT user_id FROM orders GROUP BY user_id HAVING SUM(total) > 1000)', 'WITH RECURSIVE...'],
+            'category': 'DQL',
+            'complexity': 'Advanced'
+        },
+        'recursive_cte': {
+            'base_description': 'WITH RECURSIVE for hierarchical data traversal and graph operations',
+            'examples': ['WITH RECURSIVE employee_hierarchy AS (SELECT id, name, manager_id FROM employees WHERE manager_id IS NULL UNION...)', 'WITH RECURSIVE path_finder...'],
+            'category': 'RECURSIVE',
+            'complexity': 'Expert'
+        },
+        'json_parsing': {
+            'base_description': 'JSON operators (->, ->>, #>, #>>) for extracting data from JSON columns',
+            'examples': ['SELECT data->>\'name\' FROM users WHERE data->\'age\' > \'25\'', 'SELECT jsonb_extract_path(config, \'database\', \'host\') FROM settings'],
+            'category': 'JSON',
+            'complexity': 'Intermediate'
+        },
+        'json_aggregation': {
+            'base_description': 'JSON_AGG, JSON_OBJECT_AGG for converting relational data to JSON format',
+            'examples': ['SELECT JSON_AGG(name) FROM users', 'SELECT JSON_OBJECT_AGG(id, name) FROM products'],
+            'category': 'JSON',
+            'complexity': 'Advanced'
+        },
+        'explain_plan': {
+            'base_description': 'EXPLAIN and EXPLAIN ANALYZE for query performance analysis',
+            'examples': ['EXPLAIN SELECT * FROM users WHERE email = \'test@example.com\'', 'EXPLAIN (ANALYZE, BUFFERS) SELECT...'],
+            'category': 'ANALYTICS',
+            'complexity': 'Advanced'
+        },
+        'index_usage': {
+            'base_description': 'Query optimization techniques using indexes effectively',
+            'examples': ['SELECT * FROM products WHERE category = \'electronics\' -- uses idx_products_category', 'WHERE date_created >= \'2024-01-01\' -- uses idx_products_date'],
+            'category': 'ANALYTICS',
+            'complexity': 'Advanced'
+        },
+        'query_optimization': {
+            'base_description': 'Performance tuning through query rewriting and optimization techniques',
+            'examples': ['EXISTS vs IN performance comparisons', 'Subquery to JOIN conversions for better performance'],
+            'category': 'ANALYTICS',
+            'complexity': 'Expert'
+        },
+        'partitioning': {
+            'base_description': 'Table partitioning for large dataset management and performance',
+            'examples': ['CREATE TABLE orders_2024 PARTITION OF orders FOR VALUES FROM (\'2024-01-01\') TO (\'2025-01-01\')', 'PARTITION BY RANGE (date_created)'],
+            'category': 'DDL',
+            'complexity': 'Expert'
+        },
+        'temporal_queries': {
+            'base_description': 'Date and time operations, intervals, and temporal data analysis',
+            'examples': ['SELECT * FROM orders WHERE created_at >= CURRENT_DATE - INTERVAL \'30 days\'', 'DATE_TRUNC(\'month\', order_date)'],
+            'category': 'DQL',
+            'complexity': 'Intermediate'
+        },
+        'array_operations': {
+            'base_description': 'PostgreSQL array data type operations: creation, indexing, searching, and aggregation',
+            'examples': ['SELECT * FROM products WHERE tags @> ARRAY[\'electronics\', \'mobile\']', 'SELECT UNNEST(string_to_array(categories, \',\')) as category FROM products'],
+            'category': 'ANALYTICS',
+            'complexity': 'Advanced'
+        },
+        'full_text_search': {
+            'base_description': 'PostgreSQL full-text search with tsvector, tsquery, and ranking',
+            'examples': ['SELECT * FROM articles WHERE to_tsvector(title || \' \' || content) @@ to_tsquery(\'database & optimization\')', 'CREATE INDEX idx_articles_search ON articles USING gin(to_tsvector(\'english\', title || \' \' || content))'],
+            'category': 'ANALYTICS',
+            'complexity': 'Expert'
+        },
+        'geospatial': {
+            'base_description': 'PostGIS spatial queries for geographic data analysis and location-based operations',
+            'examples': ['SELECT * FROM stores WHERE ST_DWithin(location, ST_Point(-122.4194, 37.7749), 1000)', 'SELECT ST_Area(ST_Transform(geometry, 3857)) FROM parcels'],
+            'category': 'ANALYTICS',
+            'complexity': 'Expert'
+        }
+    }
+    
+    enhanced_patterns = []
+    
+    for pattern_name, context in pattern_contexts.items():
+        print(f"🧠 Generating AI description for pattern: {pattern_name}")
+        
+        # Create prompt for AI analysis
+        prompt = f"""
+        Analyze this SQL pattern and create an educational description:
+        
+        Pattern: {pattern_name.replace('_', ' ').title()}
+        Technical Description: {context['base_description']}
+        Examples: {'; '.join(context['examples'][:2])}
+        Category: {context['category']}
+        Complexity: {context['complexity']}
+        
+        Create a comprehensive description that explains:
+        1. What this pattern accomplishes
+        2. When developers should use it
+        3. Its practical value in real applications
+        
+        Keep it concise but educational (2-3 sentences).
+        """
+        
+        try:
+            result = await pattern_description_agent.run(prompt)
+            ai_description = result.data if hasattr(result, 'data') else str(result)
+        except Exception as e:
+            print(f"⚠️  AI generation failed for {pattern_name}: {e}")
+            ai_description = context['base_description']
+        
+        enhanced_patterns.append({
+            'name': pattern_name,
+            'display_name': pattern_name.replace('_', ' ').title(),
+            'description': ai_description,
+            'category': context['category'],
+            'complexity_level': context['complexity']
+        })
+        
+        # Small delay to avoid rate limiting
+        await asyncio.sleep(0.1)
+    
+    return enhanced_patterns

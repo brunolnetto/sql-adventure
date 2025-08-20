@@ -21,10 +21,7 @@ class DateTimeEncoder(json.JSONEncoder):
         return super(DateTimeEncoder, self).default(obj)
 
 from pydantic_ai import Agent
-from core.models import (
-    EvaluationResult, Intent, LLMAnalysis, SimplifiedAnalysis,
-    Assessment, Recommendation
-)
+from core.models import Intent, ComprehensiveAnalysis, Assessment, Recommendation, LLMAnalysis, EvaluationResult
 from core.agents import (
     intent_agent, 
     sql_instructor_agent, 
@@ -38,7 +35,6 @@ from utils.cache import (
     _save_cached_result
 )
 
-from repositories.evaluation_repository import EvaluationRepository
 from repositories.sqlfile_repository import SQLFileRepository
 
 # Handle relative imports
@@ -91,8 +87,8 @@ class SQLEvaluator:
         Initial Concepts: {concepts}
         Initial Difficulty: {difficulty}
         
-        SQL Code:
-        {sql_content}
+        Note: The complete SQL code and execution results are available in the technical analysis phase.
+        Base your analysis on the metadata above and the educational context.
         
         Provide a comprehensive analysis of the educational intent, including:
         - Detailed learning objectives
@@ -114,7 +110,7 @@ class SQLEvaluator:
                 specific_skills=concepts.split(", ")
             )
     
-    async def analyze_sql_output(self, sql_content: str, quest_name: str,
+    async def analyze_sql_output(self, quest_name: str,
                                 purpose: str, difficulty: str, concepts: str,
                                 output_content: str, sql_patterns: List[str]) -> LLMAnalysis:
         """Analyze SQL output using OpenAI"""
@@ -128,17 +124,36 @@ class SQLEvaluator:
         Concepts: {concepts}
         SQL Patterns: {', '.join(sql_patterns)}
         
-        SQL Code:
-        {sql_content}
-        
         Execution Output:
         {output_content}
         
-        Provide a comprehensive analysis including:
-        - Technical analysis (syntax, logic, quality, performance)
-        - Educational analysis (learning value, difficulty, time estimate)
-        - Assessment (grade, score, overall assessment)
-        - Recommendations for improvement
+        Note: The execution output above contains the complete SQL code and results.
+        
+        Provide a comprehensive analysis with separate technical and educational reasoning:
+        
+        TECHNICAL REASONING: Provide detailed analysis of:
+        - Score (1-10): Overall technical quality assessment
+        - Explanation: Detailed technical analysis covering syntax, logic, and implementation quality
+        - Strengths: List specific technical strengths identified
+        - Weaknesses: List technical issues or areas for improvement  
+        - Syntax Quality: Assessment of SQL syntax and structure
+        - Performance Considerations: Performance implications and optimizations
+        
+        EDUCATIONAL REASONING: Provide detailed analysis of:
+        - Score (1-10): Educational value and learning effectiveness
+        - Explanation: Detailed educational analysis covering learning objectives and pedagogical value
+        - Learning Objectives: Specific learning objectives this exercise addresses
+        - Skill Development: Skills that learners will develop through this exercise
+        - Real World Relevance: How this applies to real-world database scenarios
+        - Pedagogical Value: Assessment of teaching/learning effectiveness
+        
+        OVERALL ASSESSMENT:
+        - Overall feedback combining technical and educational aspects
+        - Difficulty level (Beginner/Intermediate/Advanced/Expert)
+        - Time estimate (e.g., "5 min", "10-15 min")
+        - Detected patterns with quality assessment
+        - Final grade and score
+        - Actionable recommendations for improvement
         """
         
         try:
@@ -147,13 +162,28 @@ class SQLEvaluator:
         except Exception as e:
             print(f"Error in output analysis: {e}")
             # Fallback with simplified structure
+            from core.models import TechnicalReasoning, EducationalReasoning
             return LLMAnalysis(
-                analysis=SimplifiedAnalysis(
+                analysis=ComprehensiveAnalysis(
                     overall_feedback="Analysis failed due to technical error",
                     difficulty_level=difficulty,
                     time_estimate="10 min",
-                    technical_score=5,
-                    educational_score=5,
+                    technical_reasoning=TechnicalReasoning(
+                        score=5,
+                        explanation="Technical analysis failed - manual review needed",
+                        strengths=[],
+                        weaknesses=["Analysis error occurred"],
+                        syntax_quality="Unable to assess due to technical error",
+                        performance_considerations="Unable to assess due to technical error"
+                    ),
+                    educational_reasoning=EducationalReasoning(
+                        score=5,
+                        explanation="Educational analysis failed - manual review needed", 
+                        learning_objectives=[],
+                        skill_development=[],
+                        real_world_relevance="Unable to assess due to technical error",
+                        pedagogical_value="Unable to assess due to technical error"
+                    ),
                     detected_patterns=[]
                 ),
                 assessment=Assessment(
@@ -248,7 +278,6 @@ class SQLEvaluator:
         # Analyze with AI
         sql_intent: Intent = await self.analyze_sql_intent(sql_context)
         llm_analysis: LLMAnalysis = await self.analyze_sql_output(
-            sql_context["sql_content"],
             sql_context["quest_name"],
             sql_context["purpose"],
             sql_context["difficulty"],
@@ -323,8 +352,24 @@ class SQLEvaluator:
                 if sql_file:
                     # Save evaluation with the existing SQL file
                     print(f"✅ Found SQL file (ID: {sql_file.id}) for path: {file_path}")
-                    evaluation_repository = EvaluationRepository(session)
-                    evaluation_repository.add_from_data(sql_file.id, evaluation_data)
+                    from repositories.enhanced_evaluation_repository import EnhancedEvaluationRepository
+                    evaluation_repository = EnhancedEvaluationRepository(session)
+                    
+                    # Add file_path to evaluation_data for the EvaluationRepository
+                    evaluation_data_with_path = evaluation_data.copy()
+                    
+                    # Convert absolute path to relative path as stored in database
+                    # Database stores paths like: "quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"
+                    file_path_str = str(file_path)
+                    if "quests/" in file_path_str:
+                        # Extract the part starting from "quests/"
+                        relative_path = file_path_str[file_path_str.find("quests/"):]
+                        evaluation_data_with_path['file_path'] = relative_path
+                        print(f"🔍 Using relative path for database lookup: {relative_path}")
+                    else:
+                        evaluation_data_with_path['file_path'] = file_path_str
+                    
+                    evaluation_repository.upsert_evaluation(evaluation_data_with_path)
                     session.commit()
                     print(f"✅ Successfully saved evaluation for {file_path}")
                 else:

@@ -1,23 +1,409 @@
+#!/usr/bin/env python3
+"""
+Enhanced Evaluation Repository for normalized schema with reasoning
+Handles the new structure: Evaluation + ExecutionMetadata + Analysis with reasoning
+"""
+
+import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from repositories.base_repository import BaseRepository
 from database.tables import (
-    SQLFile,
-    Quest,
-    Evaluation, 
-    Recommendation,
-    Analysis,  # Simplified combined analysis table
-    SQLPattern,
-    EvaluationPattern  # Junction table for evaluation-pattern relationships
+    SQLFile, Quest, Evaluation, ExecutionMetadata, Analysis, 
+    Recommendation, SQLPattern
 )
-
 from config import EvaluationConfig
 
 class EvaluationRepository(BaseRepository[Evaluation]):
-    def __init__(self, session):
+    def __init__(self, session: Session):
         super().__init__(session, Evaluation)
+        self.config = EvaluationConfig()
+    
+    def upsert_evaluation(self, evaluation_data: Dict[str, Any], execution_metadata: Optional[Dict[str, Any]] = None) -> Optional[Evaluation]:
+        """
+        UPSERT: Insert or update evaluation with normalized structure
+        Handles: Evaluation + ExecutionMetadata + Analysis + Recommendations
+        """
+        try:
+            sql_file_path = evaluation_data.get('file_path')
+            if not sql_file_path:
+                print(f"❌ No file_path in evaluation data")
+                return None
+            
+            # Get SQL file
+            sql_file = self.session.query(SQLFile).filter(
+                SQLFile.file_path == sql_file_path
+            ).first()
+            
+            if not sql_file:
+                print(f"❌ SQL file not found: {sql_file_path}")
+                return None
+            
+            # Extract data from evaluation structure
+            assessment = evaluation_data.get('llm_analysis', {}).get('assessment', {})
+            analysis_data = evaluation_data.get('llm_analysis', {}).get('analysis', {})
+            execution = evaluation_data.get('execution', {})
+            recommendations = evaluation_data.get('llm_analysis', {}).get('recommendations', [])
+            
+            # UPSERT main evaluation record
+            evaluation = self.session.query(Evaluation).filter(
+                Evaluation.sql_file_id == sql_file.id
+            ).first()
+            
+            # Convert pattern detections to JSONB format
+            detected_patterns = []
+            pattern_data = analysis_data.get('detected_patterns', [])
+            
+            if pattern_data:
+                if isinstance(pattern_data, list):
+                    detected_patterns = pattern_data
+                else:
+                    detected_patterns = [str(pattern_data)]
+            
+            if evaluation:
+                # Update existing evaluation
+                evaluation.overall_assessment = assessment.get('overall_assessment', 'NEEDS_REVIEW')
+                evaluation.letter_grade = assessment.get('grade', 'C')
+                evaluation.numeric_score = self._safe_float(assessment.get('score', 5))
+                evaluation.detected_patterns = detected_patterns
+                evaluation.last_evaluated = datetime.now()
+            else:
+                # Create new evaluation
+                evaluation = Evaluation(
+                    sql_file_id=sql_file.id,
+                    quest_id=sql_file.subcategory.quest_id,
+                    overall_assessment=assessment.get('overall_assessment', 'NEEDS_REVIEW'),
+                    letter_grade=assessment.get('grade', 'C'),
+                    numeric_score=self._safe_float(assessment.get('score', 5)),
+                    detected_patterns=detected_patterns,
+                    evaluator_model=self.config.model_name,
+                    last_evaluated=datetime.now()
+                )
+                self.session.add(evaluation)
+            
+            self.session.flush()  # Get evaluation ID
+            
+            # UPSERT execution metadata
+            exec_metadata = self.session.query(ExecutionMetadata).filter(
+                ExecutionMetadata.evaluation_id == evaluation.id
+            ).first()
+            
+            # Use provided execution_metadata or extract from evaluation_data
+            exec_data = execution_metadata or execution
+            
+            if exec_metadata:
+                # Update existing execution metadata
+                exec_metadata.execution_success = exec_data.get('execution_success', True)
+                exec_metadata.execution_time_ms = exec_data.get('execution_time_ms')
+                exec_metadata.output_lines = exec_data.get('output_lines', 0)
+                exec_metadata.result_sets = exec_data.get('result_sets', 0)
+                exec_metadata.error_count = exec_data.get('error_count', 0)
+                exec_metadata.warning_count = exec_data.get('warning_count', 0)
+                exec_metadata.updated_at = datetime.now()
+            else:
+                # Create new execution metadata
+                exec_metadata = ExecutionMetadata(
+                    evaluation_id=evaluation.id,
+                    execution_success=exec_data.get('execution_success', True),
+                    execution_time_ms=exec_data.get('execution_time_ms'),
+                    output_lines=exec_data.get('output_lines', 0),
+                    result_sets=exec_data.get('result_sets', 0),
+                    error_count=exec_data.get('error_count', 0),
+                    warning_count=exec_data.get('warning_count', 0)
+                )
+                self.session.add(exec_metadata)
+            
+            # UPSERT analysis with reasoning
+            analysis = self.session.query(Analysis).filter(
+                Analysis.evaluation_id == evaluation.id
+            ).first()
+            
+            # Extract reasoning data
+            technical_reasoning = analysis_data.get('technical_reasoning', {})
+            educational_reasoning = analysis_data.get('educational_reasoning', {})
+            
+            # Extract time estimate and convert to minutes
+            time_estimate = analysis_data.get('time_estimate', '10 min')
+            estimated_minutes = self._parse_time_estimate(time_estimate)
+            
+            if analysis:
+                # Update existing analysis
+                analysis.overall_feedback = analysis_data.get('overall_feedback', 'Analysis completed')
+                analysis.difficulty_level = analysis_data.get('difficulty_level', 'Intermediate')
+                analysis.estimated_time_minutes = estimated_minutes
+                analysis.technical_score = self._safe_float(technical_reasoning.get('score', 5))
+                analysis.technical_reasoning = technical_reasoning.get('explanation', 'No technical analysis provided')
+                analysis.educational_score = self._safe_float(educational_reasoning.get('score', 5))
+                analysis.educational_reasoning = educational_reasoning.get('explanation', 'No educational analysis provided')
+                analysis.updated_at = datetime.now()
+            else:
+                # Create new analysis
+                analysis = Analysis(
+                    evaluation_id=evaluation.id,
+                    overall_feedback=analysis_data.get('overall_feedback', 'Analysis completed'),
+                    difficulty_level=analysis_data.get('difficulty_level', 'Intermediate'),
+                    estimated_time_minutes=estimated_minutes,
+                    technical_score=self._safe_float(technical_reasoning.get('score', 5)),
+                    technical_reasoning=technical_reasoning.get('explanation', 'No technical analysis provided'),
+                    educational_score=self._safe_float(educational_reasoning.get('score', 5)),
+                    educational_reasoning=educational_reasoning.get('explanation', 'No educational analysis provided')
+                )
+                self.session.add(analysis)
+            
+            # Handle recommendations (replace all)
+            # Delete existing recommendations
+            self.session.query(Recommendation).filter(
+                Recommendation.evaluation_id == evaluation.id
+            ).delete()
+            
+            # Add new recommendations
+            for rec_data in recommendations:
+                if isinstance(rec_data, dict):
+                    rec_text = rec_data.get('recommendation_text', str(rec_data))
+                    priority = rec_data.get('priority', 'Medium')
+                    effort = rec_data.get('implementation_effort', 'Medium')
+                elif isinstance(rec_data, str):
+                    rec_text = rec_data
+                    priority = 'Medium'
+                    effort = 'Medium'
+                else:
+                    rec_text = str(rec_data)
+                    priority = 'Medium'
+                    effort = 'Medium'
+                
+                if rec_text and rec_text.strip():
+                    recommendation = Recommendation(
+                        evaluation_id=evaluation.id,
+                        recommendation_text=rec_text,
+                        priority=self._normalize_priority(priority),
+                        implementation_effort=self._normalize_effort(effort),
+                        category=self._categorize_recommendation(rec_text)
+                    )
+                    self.session.add(recommendation)
+            
+            self.session.commit()
+            return evaluation
+            
+        except Exception as e:
+            self.session.rollback()
+            print(f"❌ Error upserting evaluation: {e}")
+            raise
+    
+    def _safe_float(self, value: Any) -> float:
+        """Safely convert value to float with default"""
+        try:
+            if isinstance(value, (int, float)):
+                return float(value)
+            elif isinstance(value, str):
+                # Try to extract number from string
+                number_match = re.search(r'(\d+\.?\d*)', value)
+                if number_match:
+                    return float(number_match.group(1))
+            return 5.0  # Default score
+        except:
+            return 5.0
+    
+    def _parse_time_estimate(self, time_str: str) -> int:
+        """Parse time estimate string to minutes"""
+        try:
+            # Extract numbers from time string
+            numbers = re.findall(r'\d+', str(time_str))
+            if numbers:
+                return int(numbers[0])  # Take first number found
+            return 10  # Default fallback
+        except:
+            return 10
+    
+    def _normalize_priority(self, priority: str) -> str:
+        """Normalize priority to valid constraint values"""
+        priority_lower = priority.lower() if priority else 'medium'
+        
+        if priority_lower in ['low', 'minor']:
+            return 'Low'
+        elif priority_lower in ['high', 'critical', 'important']:
+            return 'High'
+        else:
+            return 'Medium'
+    
+    def _normalize_effort(self, effort: str) -> str:
+        """Normalize implementation effort to valid constraint values"""
+        effort_lower = effort.lower() if effort else 'medium'
+        
+        if effort_lower in ['low', 'easy', 'simple']:
+            return 'Low'
+        elif effort_lower in ['high', 'hard', 'difficult', 'complex']:
+            return 'High'
+        else:
+            return 'Medium'
+    
+    def _categorize_recommendation(self, recommendation_text: str) -> str:
+        """Categorize recommendation based on content keywords"""
+        text = recommendation_text.lower()
+        
+        if any(word in text for word in ['performance', 'slow', 'optimize', 'efficient', 'index']):
+            return 'Performance'
+        elif any(word in text for word in ['syntax', 'error', 'correct', 'format']):
+            return 'Syntax'
+        elif any(word in text for word in ['practice', 'convention', 'standard', 'style']):
+            return 'Best Practices'
+        elif any(word in text for word in ['security', 'secure', 'safe', 'injection']):
+            return 'Security'
+        elif any(word in text for word in ['comment', 'document', 'explain', 'clarity']):
+            return 'Documentation'
+        else:
+            return 'General'
+    
+    def get_evaluation_with_details(self, sql_file_path: str) -> Optional[Dict[str, Any]]:
+        """Get complete evaluation details for a SQL file"""
+        
+        sql_file = self.session.query(SQLFile).filter(
+            SQLFile.file_path == sql_file_path
+        ).first()
+        
+        if not sql_file:
+            return None
+            
+        evaluation = self.session.query(Evaluation).filter(
+            Evaluation.sql_file_id == sql_file.id
+        ).first()
+        
+        if not evaluation:
+            return None
+        
+        # Get related data
+        exec_metadata = self.session.query(ExecutionMetadata).filter(
+            ExecutionMetadata.evaluation_id == evaluation.id
+        ).first()
+        
+        analysis = self.session.query(Analysis).filter(
+            Analysis.evaluation_id == evaluation.id
+        ).first()
+        
+        recommendations = self.session.query(Recommendation).filter(
+            Recommendation.evaluation_id == evaluation.id
+        ).all()
+        
+        return {
+            'evaluation': evaluation,
+            'execution_metadata': exec_metadata,
+            'analysis': analysis,
+            'recommendations': recommendations,
+            'sql_file': sql_file
+        }
+    
+    def get_quest_summary_statistics(self, quest_id: int) -> Dict[str, Any]:
+        """Get summary statistics for a quest"""
+        
+        query = self.session.query(
+            func.count(Evaluation.id).label('total_evaluations'),
+            func.avg(Evaluation.numeric_score).label('avg_score'),
+            func.count(Evaluation.id).filter(Evaluation.overall_assessment == 'PASS').label('pass_count'),
+            func.count(Evaluation.id).filter(Evaluation.overall_assessment == 'FAIL').label('fail_count'),
+            func.count(Evaluation.id).filter(Evaluation.overall_assessment == 'NEEDS_REVIEW').label('review_count')
+        ).filter(Evaluation.quest_id == quest_id)
+        
+        result = query.first()
+        
+        # Get technical and educational score averages
+        tech_edu_query = self.session.query(
+            func.avg(Analysis.technical_score).label('avg_technical'),
+            func.avg(Analysis.educational_score).label('avg_educational')
+        ).join(Evaluation).filter(Evaluation.quest_id == quest_id)
+        
+        tech_edu_result = tech_edu_query.first()
+        
+        return {
+            'total_evaluations': result.total_evaluations or 0,
+            'average_score': float(result.avg_score or 0),
+            'pass_count': result.pass_count or 0,
+            'fail_count': result.fail_count or 0,
+            'review_count': result.review_count or 0,
+            'average_technical_score': float(tech_edu_result.avg_technical or 0),
+            'average_educational_score': float(tech_edu_result.avg_educational or 0)
+        }
+    
+    def get_recent_evaluations(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent evaluations with summary info"""
+        
+        evaluations = self.session.query(Evaluation).join(SQLFile).order_by(Evaluation.last_evaluated.desc()).limit(limit).all()
+        
+        results = []
+        for evaluation in evaluations:
+            analysis = self.session.query(Analysis).filter(
+                Analysis.evaluation_id == evaluation.id
+            ).first()
+
+            results.append({
+                'file_path': evaluation.sql_file.file_path,
+                'filename': evaluation.sql_file.filename,
+                'quest_name': evaluation.quest.name,
+                'overall_assessment': evaluation.overall_assessment,
+                'letter_grade': evaluation.letter_grade,
+                'numeric_score': evaluation.numeric_score,
+                'technical_score': analysis.technical_score if analysis else None,
+                'educational_score': analysis.educational_score if analysis else None,
+                'last_evaluated': evaluation.last_evaluated
+            })
+        
+        return results
+
+    # Legacy compatibility methods
+    def add_from_data(self, sql_file_id: int, evaluation_data: dict) -> Evaluation:
+        """Legacy method for compatibility - delegates to upsert_evaluation"""
+        return self.upsert_evaluation(evaluation_data)
+    
+    def get_current_evaluation(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Get current evaluation state for a file (legacy compatibility)"""
+        return self.get_evaluation_with_details(file_path)
+    
+    def add_from_data(self, sql_file_id: int, evaluation_data: dict) -> Evaluation:
+        """
+        Legacy method for compatibility - delegates to upsert_evaluation
+        
+        Args:
+            sql_file_id: ID of the SQL file being evaluated (not used, path extracted from data)
+            evaluation_data: Dictionary containing evaluation results
+            
+        Returns:
+            Created/Updated Evaluation entity
+        """
+        return self.upsert_evaluation(evaluation_data)
+    
+    def get_current_evaluation(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Get current evaluation state for a file"""
+        try:
+            sql_file = self.session.query(SQLFile).filter(
+                SQLFile.file_path == file_path
+            ).first()
+            
+            if not sql_file:
+                return None
+            
+            evaluation = self.session.query(Evaluation).filter(
+                Evaluation.sql_file_id == sql_file.id
+            ).first()
+            
+            if not evaluation:
+                return None
+            
+            # Get related data
+            recommendations = self.session.query(Recommendation).filter(
+                Recommendation.evaluation_id == evaluation.id
+            ).all()
+            
+            return {
+                'evaluation': evaluation,
+                'recommendations': recommendations,
+                'file': sql_file,
+                'quest': evaluation.quest
+            }
+            
+        except Exception as e:
+            print(f"❌ Error getting current evaluation: {e}")
+            return None
     
     def _extract_score_from_text(self, text: str) -> float:
         """Extract a numeric score from text, returning a default if not found"""
@@ -72,162 +458,6 @@ class EvaluationRepository(BaseRepository[Evaluation]):
             return int(number_match.group(1))
         
         return 10  # Default fallback
-
-    def add_from_data(self, sql_file_id: int, evaluation_data: dict) -> Evaluation:
-        """
-        Add evaluation data to the database.
-        
-        Note: This method does not commit the session. The caller is responsible
-        for committing or rolling back the transaction.
-        
-        Args:
-            sql_file_id: ID of the SQL file being evaluated
-            evaluation_data: Dictionary containing evaluation results
-            
-        Returns:
-            Created Evaluation entity
-            
-        Raises:
-            Exception: If database operation fails (session will be rolled back by caller)
-        """
-        try:
-            # Retrieve sql_file from database
-            sql_file: SQLFile = self.session.query(SQLFile).filter(SQLFile.id == sql_file_id).first()
-            if not sql_file:
-                raise ValueError(f"SQL file with ID {sql_file_id} not found")
-                
-            # Create main evaluation record
-            # Create or update evaluation (UPSERT logic)
-            evaluation = self.session.query(Evaluation).filter(Evaluation.sql_file_id == sql_file_id).first()
-            
-            if not evaluation:
-                evaluation = Evaluation(
-                    sql_file_id=sql_file_id,
-                    quest_id=sql_file.subcategory.quest_id,
-                    evaluator_model=evaluation_data.get('evaluator_model', EvaluationConfig().model_name),
-                    overall_assessment=evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('overall_assessment', 'UNKNOWN'),
-                    numeric_score=evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 1),
-                    letter_grade=evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('grade', 'F'),
-                    execution_success=evaluation_data.get('execution', {}).get('success', False),
-                    execution_time_ms=evaluation_data.get('execution', {}).get('execution_time_ms', 0),
-                    output_lines=evaluation_data.get('execution', {}).get('output_lines', 0),
-                    result_sets=evaluation_data.get('execution', {}).get('result_sets', 0),
-                    rows_affected=evaluation_data.get('execution', {}).get('rows_affected', 0),
-                    error_count=evaluation_data.get('execution', {}).get('error_count', 0),
-                    warning_count=evaluation_data.get('execution', {}).get('warning_count', 0)
-                )
-                self.session.add(evaluation)
-            else:
-                # Update existing evaluation
-                evaluation.last_evaluated = datetime.now()
-                evaluation.overall_assessment = evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('overall_assessment', 'UNKNOWN')
-                evaluation.numeric_score = evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 1)
-                evaluation.letter_grade = evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('grade', 'F')
-                evaluation.execution_success = evaluation_data.get('execution', {}).get('success', False)
-                evaluation.execution_time_ms = evaluation_data.get('execution', {}).get('execution_time_ms', 0)
-                evaluation.output_lines = evaluation_data.get('execution', {}).get('output_lines', 0)
-                evaluation.result_sets = evaluation_data.get('execution', {}).get('result_sets', 0)
-                evaluation.rows_affected = evaluation_data.get('execution', {}).get('rows_affected', 0)
-                evaluation.error_count = evaluation_data.get('execution', {}).get('error_count', 0)
-                evaluation.warning_count = evaluation_data.get('execution', {}).get('warning_count', 0)
-                
-            self.session.flush()  # Get the ID without committing
-
-            # Create or update simplified analysis
-            analysis = self.session.query(Analysis).filter(Analysis.evaluation_id == evaluation.id).first()
-            
-            # Extract simplified analysis data
-            llm_analysis = evaluation_data.get('llm_analysis', {})
-            simplified_analysis = llm_analysis.get('analysis', {}) if 'analysis' in llm_analysis else {}
-            
-            # Build combined feedback from LLM analysis
-            combined_feedback = simplified_analysis.get('overall_feedback', '')
-            if not combined_feedback:
-                # Fallback: combine separate technical/educational if they exist
-                tech_analysis = llm_analysis.get('technical_analysis', {})
-                edu_analysis = llm_analysis.get('educational_analysis', {})
-                combined_feedback = f"Technical: {tech_analysis.get('code_quality', 'Good')}. Educational: {edu_analysis.get('learning_value', 'High value')}."
-            
-            if not analysis:
-                analysis = Analysis(
-                    evaluation_id=evaluation.id,
-                    overall_feedback=combined_feedback,
-                    difficulty_level=simplified_analysis.get('difficulty_level', 'Beginner'),
-                    estimated_time_minutes=self._extract_time_from_text(simplified_analysis.get('time_estimate', '10 min')),
-                    technical_score=simplified_analysis.get('technical_score', evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 7)),
-                    educational_score=simplified_analysis.get('educational_score', evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 7))
-                )
-                self.session.add(analysis)
-            else:
-                # Update existing analysis
-                analysis.overall_feedback = combined_feedback
-                analysis.difficulty_level = simplified_analysis.get('difficulty_level', 'Beginner')
-                analysis.estimated_time_minutes = self._extract_time_from_text(simplified_analysis.get('time_estimate', '10 min'))
-                analysis.technical_score = simplified_analysis.get('technical_score', evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 7))
-                analysis.educational_score = simplified_analysis.get('educational_score', evaluation_data.get('llm_analysis', {}).get('assessment', {}).get('score', 7))
-                analysis.updated_at = datetime.now()
-            
-            self.session.flush()  # Get analysis ID
-            
-            # Handle detected patterns - create evaluation_pattern relationships
-            detected_patterns = simplified_analysis.get('detected_patterns', [])
-            if detected_patterns:
-                # Remove existing pattern relationships for this evaluation
-                self.session.query(EvaluationPattern).filter(
-                    EvaluationPattern.evaluation_id == evaluation.id
-                ).delete()
-                
-                # Add new pattern relationships
-                for pattern_name in detected_patterns:
-                    # Find pattern by name
-                    pattern = self.session.query(SQLPattern).filter(
-                        SQLPattern.name == pattern_name
-                    ).first()
-                    
-                    if pattern:
-                        eval_pattern = EvaluationPattern(
-                            evaluation_id=evaluation.id,
-                            pattern_id=pattern.id,
-                            confidence_score=0.9,  # High confidence from LLM
-                            usage_quality='Good'
-                        )
-                        self.session.add(eval_pattern)
-                analysis.updated_at = datetime.now()
-                
-            # Clear existing recommendations and save new ones
-            self.session.query(Recommendation).filter(Recommendation.evaluation_id == evaluation.id).delete()
-            
-            # Save recommendations BEFORE returning
-            recommendations = evaluation_data.get('llm_analysis', {}).get('recommendations', [])
-            for rec_data in recommendations:
-                if isinstance(rec_data, dict):
-                    # Handle structured recommendation data
-                    recommendation = Recommendation(
-                        evaluation_id=evaluation.id,
-                        category=self._categorize_recommendation(rec_data.get('recommendation_text', '')),
-                        priority=rec_data.get('priority', 'Medium'),
-                        recommendation_text=rec_data.get('recommendation_text', ''),
-                        implementation_effort=self._normalize_effort(rec_data.get('implementation_effort', 'Medium')),
-                        expected_impact=self._normalize_impact(rec_data.get('expected_impact', 'Medium'))
-                    )
-                else:
-                    # Handle simple string recommendation
-                    recommendation = Recommendation(
-                        evaluation_id=evaluation.id,
-                        category=self._categorize_recommendation(str(rec_data)),
-                        priority='Medium',
-                        recommendation_text=str(rec_data),
-                        implementation_effort='Medium',
-                        expected_impact='Medium'
-                    )
-                self.session.add(recommendation)
-            
-            return evaluation
-            
-        except Exception as e:
-            # Log the error but don't rollback here - let the caller handle it
-            print(f"❌ Error in add_from_data: {e}")
-            raise
         
     
     def get_evaluation_analytics(self, quest_name: Optional[str] = None, 

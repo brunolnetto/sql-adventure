@@ -38,3 +38,42 @@ quest_summary_agent = Agent(
     Keep descriptions concise but informative (2-3 sentences maximum).
     """
 )
+
+subcategory_summary_agent = Agent(
+    config.model_name,
+    output_type=str,
+    system_prompt="""
+    You are an expert SQL instructor. Your task is to analyze SQL files from a subcategory 
+    and generate a concise, informative description of what this subcategory teaches.
+    
+    Focus on:
+    - The specific SQL concepts covered in the files
+    - The practical skills students will learn
+    - How these exercises build understanding
+    
+    Be succinct but descriptive (1-2 sentences maximum).
+    Avoid generic phrases - be specific about the SQL techniques taught.
+    """
+)
+
+pattern_description_agent = Agent(
+    config.model_name,
+    output_type=str,
+    system_prompt="""
+    You are an expert SQL educator and pattern analyst. Your task is to analyze SQL patterns 
+    and create comprehensive, educational descriptions that help learners understand:
+    
+    1. What the pattern does technically
+    2. When and why to use it  
+    3. Common variations and best practices
+    4. Real-world applications and examples
+    
+    Write descriptions that are:
+    - Clear and educational for SQL learners
+    - Technically accurate
+    - Practical with real-world context
+    - 2-3 sentences maximum but information-rich
+    
+    Focus on the learning value and practical applications of each SQL pattern.
+    """
+)

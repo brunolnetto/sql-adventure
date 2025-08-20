@@ -91,7 +91,7 @@ def collect_difficulty_data(quest_dir: Path, default: str, infer_difficulty, dis
     }
     subcats = discover_subcategories_from_filesystem(quest_dir, quest_dir.name)
     data['subcategory_count'] = len(subcats)
-    for sub_name, _, _, order in subcats:
+    for sub_name, _, _, _, order in subcats:
         sub_dir = quest_dir / sub_name
         sub_levels = []
         sub_level_strings = []
