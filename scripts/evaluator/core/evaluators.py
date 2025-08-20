@@ -13,32 +13,40 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import asyncpg
 
+# JSON encoder for datetime objects
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super(DateTimeEncoder, self).default(obj)
+
 from pydantic_ai import Agent
-from .models import (
-    EvaluationResult, Intent, LLMAnalysis, TechnicalAnalysis,
-    EducationalAnalysis, Assessment, Recommendation
+from core.models import (
+    EvaluationResult, Intent, LLMAnalysis, SimplifiedAnalysis,
+    Assessment, Recommendation
 )
-from .agents import (
+from core.agents import (
     intent_agent, 
     sql_instructor_agent, 
     quality_assessor_agent
 )
-from ..utils.discovery import MetadataExtractor, detect_sql_patterns
-from ..utils.cache import (
+from utils.discovery import MetadataExtractor, detect_sql_patterns
+from utils.cache import (
     _is_cached_valid, 
     _get_cache_path, 
     _load_cached_result, 
     _save_cached_result
 )
 
-from ..repositories.evaluation_repository import EvaluationRepository
-from ..repositories.sqlfile_repository import SQLFileRepository
+from repositories.evaluation_repository import EvaluationRepository
+from repositories.sqlfile_repository import SQLFileRepository
 
 # Handle relative imports
 evaluator_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(evaluator_dir))
 
 from database.manager import DatabaseManager
+from database.tables import EvaluationBase
 from config import ProjectFolderConfig, EvaluationConfig
 
 
@@ -50,13 +58,21 @@ class SQLEvaluator:
 
         self.agents = {
             "intent_analyst": intent_agent,
-            "instructor": sql_instructor_agent,
+            "sql_instructor": sql_instructor_agent,
             "quality_assessor": quality_assessor_agent
         }
         self._db_pool = None
 
-        # Initialize database manager for persistence
-        self.db_manager = DatabaseManager()
+        # Initialize database manager for persistence (use evaluator database)
+        from database.utils import get_evaluator_connection_string, get_quests_connection_string
+        evaluator_connection_string = get_evaluator_connection_string()
+        quests_connection_string = get_quests_connection_string()
+        
+        # Evaluator database: stores evaluation metadata with proper schema
+        self.db_manager = DatabaseManager(EvaluationBase, database_type="evaluator")
+        
+        # Quests database: execution sandbox only, no schema needed
+        self.sql_execution_manager = DatabaseManager(None, database_type="quests")
     
     async def analyze_sql_intent(self, sql_metadata: dict) -> Intent:
         """Analyze educational intent using OpenAI"""
@@ -86,7 +102,8 @@ class SQLEvaluator:
         """
         
         try:
-            return await self.agents["intent_analyst"].run(prompt, output_type=Intent)
+            result = await self.agents["intent_analyst"].run(prompt, output_type=Intent)
+            return result.data  # Extract the actual data from AgentRunResult
         except Exception as e:
             print(f"Error in intent analysis: {e}")
             # Fallback
@@ -125,22 +142,19 @@ class SQLEvaluator:
         """
         
         try:
-            result = await self.agents["instructor"].run(prompt, output_type=LLMAnalysis)
-            return result
+            result = await self.agents["sql_instructor"].run(prompt, output_type=LLMAnalysis)
+            return result.data  # Extract the actual data from AgentRunResult
         except Exception as e:
             print(f"Error in output analysis: {e}")
-            # Fallback
+            # Fallback with simplified structure
             return LLMAnalysis(
-                technical_analysis=TechnicalAnalysis(
-                    syntax_correctness="Analysis failed",
-                    logical_structure="Analysis failed",
-                    code_quality="Analysis failed"
-                ),
-                educational_analysis=EducationalAnalysis(
-                    learning_value="Analysis failed",
+                analysis=SimplifiedAnalysis(
+                    overall_feedback="Analysis failed due to technical error",
                     difficulty_level=difficulty,
-                    time_estimate="Unknown",
-                    prerequisites=[]
+                    time_estimate="10 min",
+                    technical_score=5,
+                    educational_score=5,
+                    detected_patterns=[]
                 ),
                 assessment=Assessment(
                     grade="C",
@@ -157,11 +171,11 @@ class SQLEvaluator:
     async def execute_sql_file(self, file_path: Path) -> Dict[str, Any]:
         """Execute SQL file using connection pool"""
         try:
-            # Read SQL content
-            sql_content = file_path.read_text()
+            # Clean up execution sandbox before running SQL file
+            self._cleanup_execution_sandbox()
             
-            # Execute using connection pool
-            return await self.db_manager.execute_sql(sql_content, file_path)
+            # Use the SQL execution manager (connects to quests database)
+            return await self.sql_execution_manager.execute_sql_file(str(file_path))
             
         except Exception as e:
             print(f"Error executing SQL file: {e}")
@@ -174,6 +188,17 @@ class SQLEvaluator:
                 "result_sets": 0,
                 "statement_details": []
             }
+
+    def _cleanup_execution_sandbox(self):
+        """
+        Clean up execution sandbox before running SQL files.
+        This is domain logic specific to the evaluation process.
+        """
+        tables_dropped = self.sql_execution_manager.drop_all_tables()
+        if tables_dropped > 0:
+            print(f"🧹 Cleaned up {tables_dropped} tables from execution sandbox")
+        else:
+            print("🧹 Execution sandbox is already clean")
     
     def parse_sql_file(self, file_path: Path) -> str:
         """Parse SQL file content"""
@@ -211,17 +236,26 @@ class SQLEvaluator:
         # Execute SQL
         execution_result = await self.execute_sql_file(file_path)        
         sql_context["execution_result"] = execution_result
+        sql_context["output_content"] = execution_result.get("output_content", "No output")
 
         sql_content = sql_context["sql_content" ]
 
         # Detect patterns
         sql_patterns = detect_sql_patterns(sql_content)
-        pattern_names = [p.pattern_name for p in sql_patterns]
+        pattern_names = [p[0] for p in sql_patterns]  # Extract pattern_name from tuple
         sql_context["pattern_names"] = pattern_names
 
         # Analyze with AI
         sql_intent: Intent = await self.analyze_sql_intent(sql_context)
-        llm_analysis: LLMAnalysis = await self.analyze_sql_output(sql_context)
+        llm_analysis: LLMAnalysis = await self.analyze_sql_output(
+            sql_context["sql_content"],
+            sql_context["quest_name"],
+            sql_context["purpose"],
+            sql_context["difficulty"],
+            sql_context["concepts"],
+            sql_context["output_content"],
+            sql_context["pattern_names"]
+        )
 
         # Create basic evaluation
         score = llm_analysis.assessment.score
@@ -234,20 +268,15 @@ class SQLEvaluator:
                 "quest": sql_context["quest_name"],
                 "full_path": str(file_path)
             },
-            intent={
-                "purpose": sql_context["purpose"],
-                "difficulty": sql_context["difficulty"],
-                "concepts": sql_context["concepts"],
-                "sql_patterns": sql_context["pattern_names"]
-            },
+            intent=sql_intent,
             execution={
-                "success": execution_result["success"],
-                "output_content": execution_result["output_content"],
-                "output_lines": execution_result["output_lines"],
-                "errors": execution_result["errors"],
-                "warnings": execution_result["warnings"],
-                "result_sets": execution_result["result_sets"],
-                "raw_output": execution_result["output_content"]
+                "success": execution_result.get("success", False),
+                "output_content": sql_context["output_content"],
+                "output_lines": execution_result.get("output_lines", 0),
+                "errors": execution_result.get("errors", 0),
+                "warnings": execution_result.get("warnings", 0),
+                "result_sets": execution_result.get("result_sets", 0),
+                "raw_output": sql_context["output_content"]
             },
             basic_evaluation={
                 "overall_assessment": assessment,
@@ -257,8 +286,8 @@ class SQLEvaluator:
                 "recommendations": "Good example with room for improvement"
             },
             basic_analysis={
-                "correctness": "Output appears to execute successfully" if execution_result["success"] else "Execution failed",
-                "completeness": f"Generated {execution_result['output_lines']} lines of output with {execution_result['result_sets']} result sets",
+                "correctness": "Output appears to execute successfully" if execution_result.get("success", False) else "Execution failed",
+                "completeness": f"Generated {execution_result.get('output_lines', 0)} lines of output with {execution_result.get('result_sets', 0)} result sets",
                 "learning_value": "Demonstrates intended SQL patterns",
                 "quality": "Output is clear and readable"
             },
@@ -284,24 +313,27 @@ class SQLEvaluator:
             
             session = self.db_manager.SessionLocal()
             try:
-                # Get or create SQL file within the same session
-                from ..database.tables import SQLFile, Quest, Subcategory
+                # Get existing SQL file from database
+                from database.tables import SQLFile, Quest, Subcategory
+                from repositories.sqlfile_repository import SQLFileRepository
                 
                 sql_file_repository = SQLFileRepository(session)
-                sql_file = sql_file_repository.get_or_create(str(file_path))
+                sql_file = sql_file_repository.get_by_path(str(file_path))
                 
                 if sql_file:
-                    # Save evaluation with the same session
+                    # Save evaluation with the existing SQL file
+                    print(f"✅ Found SQL file (ID: {sql_file.id}) for path: {file_path}")
                     evaluation_repository = EvaluationRepository(session)
-                    
                     evaluation_repository.add_from_data(sql_file.id, evaluation_data)
+                    session.commit()
+                    print(f"✅ Successfully saved evaluation for {file_path}")
                 else:
                     session.rollback()
-                    print(f"⚠️  Failed to create SQL file record for {file_path}")
+                    print(f"⚠️  SQL file not found in database: {file_path}")
+                    print(f"💡 Hint: Run 'python init_database.py' to populate SQL files")
             except Exception as e:
-                self.session.rollback()
+                session.rollback()
                 print(f"❌ Error saving evaluation for {file_path}: {e}")
-                    
             finally:
                 session.close()
                 
@@ -324,12 +356,12 @@ class QuestEvaluator:
     
     async def evaluate_subcategory(self, file_path: Path) -> Dict[str, Any]:
         """Evaluate a single SQL file with caching"""
-        print(f"Evaluating: {file_path}")
         
         # Check cache first
-        is_cache_enabled_or_changed=not self.config.cache_enabled or not self.config.skip_unchanged
+        cache_enabled = False  # Simplified: disable caching for now
+        skip_unchanged = False  # Simplified: always evaluate
 
-        if _is_cached_valid(file_path) and is_cache_enabled_or_changed:
+        if cache_enabled and _is_cached_valid(file_path) and skip_unchanged:
             cached_result = _load_cached_result(self.folder_config.cache_dir, file_path)
             if cached_result:
                 print(f"📋 Using cached result for {file_path.name}")
@@ -340,7 +372,7 @@ class QuestEvaluator:
             result = await self.evaluator.evaluate_sql_file(file_path)
             result_dict = result.model_dump()
             
-            if self.config.cache_enabled:
+            if cache_enabled:
                 # Cache the result
                 _save_cached_result(
                     self.folder_config.cache_dir, file_path, result_dict
@@ -403,10 +435,10 @@ class QuestEvaluator:
             # Create proper subdirectory structure
             if len(quest_path.parts) >= 3:
                 # For subdirectories like quests/1-data-modeling/00-basic-concepts
-                output_path = self.config.output_dir / quest_path.parts[-2] / quest_path.parts[-1]
+                output_path = Path("ai-evaluations") / quest_path.parts[-2] / quest_path.parts[-1]
             else:
                 # For main quest directories
-                output_path = self.config.output_dir / quest_path.name
+                output_path = Path("ai-evaluations") / quest_path.name
         
         output_path.mkdir(parents=True, exist_ok=True)
         
@@ -417,13 +449,13 @@ class QuestEvaluator:
                 original_filename = result["metadata"]["file"]
                 file_name = original_filename.replace(".sql", ".json")
                 result_file = output_path / file_name
-                result_file.write_text(json.dumps(result, indent=2))
+                result_file.write_text(json.dumps(result, indent=2, cls=DateTimeEncoder))
                 print(f"✅ Saved: {result_file}")
             elif "file" in result:
                 # Fallback for error results
                 file_name = result["file"].replace(".sql", ".json")
                 result_file = output_path / file_name
-                result_file.write_text(json.dumps(result, indent=2))
+                result_file.write_text(json.dumps(result, indent=2, cls=DateTimeEncoder))
                 print(f"⚠️  Saved error result: {result_file}")
             else:
                 print(f"❌ Result missing file info: {result.keys()}")
@@ -437,7 +469,11 @@ class QuestEvaluator:
     
     async def evaluate_all(self) -> Dict[str, Any]:
         """Evaluate all quests sequentially with parallel file processing within each quest"""
-        quest_dirs = [d for d in self.quests_dir.iterdir() if d.is_dir() and d.name[0].isdigit()]
+        return await self.evaluate_all_in_directory(self.folder_config.quests_dir)
+    
+    async def evaluate_all_in_directory(self, quests_dir: Path) -> Dict[str, Any]:
+        """Evaluate all quests in the specified directory"""
+        quest_dirs = [d for d in quests_dir.iterdir() if d.is_dir() and d.name[0].isdigit()]
         quest_dirs.sort(key=lambda x: int(x.name.split('-')[0]))
         
         print(f"🎯 Found {len(quest_dirs)} quests to evaluate")
@@ -448,7 +484,7 @@ class QuestEvaluator:
         
         for quest_dir in quest_dirs:
             print(f"\n📚 Processing quest: {quest_dir.name}")
-            quest_result = await self.evaluate_quest_parallel(quest_dir)
+            quest_result = await self.evaluate_quest(quest_dir)
             all_results.append(quest_result)
             
             total_files += quest_result["total"]

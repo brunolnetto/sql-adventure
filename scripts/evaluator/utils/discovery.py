@@ -8,19 +8,33 @@ import re
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
 
+# Regex pattern for parsing SQL comment headers
 HEADER_PATTERN = re.compile(r"^--\s*(?P<key>\w+):\s*(?P<value>.+)$", re.IGNORECASE)
 
+
+# Import difficulty logic from unified module
+from utils.difficulty import (
+    LEVEL_KEYWORDS,
+    LEVEL_ORDER,
+    ORDER_LEVEL,
+    DifficultyStrategy,
+    determine_quest_difficulty,
+    parse_header_level
+)
+
+
 class MetadataExtractor:
-    """Extrai metadados do cabeçalho de comentários SQL."""
+    """Extract metadata from SQL comment headers."""
 
     @staticmethod
-    def parse_header(sql_content: str, delimiter: str) -> Dict[str, str]:
+    def parse_header(sql_content: str, delimiter: str = ":") -> Dict[str, str]:
         metadata: Dict[str, str] = {}
         for line in sql_content.splitlines():
             match = HEADER_PATTERN.match(line)
             if not match:
-                # headers estão no início; interrompa ao encontrar primeira linha de código
-                if not line.strip().startswith("--"): break
+                # Headers are at the beginning; stop at first code line
+                if not line.strip().startswith("--"): 
+                    break
                 continue
             key = match.group("key").strip().lower()
             value = match.group("value").strip()
@@ -28,66 +42,9 @@ class MetadataExtractor:
         return metadata
 
 
-# Map normalized labels to canonical levels
-LEVEL_KEYWORDS = {
-    'beginner': ['beginner', '🟢', 'green'],
-    'intermediate': ['intermediate', '🟡', 'yellow'],
-    'advanced': ['advanced', '🔴', 'red'],
-    'expert': ['expert', '⚫', 'black']
-}
 
-LEVEL_ORDER = {level.capitalize(): idx for idx, level in enumerate(LEVEL_KEYWORDS, start=1)}
-ORDER_LEVEL = {v: k for k, v in LEVEL_ORDER.items()}
+# Use parse_header_level from difficulty.py
 
-def parse_header_level(raw: str) -> str:
-    """
-    Normalize a raw difficulty string from header into one of the four levels.
-    """
-    text = raw.lower()
-    for level, keywords in LEVEL_KEYWORDS.items():
-        if any(k in text for k in keywords):
-            return level.capitalize()
-
-    # Fallback if numeric time estimate found
-    if re.search(r"\d+\s*-\s*\d+\s*min", text):
-        # assume short indicates beginner
-        return 'Beginner'
-    return None
-
-def determine_quest_difficulty(
-    quest_dir: Path,
-    default: str = 'Intermediate'
-) -> str:
-    """
-    Determine a quest's difficulty by:
-    1) Checking for any SQL header override under the quest directory.
-    2) Otherwise, aggregating per-file difficulties across subcategories.
-    """
-    # 1) Global header override
-    for sql_file in quest_dir.rglob('*.sql'):
-        try:
-            meta = MetadataExtractor.parse_header(sql_file.read_text())
-            if 'difficulty' in meta:
-                normalized = parse_header_level(meta['difficulty'])
-                if normalized:
-                    return normalized
-        except Exception:
-            continue
-
-    # 2) Aggregate subcategory/file difficulties
-    subcats: List[Tuple[str, str, str, int]] = discover_subcategories_from_filesystem(quest_dir, quest_dir.name)
-    levels: List[int] = []
-    for sub_name, _, _, _ in subcats:
-        sub_dir = quest_dir / sub_name
-        for sql_file in sub_dir.rglob('*.sql'):
-            lvl_str = infer_difficulty(sql_file, default)
-            levels.append(LEVEL_ORDER.get(lvl_str, LEVEL_ORDER[default]))
-
-    if not levels:
-        return default
-    avg = sum(levels) / len(levels)
-    quest_value = int(avg + 0.5)
-    return ORDER_LEVEL.get(quest_value, default)
 
 def infer_difficulty(
     sql_file_path: Path, default: str = 'Intermediate'
@@ -112,33 +69,6 @@ def infer_difficulty(
     # If no valid difficulty found, return default
     return default
 
-HEADER_PATTERN = re.compile(r"^--\s*(?P<key>\w+):\s*(?P<value>.+)$", re.IGNORECASE)
-
-
-# Map normalized labels to canonical levels
-LEVEL_KEYWORDS = {
-    'beginner': ['beginner', '🟢', 'green'],
-    'intermediate': ['intermediate', '🟡', 'yellow'],
-    'advanced': ['advanced', '🟠', 'orange'],
-    'expert': ['expert', '🔴', 'red']
-}
-
-LEVEL_ORDER = {
-    level.capitalize(): idx 
-    for idx, level in enumerate(LEVEL_KEYWORDS, start=1)
-}
-ORDER_LEVEL = {v: k for k, v in LEVEL_ORDER.items()}
-
-def parse_header_level(raw: str) -> str:
-    """
-    Normalize a raw difficulty string from header into one of the four levels.
-    """
-    text = raw.lower()
-    for level, keywords in LEVEL_KEYWORDS.items():
-        if any(k in text for k in keywords):
-            return level.capitalize()
-
-    return None
 
 def determine_quest_difficulty(
     quest_dir: Path,
@@ -172,81 +102,87 @@ def determine_quest_difficulty(
     if not levels:
         return default
 
-    avg = sum(levels) / len(levels)
-    quest_value = int(avg + 0.5)
+    # Enhanced difficulty calculation with outlier handling
+    import statistics
+    from collections import Counter
+    
+    # Collect level strings for modal analysis
+    level_strings = []
+    for sub_name, _, _, _ in subcats:
+        sub_dir = quest_dir / sub_name
+        for sql_file in sub_dir.rglob('*.sql'):
+            lvl_str = infer_difficulty(sql_file, default)
+            level_strings.append(lvl_str)
+    
+    # For small quests (<=5 files), use modal approach to avoid outlier bias
+    if len(levels) <= 5:
+        level_counts = Counter(level_strings)
+        return level_counts.most_common(1)[0][0]
+    
+    # For larger quests, check for high variance (suggests outliers)
+    if len(levels) > 2:
+        variance = statistics.variance(levels)
+        if variance > 1.5:  # High variance indicates outliers present
+            level_counts = Counter(level_strings)
+            return level_counts.most_common(1)[0][0]
+    
+    # Standard case: improved average with proper rounding
+    avg = statistics.mean(levels)
+    quest_value = round(avg)  # Use proper rounding instead of int(avg + 0.5)
+    
+    # Bounds checking to ensure valid difficulty level
+    quest_value = max(1, min(quest_value, len(ORDER_LEVEL)))
+    
     return ORDER_LEVEL.get(quest_value, default)
 
-def determine_subcategory_difficulty(
-    subcategory_path: Path, default: str = 'Intermediate'
-) -> str:
-    return infer_difficulty(subcategory_path, default)
 
 def determine_subcategory_difficulty(
     subcategory_path: Path, default: str = 'Intermediate'
 ) -> str:
+    """Determine subcategory difficulty from its content."""
     return infer_difficulty(subcategory_path, default)
 
 def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, int]]) -> str:
-    """Generate quest description based on subcategories"""
-    quest_keywords = {
-        'data-modeling': 'Database design principles, normalization patterns, and schema optimization',
-        'performance-tuning': 'Query optimization, indexing strategies, and performance analysis',
-        'window-functions': 'Advanced analytics and ranking operations using window functions',
-        'json-operations': 'Working with JSON data in PostgreSQL',
-        'recursive-cte': 'Hierarchical data and recursive queries',
-        'stored-procedures': 'Database programming with stored procedures and functions',
-        'triggers': 'Automated database actions with triggers',
-        'transactions': 'Data consistency and transaction management'
-    }
-    
-    # Extract quest type from name
-    quest_type = '-'.join(quest_name.split('-')[1:])
-    
-    if quest_type in quest_keywords:
-        return quest_keywords[quest_type]
-    
-    # Fallback: generate description from subcategories
-    subcategory_names = [display_name for _, display_name, _, _ in subcategories]
-    return f"Comprehensive coverage of {', '.join(subcategory_names[:3])} and related concepts"
+    """
+    Generate quest description using AI agent if available, fallback to content-based method otherwise.
+    """
+    try:
+        from .quest_summary import generate_quest_description_ai, generate_quest_description_fallback
+        import asyncio
+        
+        # Aggregate all quest content into a single text
+        aggregated_content = f"Quest: {quest_name}\n"
+        
+        # Add subcategory information
+        if subcategories:
+            aggregated_content += "Subcategories:\n"
+            for sub_name, display_name, difficulty, order in subcategories:
+                aggregated_content += f"- {display_name} ({difficulty})\n"
+        
+        # Try AI description first
+        try:
+            loop = asyncio.get_event_loop()
+            description = loop.run_until_complete(generate_quest_description_ai(aggregated_content))
+            return description
+        except Exception:
+            # Fallback to simple description
+            return generate_quest_description_fallback(aggregated_content)
+            
+    except Exception:
+        # Final fallback to previous content-based method
+        if not subcategories:
+            quest_type = '-'.join(quest_name.split('-')[1:])
+            return f"SQL {quest_type.replace('-', ' ')} exercises and concepts"
+        subcategory_names = [display_name for _, display_name, _, _ in subcategories]
+        if len(subcategory_names) == 1:
+            return f"Focused training on {subcategory_names[0].lower()}"
+        elif len(subcategory_names) <= 3:
+            return f"Comprehensive coverage of {', '.join(subcategory_names).lower()}"
+        else:
+            primary_topics = subcategory_names[:2]
+            remaining_count = len(subcategory_names) - 2
+            return f"In-depth exploration of {', '.join(primary_topics).lower()} and {remaining_count} additional topics"
 
-def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
-    """Discover quests and subcategories from the quests directory"""
-    quests_data = []
-    
-    if not quests_dir.exists():
-        print(f"⚠️  Quests directory not found: {quests_dir}")
-        return quests_data
-    
-    # Find all quest directories (e.g., 1-data-modeling, 2-performance-tuning)
-    quest_dirs = [d for d in quests_dir.iterdir() if d.is_dir() and re.match(r'^\d+-', d.name)]
-    quest_dirs.sort(key=lambda x: int(x.name.split('-')[0]))
-    
-    for quest_dir in quest_dirs:
-        quest_name = quest_dir.name
-        quest_number = int(quest_name.split('-')[0])
-        
-        # Extract display name from directory name
-        display_name = ' '.join(word.capitalize() for word in quest_name.split('-')[1:])
-        
-        # Determine difficulty based on quest number and content
-        difficulty_level = determine_quest_difficulty(quest_dir)
-        
-        # Discover subcategories
-        subcategories = discover_subcategories_from_filesystem(quest_dir, quest_name)
-        
-        quest_data = {
-            'name': quest_name,
-            'display_name': display_name,
-            'description': generate_quest_description(quest_name, subcategories),
-            'difficulty_level': difficulty_level,
-            'order_index': quest_number,
-            'subcategories': subcategories
-        }
-        
-        quests_data.append(quest_data)
-        print(f"🔍 Discovered quest: {display_name} ({len(subcategories)} subcategories)")
-    
-    return quests_data
 
 def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> List[Tuple[str, str, str, int]]:
     """Discover subcategories within a quest directory"""
@@ -264,16 +200,17 @@ def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> 
         display_name = ' '.join(word.capitalize() for word in subcategory_name.split('-')[1:])
         
         # Determine difficulty based on subcategory name and content
-        difficulty_level = determine_subcategory_difficulty(subcategory_dir, subcategory_name)
+        difficulty_level = determine_subcategory_difficulty(subcategory_dir)
         
         subcategories.append((subcategory_name, display_name, difficulty_level, subcategory_number))
     
     return subcategories
 
+
 # Pattern definitions with regex patterns
 PatternType = Tuple[str, str, str, str]  # (display_name, category, complexity, regex)
 
-PATTERN_DEFINITIONS: PatternType = {
+PATTERN_DEFINITIONS: Dict[str, PatternType] = {
     # DDL Patterns
     'table_creation': ('Table Creation', 'DDL', 'Basic', r'CREATE\s+TABLE'),
     'index_creation': ('Index Creation', 'DDL', 'Intermediate', r'CREATE\s+(UNIQUE\s+)?INDEX'),
@@ -325,7 +262,7 @@ def detect_sql_patterns(sql_content: str) -> PatternType:
 
     return patterns_data
 
-def discover_sql_patterns_from_filesystem() -> :
+def discover_sql_patterns_from_filesystem() -> List[Tuple[str, str, str, str, str]]:
     """Discover SQL patterns by analyzing actual SQL files"""
     patterns_data = []
     quests_dir = Path("quests")
@@ -353,3 +290,56 @@ def discover_sql_patterns_from_filesystem() -> :
             print(f"🔍 Discovered pattern: {display_name} (used in {usage_count} files)")
 
     return patterns_data
+
+
+def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
+    """
+    Discover all quests from the filesystem.
+    
+    Args:
+        quests_dir: Path to the quests directory
+        
+    Returns:
+        List of dictionaries with quest data for repository persistence
+    """
+    quests_data = []
+    
+    if not quests_dir.exists():
+        print(f"⚠️  Quests directory not found: {quests_dir}")
+        return quests_data
+    
+    # Iterate through quest directories
+    for quest_index, quest_path in enumerate(sorted(quests_dir.iterdir())):
+        if quest_path.is_dir() and not quest_path.name.startswith('.'):
+            quest_name = quest_path.name
+            
+            # Generate quest title from directory name
+            quest_title = quest_name.replace('-', ' ').title()
+            
+            # Discover subcategories for this quest
+            subcategories_tuples = discover_subcategories_from_filesystem(quest_path, quest_name)
+            
+            # Convert subcategory tuples to the format expected by repository
+            subcategories_list = []
+            for sub_index, (sub_name, sub_display, sub_difficulty, _) in enumerate(subcategories_tuples):
+                subcategories_list.append((sub_name, sub_display, sub_difficulty, sub_index))
+            
+            # Determine quest difficulty based on subcategories
+            difficulty = determine_quest_difficulty(quest_path)
+            
+            # Generate a basic description for future improvements
+            description = f"SQL training focusing on {quest_title.lower()} concepts and techniques."
+            
+            quest_data = {
+                'name': quest_name,
+                'display_name': quest_title,
+                'description': description,
+                'difficulty_level': difficulty,
+                'order_index': quest_index,
+                'subcategories': subcategories_list
+            }
+            
+            quests_data.append(quest_data)
+            print(f"🎯 Discovered quest: {quest_title} ({len(subcategories_list)} subcategories, {difficulty} difficulty)")
+    
+    return quests_data

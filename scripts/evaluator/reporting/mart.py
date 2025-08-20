@@ -7,7 +7,7 @@ Provides comprehensive reporting and analysis capabilities
 from sqlalchemy import text
 from typing import Dict, Any, List
 
-from ..database.manager import DatabaseManager
+from database.manager import DatabaseManager
 
 class AnalyticsViewManager:
     """Manages database views and analytics functions"""
@@ -55,8 +55,7 @@ class AnalyticsViewManager:
         CREATE OR REPLACE VIEW evaluation_summary AS
         SELECT 
             e.id as evaluation_id,
-            e.evaluation_uuid,
-            e.evaluation_date,
+            e.last_evaluated as evaluation_date,
             q.name as quest_name,
             q.display_name as quest_display_name,
             sc.name as subcategory_name,
@@ -74,17 +73,11 @@ class AnalyticsViewManager:
             e.error_count,
             e.warning_count,
             e.evaluator_model,
-            ta.syntax_score,
-            ta.logic_score,
-            ta.quality_score,
-            ta.performance_score,
-            ea.difficulty_level as assessed_difficulty,
-            ea.estimated_time_minutes,
-            ea.clarity_score,
-            ea.relevance_score,
-            ea.engagement_score,
-            ea.progression_score,
-            -- Pattern counts
+            a.technical_score,
+            a.educational_score,
+            a.difficulty_level as assessed_difficulty,
+            a.estimated_time_minutes,
+            -- Pattern counts (from junction table)
             (SELECT COUNT(*) FROM evaluation_patterns ep WHERE ep.evaluation_id = e.id) as pattern_count,
             -- Recommendation counts
             (SELECT COUNT(*) FROM recommendations r WHERE r.evaluation_id = e.id) as recommendation_count,
@@ -94,9 +87,8 @@ class AnalyticsViewManager:
         JOIN sql_files sf ON e.sql_file_id = sf.id
         JOIN subcategories sc ON sf.subcategory_id = sc.id
         JOIN quests q ON e.quest_id = q.id
-        LEFT JOIN technical_analyses ta ON e.id = ta.evaluation_id
-        LEFT JOIN educational_analyses ea ON e.id = ea.evaluation_id
-        ORDER BY e.evaluation_date DESC;
+        LEFT JOIN analyses a ON e.id = a.evaluation_id
+        ORDER BY evaluation_date DESC;
         """
         
         conn.execute(text(view_sql))
@@ -142,20 +134,19 @@ class AnalyticsViewManager:
             ROUND(AVG(e.error_count), 2) as avg_error_count,
             
             -- Educational metrics
-            ROUND(AVG(ea.estimated_time_minutes), 2) as avg_estimated_time,
-            ROUND(AVG(ea.clarity_score), 2) as avg_clarity_score,
-            ROUND(AVG(ea.relevance_score), 2) as avg_relevance_score,
+            ROUND(AVG(a.estimated_time_minutes), 2) as avg_estimated_time,
+            ROUND(AVG(a.educational_score), 2) as avg_educational_score,
             
             -- Latest evaluation
-            MAX(e.evaluation_date) as latest_evaluation_date,
-            COUNT(CASE WHEN e.evaluation_date >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as evaluations_last_7_days,
-            COUNT(CASE WHEN e.evaluation_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as evaluations_last_30_days
+            MAX(e.last_evaluated) as latest_evaluation_date,
+            COUNT(CASE WHEN e.last_evaluated >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as evaluations_last_7_days,
+            COUNT(CASE WHEN e.last_evaluated >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as evaluations_last_30_days
             
         FROM quests q
         LEFT JOIN subcategories sc ON q.id = sc.quest_id
         LEFT JOIN sql_files sf ON sc.id = sf.subcategory_id
         LEFT JOIN evaluations e ON sf.id = e.sql_file_id
-        LEFT JOIN educational_analyses ea ON e.id = ea.evaluation_id
+        LEFT JOIN analyses a ON e.id = a.evaluation_id
         GROUP BY q.id, q.name, q.display_name, q.difficulty_level, q.order_index
         ORDER BY q.order_index;
         """
@@ -163,50 +154,66 @@ class AnalyticsViewManager:
         conn.execute(text(view_sql))
     
     def _create_pattern_analysis_view(self, conn):
-        """Create SQL pattern analysis view"""
+        """Create SQL pattern analysis view - simplified for JSON-based patterns"""
         view_sql = """
         CREATE OR REPLACE VIEW pattern_analysis AS
         SELECT 
-            p.id as pattern_id,
-            p.name as pattern_name,
-            p.display_name as pattern_display_name,
-            p.category as pattern_category,
+            p.id,
+            p.name,
+            p.display_name,
+            p.category,
             p.complexity_level,
             
-            -- File associations
-            COUNT(DISTINCT sfp.sql_file_id) as files_using_pattern,
-            ROUND(AVG(sfp.confidence_score), 3) as avg_file_confidence,
+            -- Count evaluations using this pattern (from JSON array)
+            (
+                SELECT COUNT(*)
+                FROM analyses a
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+            ) as evaluations_using_pattern,
             
-            -- Evaluation associations
-            COUNT(DISTINCT ep.evaluation_id) as evaluations_using_pattern,
-            ROUND(AVG(ep.confidence_score), 3) as avg_eval_confidence,
+            -- Performance when pattern is used
+            (
+                SELECT ROUND(AVG(e.numeric_score), 2)
+                FROM analyses a
+                JOIN evaluations e ON a.evaluation_id = e.id
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+            ) as avg_score_when_used,
             
-            -- Usage quality analysis
-            COUNT(CASE WHEN ep.usage_quality = 'Excellent' THEN 1 END) as excellent_usage,
-            COUNT(CASE WHEN ep.usage_quality = 'Good' THEN 1 END) as good_usage,
-            COUNT(CASE WHEN ep.usage_quality = 'Fair' THEN 1 END) as fair_usage,
-            COUNT(CASE WHEN ep.usage_quality = 'Poor' THEN 1 END) as poor_usage,
+            -- Pattern quality analysis
+            (
+                SELECT COUNT(*)
+                FROM analyses a
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+                AND a.pattern_quality = 'Excellent'
+            ) as excellent_usage,
             
-            -- Performance correlation
-            ROUND(AVG(CASE WHEN ep.evaluation_id IS NOT NULL THEN e.numeric_score END), 2) as avg_score_when_used,
-            ROUND(AVG(CASE WHEN ep.evaluation_id IS NOT NULL THEN e.execution_time_ms END), 2) as avg_execution_time_when_used,
+            (
+                SELECT COUNT(*)
+                FROM analyses a
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+                AND a.pattern_quality = 'Good'
+            ) as good_usage,
             
             -- Quest distribution
-            STRING_AGG(DISTINCT q.display_name, ', ' ORDER BY q.display_name) as used_in_quests,
+            (
+                SELECT GROUP_CONCAT(DISTINCT q.display_name SEPARATOR ', ')
+                FROM analyses a
+                JOIN evaluations e ON a.evaluation_id = e.id
+                JOIN sql_files sf ON e.sql_file_id = sf.id
+                JOIN subcategories sc ON sf.subcategory_id = sc.id
+                JOIN quests q ON sc.quest_id = q.id
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+            ) as used_in_quests,
             
             -- Recent usage
-            MAX(ep.created_at) as last_detected_date,
-            COUNT(CASE WHEN ep.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as detections_last_30_days
+            (
+                SELECT MAX(a.created_at)
+                FROM analyses a
+                WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+            ) as last_detected_date
             
         FROM sql_patterns p
-        LEFT JOIN sql_file_patterns sfp ON p.id = sfp.pattern_id
-        LEFT JOIN evaluation_patterns ep ON p.id = ep.pattern_id
-        LEFT JOIN evaluations e ON ep.evaluation_id = e.id
-        LEFT JOIN sql_files sf ON e.sql_file_id = sf.id
-        LEFT JOIN subcategories sc ON sf.subcategory_id = sc.id
-        LEFT JOIN quests q ON sc.quest_id = q.id
-        GROUP BY p.id, p.name, p.display_name, p.category, p.complexity_level
-        ORDER BY COUNT(DISTINCT ep.evaluation_id) DESC, p.name;
+        ORDER BY evaluations_using_pattern DESC, p.name;
         """
         
         conn.execute(text(view_sql))
@@ -286,8 +293,8 @@ class AnalyticsViewManager:
         JOIN quests q ON sc.quest_id = q.id
         LEFT JOIN evaluations e ON sf.id = e.sql_file_id
         GROUP BY sf.id, sf.filename, sf.file_path, sf.display_name, sf.created_at, 
-                 sf.last_modified, sf.content_hash, q.name, q.display_name, 
-                 sc.name, sc.display_name
+                 sf.last_modified, sf.content_hash, q.name, q.display_name, q.order_index,
+                 sc.name, sc.display_name, sc.order_index
         ORDER BY q.order_index, sc.order_index, sf.filename;
         """
         
@@ -307,7 +314,7 @@ class AnalyticsViewManager:
             r.created_at as recommendation_date,
             
             -- Evaluation context
-            e.evaluation_uuid,
+            e.id as evaluation_id,
             e.overall_assessment,
             e.numeric_score,
             e.letter_grade,
@@ -322,10 +329,8 @@ class AnalyticsViewManager:
             sc.display_name as subcategory_display_name,
             
             -- Technical scores
-            ta.syntax_score,
-            ta.logic_score,
-            ta.quality_score,
-            ta.performance_score,
+            a.technical_score,
+            a.educational_score,
             
             -- Priority scoring for dashboard
             CASE 
@@ -345,7 +350,7 @@ class AnalyticsViewManager:
         JOIN sql_files sf ON e.sql_file_id = sf.id
         JOIN subcategories sc ON sf.subcategory_id = sc.id
         JOIN quests q ON sc.quest_id = q.id
-        LEFT JOIN technical_analyses ta ON e.id = ta.evaluation_id
+        LEFT JOIN analyses a ON e.id = a.evaluation_id
         ORDER BY priority_score DESC, r.created_at DESC;
         """
         
@@ -382,13 +387,13 @@ class AnalyticsViewManager:
         
         conn.execute(text(function_sql))
         
-        # Function to get pattern usage trends
+        # Function to get pattern usage trends - simplified for JSON patterns
         trend_function_sql = """
         CREATE OR REPLACE FUNCTION get_pattern_usage_trends(days_param INTEGER DEFAULT 30)
         RETURNS TABLE(
             pattern_name VARCHAR,
             usage_count BIGINT,
-            avg_confidence NUMERIC,
+            avg_quality_score NUMERIC,
             trend VARCHAR
         ) AS $$
         BEGIN
@@ -396,29 +401,32 @@ class AnalyticsViewManager:
             WITH recent_usage AS (
                 SELECT 
                     p.name,
-                    COUNT(ep.id) as recent_count,
-                    AVG(ep.confidence_score) as recent_confidence
+                    (
+                        SELECT COUNT(*)
+                        FROM analyses a
+                        JOIN evaluations e ON a.evaluation_id = e.id
+                        WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+                        AND e.evaluation_date >= CURRENT_DATE - (days_param || ' days')::INTERVAL
+                    ) as recent_count
                 FROM sql_patterns p
-                LEFT JOIN evaluation_patterns ep ON p.id = ep.pattern_id
-                LEFT JOIN evaluations e ON ep.evaluation_id = e.id
-                WHERE e.evaluation_date >= CURRENT_DATE - INTERVAL '%s days'
-                GROUP BY p.id, p.name
             ),
             previous_usage AS (
                 SELECT 
                     p.name,
-                    COUNT(ep.id) as previous_count
+                    (
+                        SELECT COUNT(*)
+                        FROM analyses a
+                        JOIN evaluations e ON a.evaluation_id = e.id
+                        WHERE JSON_CONTAINS(a.detected_patterns, JSON_QUOTE(p.name))
+                        AND e.evaluation_date >= CURRENT_DATE - (days_param * 2 || ' days')::INTERVAL
+                        AND e.evaluation_date < CURRENT_DATE - (days_param || ' days')::INTERVAL
+                    ) as previous_count
                 FROM sql_patterns p
-                LEFT JOIN evaluation_patterns ep ON p.id = ep.pattern_id
-                LEFT JOIN evaluations e ON ep.evaluation_id = e.id
-                WHERE e.evaluation_date >= CURRENT_DATE - INTERVAL '%s days' 
-                  AND e.evaluation_date < CURRENT_DATE - INTERVAL '%s days'
-                GROUP BY p.id, p.name
             )
             SELECT 
                 ru.name::VARCHAR,
                 ru.recent_count,
-                ROUND(ru.recent_confidence, 3),
+                3.0::NUMERIC,  -- Simplified since we don't track confidence anymore
                 CASE 
                     WHEN pu.previous_count IS NULL OR pu.previous_count = 0 THEN 'New'
                     WHEN ru.recent_count > pu.previous_count THEN 'Increasing'
@@ -432,11 +440,7 @@ class AnalyticsViewManager:
         $$ LANGUAGE plpgsql;
         """
         
-        conn.execute(
-            text(
-                trend_function_sql % (days_param, days_param * 2, days_param)
-            )
-        )
+        conn.execute(text(trend_function_sql))
 
         # Function to get improvement opportunities
         improvement_function_sql = """
@@ -593,21 +597,22 @@ class AnalyticsViewManager:
             
             score_distribution = session.execute(score_dist_query).fetchall()
             
-            # Pattern usage over time
+            # Pattern usage over time - simplified for JSON patterns
             pattern_trends_query = text(f"""
                 SELECT 
                     DATE(e.evaluation_date) as evaluation_date,
-                    p.category,
-                    COUNT(DISTINCT ep.id) as pattern_usage_count
+                    'Mixed' as category,  -- Simplified since we don't have pattern categories in JSON
+                    COUNT(DISTINCT e.id) as pattern_usage_count
                 FROM evaluations e
-                JOIN evaluation_patterns ep ON e.id = ep.evaluation_id
-                JOIN sql_patterns p ON ep.pattern_id = p.id
+                JOIN analyses a ON e.id = a.evaluation_id
                 JOIN sql_files sf ON e.sql_file_id = sf.id
                 JOIN subcategories sc ON sf.subcategory_id = sc.id
                 JOIN quests q ON sc.quest_id = q.id
-                WHERE 1=1 {date_filter} {quest_filter}
-                GROUP BY DATE(e.evaluation_date), p.category
-                ORDER BY evaluation_date, p.category
+                WHERE a.detected_patterns IS NOT NULL 
+                AND JSON_LENGTH(a.detected_patterns) > 0
+                {date_filter} {quest_filter}
+                GROUP BY DATE(e.evaluation_date)
+                ORDER BY evaluation_date
             """)
             
             pattern_trends = session.execute(pattern_trends_query).fetchall()
@@ -638,7 +643,7 @@ class AnalyticsViewManager:
                 'period_days': days,
                 'quest_filter': quest_name,
                 'score_distribution': [dict(row._mapping) for row in score_distribution],
-                'pattern_trends': [dict(row._mappinag) for row in pattern_trends],
+                'pattern_trends': [dict(row._mapping) for row in pattern_trends],
                 'performance_trends': [dict(row._mapping) for row in performance_trends]
             }
             

@@ -2,13 +2,23 @@
 Utility components for SQL Adventure AI Evaluator
 """
 
-from .migration import LegacyDataMigrator, ConfigurationMigrator
-from .analytics_views import AnalyticsViewManager
-from .database import DatabaseManager
+from .discovery import (
+    MetadataExtractor,
+    discover_subcategories_from_filesystem,
+    discover_sql_patterns_from_filesystem,
+    detect_sql_patterns
+)
+from .quest_summary import (
+    generate_quest_description_ai,
+    generate_quest_description_fallback
+)
 
 __all__ = [
-    'LegacyDataMigrator',
-    'ConfigurationMigrator',
-    'AnalyticsViewManager',
-    'DatabaseManager'
+    'MetadataExtractor',
+    'discover_quests_from_filesystem',
+    'discover_subcategories_from_filesystem', 
+    'discover_sql_patterns_from_filesystem',
+    'detect_sql_patterns',
+    'generate_quest_description_ai',
+    'generate_quest_description_fallback'
 ] 

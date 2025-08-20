@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 
-from .base_repository import BaseRepository
-from ..database.tables import Quest, Subcategory
+from repositories.base_repository import BaseRepository
+from database.tables import Quest, Subcategory
 
 class QuestRepository(BaseRepository[Quest]):
     def __init__(self, session):

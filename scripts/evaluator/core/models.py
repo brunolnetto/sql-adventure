@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, conint, confloat
+from pydantic import BaseModel, Field, conint, confloat, field_validator
 from typing import List, Optional, Dict, Any, Literal, Annotated
 
 from datetime import datetime
@@ -22,25 +22,34 @@ class Intent(BaseModel):
     specific_skills: List[str] = Field(default_factory=list, description="Skills that learners will develop")
 
 
-class TechnicalAnalysis(BaseModel):
+class SimplifiedAnalysis(BaseModel):
     """
-    Technical analysis of the SQL code.
+    Simplified analysis combining technical and educational aspects.
     """
-    syntax_correctness: str = Field(..., description="Assessment of SQL syntax")
-    logical_structure: str = Field(..., description="Assessment of logical structure")
-    code_quality: str = Field(..., description="Overall code quality assessment")
-    performance_notes: Optional[str] = Field(None, description="Performance considerations")
-
-
-class EducationalAnalysis(BaseModel):
-    """
-    Educational analysis of the SQL code.
-    """
-    learning_value: str = Field(..., description="Educational value assessment")
+    overall_feedback: str = Field(..., description="Combined technical and educational feedback")
     difficulty_level: Literal["Beginner", "Intermediate", "Advanced", "Expert"] = Field(
         ..., description="Difficulty level")
     time_estimate: str = Field(..., description="Estimated completion time (e.g., '5 min', '10-15 min')")
-    prerequisites: List[str] = Field(default_factory=list, description="Required knowledge or skills")
+    technical_score: int = Field(..., ge=1, le=10, description="Technical quality score (1-10)")
+    educational_score: int = Field(..., ge=1, le=10, description="Educational value score (1-10)")
+    detected_patterns: List[str] = Field(default_factory=list, description="List of detected SQL pattern names")
+    
+    @field_validator('difficulty_level', mode='before')
+    def clean_difficulty_level(cls, v):
+        """Extract clean difficulty level from potentially decorated text"""
+        if isinstance(v, str):
+            # Remove emojis and extract the difficulty level
+            import re
+            # Look for known difficulty levels in the text
+            for level in ["Beginner", "Intermediate", "Advanced", "Expert"]:
+                if level.lower() in v.lower():
+                    return level
+            # If no match found, try to extract first word that looks like a level
+            words = re.findall(r'\b[A-Za-z]+\b', v)
+            for word in words:
+                if word.lower() in ["beginner", "intermediate", "advanced", "expert"]:
+                    return word.capitalize()
+        return v  # Return as-is if we can't clean it
 
 
 class Assessment(BaseModel):
@@ -50,6 +59,31 @@ class Assessment(BaseModel):
     grade: Literal["A", "B", "C", "D", "E", "F"] = Field(..., description="Letter grade")
     score: Annotated[int, Field(ge=1, le=10)] = Field(..., description="Numeric score from 1 to 10")
     overall_assessment: Literal["PASS", "FAIL", "NEEDS_REVIEW"] = Field(..., description="Final assessment verdict")
+    
+    @field_validator('grade', mode='before')
+    def clean_grade(cls, v):
+        """Extract clean grade from potentially decorated text"""
+        if isinstance(v, str):
+            import re
+            # Look for letter grades A-F
+            for grade in ["A", "B", "C", "D", "E", "F"]:
+                if grade in v.upper():
+                    return grade
+            # Try to extract first letter that looks like a grade
+            letters = re.findall(r'\b[A-F]\b', v.upper())
+            if letters:
+                return letters[0]
+        return v
+    
+    @field_validator('overall_assessment', mode='before')
+    def clean_overall_assessment(cls, v):
+        """Extract clean assessment from potentially decorated text"""
+        if isinstance(v, str):
+            v_upper = v.upper()
+            for assessment in ["PASS", "FAIL", "NEEDS_REVIEW"]:
+                if assessment in v_upper:
+                    return assessment
+        return v
 
 
 class Recommendation(BaseModel):
@@ -63,10 +97,9 @@ class Recommendation(BaseModel):
 
 class LLMAnalysis(BaseModel):
     """
-    AI-powered analysis of the SQL code.
+    AI-powered analysis of the SQL code - simplified structure.
     """
-    technical_analysis: TechnicalAnalysis
-    educational_analysis: EducationalAnalysis
+    analysis: SimplifiedAnalysis
     assessment: Assessment
     recommendations: List[Recommendation] = Field(default_factory=list, description="Improvement suggestions")
 

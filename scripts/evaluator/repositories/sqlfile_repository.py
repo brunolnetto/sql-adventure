@@ -4,55 +4,32 @@ from typing import Optional
 from datetime import datetime
 from sqlalchemy import and_
 
-from ..database.tables import SQLFile, Quest, Subcategory
-from .base_repository import BaseRepository
-from ..database.tables import (
-    SQLPattern, 
-    SQLFilePattern,
-)
+from database.tables import SQLFile, Quest, Subcategory
+from repositories.base_repository import BaseRepository
+from database.tables import SQLPattern  # Keep for basic reference
 
 class SQLFileRepository(BaseRepository[SQLFile]):
     def __init__(self, session):
         super().__init__(session, SQLFile)
     
     def _detect_and_associate_patterns(self, sql_file: SQLFile, file_path: str):
-        """Detect SQL patterns in file and create associations"""
+        """Simplified: No automatic pattern detection - patterns detected by AI during evaluation"""
         try:
             with open(file_path, 'r') as f:
-                content = f.read().upper()
+                content = f.read()
             
-            patterns = self.session.query(SQLPattern).all()
+            # Simplified: No automatic pattern detection
+            # Patterns will be detected during evaluation by AI agents
+            print(f"   ✅ SQL file processed: {sql_file.filename}")
             
-            for pattern in patterns:
-                if pattern.detection_regex:
-                    import re
-                    if re.search(pattern.detection_regex, content, re.IGNORECASE | re.MULTILINE):
-                        # Check if association already exists
-                        existing = self.session.query(SQLFilePattern).filter(
-                            and_(
-                                SQLFilePattern.sql_file_id == sql_file.id,
-                                SQLFilePattern.pattern_id == pattern.id
-                            )
-                        ).first()
-                        
-                        if not existing:
-                            file_pattern = SQLFilePattern(
-                                sql_file_id=sql_file.id,
-                                pattern_id=pattern.id,
-                                confidence_score=0.9  # Basic regex detection confidence
-                            )
-                            self.session.add(file_pattern)
-        
         except Exception as e:
-            print(f"⚠️  Error detecting patterns: {e}")
+            print(f"   ❌ Error processing SQL file: {e}")
     
-    @staticmethod
     def _generate_display_name(self, filename: str) -> str:
         """Generate human-readable display name from filename"""
         name = filename.replace('.sql', '').replace('-', ' ').replace('_', ' ')
         return ' '.join(word.capitalize() for word in name.split())
     
-    @staticmethod
     def _calculate_hash(self, file_path: str) -> str:
         """Calculate SHA-256 hash of file content"""
         try:
@@ -74,7 +51,6 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                 # Update last_modified
                 sql_file.last_modified = datetime.now()
                 self.session.commit()
-                self.session.close()
                 return sql_file
             
             # Create new file record
@@ -95,7 +71,7 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                     
                     if subcategory:
                         # Calculate content hash
-                        content_hash = self._calculate_file_hash(file_path)
+                        content_hash = self._calculate_hash(file_path)
                         
                         sql_file = SQLFile(
                             subcategory_id=subcategory.id,
@@ -109,14 +85,33 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                         self.session.commit()
                         
                         # Detect and associate patterns
-                        self._detect_and_associate_patterns(self.session, sql_file, file_path)
+                        self._detect_and_associate_patterns(sql_file, file_path)
                         
                         self.session.commit()
-                        self.session.close()
                         return sql_file
             
-            self.session.close()
             return None
 
         except Exception as e:
             print(f"⚠️  Error getting or creating SQL file: {e}")
+            return None
+
+    def get_by_path(self, file_path: str) -> Optional[SQLFile]:
+        """Get existing SQL file record by path (converts absolute to relative if needed)"""
+        try:
+            # Convert absolute path to relative if needed
+            if file_path.startswith('/'):
+                # Extract relative path from absolute path
+                # Look for 'quests/' in the path
+                if 'quests/' in file_path:
+                    relative_path = file_path[file_path.find('quests/'):]
+                else:
+                    relative_path = file_path
+            else:
+                relative_path = file_path
+            
+            sql_file = self.session.query(SQLFile).filter(SQLFile.file_path == relative_path).first()
+            return sql_file
+        except Exception as e:
+            print(f"⚠️  Error getting SQL file by path: {e}")
+            return None

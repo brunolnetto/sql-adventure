@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from sqlalchemy.orm import Session
-from ..core.models import SQLPattern
-from .base_repository import BaseRepository
+from database.tables import SQLPattern
+from repositories.base_repository import BaseRepository
 
 class SQLPatternRepository(BaseRepository[SQLPattern]):
     def __init__(self, session: Session):
@@ -21,7 +21,7 @@ class SQLPatternRepository(BaseRepository[SQLPattern]):
                     display_name=display_name,
                     category=category,
                     complexity_level=complexity,
-                    detection_regex=regex
+                    description=f"Pattern for {display_name}"  # Use description instead of regex
                 )
                 self.session.add(pattern)
                 print(f"✅ Added pattern: {display_name}")

@@ -5,15 +5,22 @@ Generates and optionally saves/prints comprehensive reports from AI evaluation r
 """
 
 import json
+import os
+import sys
 import argparse
 from pathlib import Path
 from typing import Dict, List, Any
 from datetime import datetime
 
-from config import ProjectFolderConfig
+# Add the evaluator directory to the path for module imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-project_cfg = ProjectFolderConfig()
-evaluations_path = project_cfg.evaluations_dir
+from config import EvaluationConfig
+
+config = EvaluationConfig()
+# Get the script directory and construct path to ai-evaluations
+script_dir = Path(__file__).parent
+evaluations_path = script_dir / "ai-evaluations"
 
 def load_evaluation_results() -> List[Dict[str, Any]]:
     results = []
@@ -36,13 +43,13 @@ def generate_summary_report(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     total_files = len(results)
     successful_executions = sum(1 for r in results if r.get("execution", {}).get("success", False))
     failed_executions = total_files - successful_executions
-    total_score = sum(r.get("basic_evaluation", {}).get("score", 0) for r in results)
+    total_score = sum(r.get("llm_analysis", {}).get("assessment", {}).get("score", 0) for r in results)
     assessment_counts = {}
     quest_stats = {}
     pattern_usage = {}
 
     for result in results:
-        assessment = result.get("basic_evaluation", {}).get("overall_assessment", "UNKNOWN")
+        assessment = result.get("llm_analysis", {}).get("assessment", {}).get("overall_assessment", "UNKNOWN")
         assessment_counts[assessment] = assessment_counts.get(assessment, 0) + 1
 
         quest = result.get("metadata", {}).get("quest", "unknown")
@@ -52,7 +59,7 @@ def generate_summary_report(results: List[Dict[str, Any]]) -> Dict[str, Any]:
             "assessments": {"PASS": 0, "FAIL": 0, "NEEDS_REVIEW": 0}
         })
         quest_stats[quest]["total_files"] += 1
-        quest_stats[quest]["total_score"] += result.get("basic_evaluation", {}).get("score", 0)
+        quest_stats[quest]["total_score"] += result.get("llm_analysis", {}).get("assessment", {}).get("score", 0)
         quest_stats[quest]["assessments"][assessment] = quest_stats[quest]["assessments"].get(assessment, 0) + 1
         if result.get("execution", {}).get("success", False):
             quest_stats[quest]["successful_executions"] += 1

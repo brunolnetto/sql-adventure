@@ -10,7 +10,24 @@ import asyncio
 import argparse
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
+
+# Add the evaluator directory to the path for module imports
+evaluator_dir = Path(__file__).parent.resolve()
+sys.path.insert(0, str(evaluator_dir))
+
+# Import and load evaluator environment configuration
+from config.env_loader import load_evaluator_env, validate_config
+
+# Load environment before other imports
+load_evaluator_env()
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super(DateTimeEncoder, self).default(obj)
 from typing import List, Optional, Dict, Any, Set
 from dataclasses import dataclass
 
@@ -26,17 +43,23 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
         raise ValueError("OPENAI_API_KEY not found in environment")
     
     # Initialize evaluator
-    evaluator = QuestEvaluator(openai_api_key, config)
+    evaluator = QuestEvaluator()
     
     target_path = Path(target)
     
-    is_quests_dir = target_path.is_dir() and target_path == ProjectFolderConfig().quests_dir
+    is_quests_root = target_path.is_dir() and (target_path == ProjectFolderConfig().quests_dir or target_path.name == "quests")
+    is_quest_dir = target_path.is_dir() and "quests/" in str(target_path) and target_path.name.startswith(('1-', '2-', '3-', '4-', '5-'))
     is_sql_file = target_path.is_file() and target.endswith(".sql")
+    
     if target == "all":
         print("🚀 Starting complete evaluation with quest-level parallelism")
         return await evaluator.evaluate_all()
     
-    elif is_quests_dir:
+    elif is_quests_root:
+        print(f"📁 Evaluating all quests in directory: {target}")
+        return await evaluator.evaluate_all_in_directory(target_path)
+    
+    elif is_quest_dir:
         print(f"📁 Evaluating quest directory: {target}")
         return await evaluator.evaluate_quest(target_path)
     
@@ -44,15 +67,15 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
         print(f"📄 Evaluating single file: {target}")
         result = await evaluator.evaluate_subcategory(target_path)
         
-        # Save to output directory
-        if config.output_dir:
-            output_path = Path(config.output_dir)
+        # Print results instead of saving for now
+        print("\n" + "="*60)
+        print("🎯 EVALUATION RESULTS")
+        print("="*60)
+        if isinstance(result, dict):
+            print(json.dumps(result, indent=2, cls=DateTimeEncoder))
         else:
-            output_path = config.output_dir / target_path.parts[-3] / target_path.parts[-2]
-        
-        output_path.mkdir(parents=True, exist_ok=True)
-        output_file = output_path / f"{target_path.stem}.json"
-        output_file.write_text(json.dumps(result, indent=2))
+            print(result)
+        print("="*60)
         
         return {"files": [result], "total": 1, "success": 1 if result.get("success", True) else 0}
     
@@ -84,17 +107,12 @@ def main():
         return
     
     # Create configuration
-    config = EvaluationConfig(
-        max_concurrent_files=args.max_concurrent,
-        cache_enabled=not args.no_cache,
-        skip_unchanged=not args.force,
-        output_dir=args.output_dir
-    )
+    config = EvaluationConfig()
     
     print(f"⚙️  Configuration:")
-    print(f"   Parallel files per quest: {config.max_concurrent_files}")
-    print(f"   Caching: {'enabled' if config.cache_enabled else 'disabled'}")
-    print(f"   Skip unchanged: {'enabled' if config.skip_unchanged else 'disabled'}")
+    print(f"   Parallel files per quest: {args.max_concurrent}")
+    print(f"   Caching: {'disabled' if args.no_cache else 'enabled'}")
+    print(f"   Skip unchanged: {'disabled' if args.force else 'enabled'}")
     
     try:
         # Run evaluation

@@ -9,11 +9,29 @@ import asyncpg
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from .utils import get_evaluator_connection_string, get_quests_connection_string
 
 class DatabaseManager:
-    def __init__(self, base, connection_string: Optional[str] = None):
-        self.connection_string = connection_string
+    def __init__(self, base=None, connection_string: Optional[str] = None, database_type: str = "evaluator"):
+        """
+        Initialize database manager
+        
+        Args:
+            base: SQLAlchemy base class (None for quests database - execution sandbox only)
+            connection_string: Override connection string (optional)
+            database_type: "evaluator" for metadata storage, "quests" for SQL execution
+        """
+        if connection_string:
+            self.connection_string = connection_string
+        elif database_type == "evaluator":
+            self.connection_string = get_evaluator_connection_string()
+        elif database_type == "quests":
+            self.connection_string = get_quests_connection_string()
+        else:
+            raise ValueError(f"Invalid database_type: {database_type}")
+            
         self.base = base
+        self.database_type = database_type
         self.engine = None
         self.SessionLocal = None
         self._db_pool = None
@@ -43,8 +61,14 @@ class DatabaseManager:
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
             self._ensure_database_exists()
-            self.base.metadata.create_all(bind=self.engine)
-            print("✅ Enhanced database connection established")
+            
+            # Only create tables if base is provided (evaluator database)
+            if self.base is not None:
+                self.base.metadata.create_all(bind=self.engine)
+            
+            db_name = self.connection_string.split('/')[-1]
+            db_type = "metadata" if self.base is not None else "execution sandbox"
+            print(f"✅ Database connection established: {db_name} ({db_type})")
         except Exception as e:
             print(f"❌ Database connection failed: {e}")
             self.engine = None
@@ -65,6 +89,34 @@ class DatabaseManager:
         except Exception as e:
             print(f"⚠️  Could not ensure database exists: {e}")
 
+    def drop_all_tables(self):
+        """
+        Drop all tables in the current database.
+        Generic utility method - caller decides when to use it.
+        """
+        try:
+            with self.engine.connect() as conn:
+                # Get all table names in the current database
+                result = conn.execute(text("""
+                    SELECT tablename 
+                    FROM pg_tables 
+                    WHERE schemaname = 'public'
+                """))
+                tables = [row[0] for row in result.fetchall()]
+                
+                if tables:
+                    # Drop all tables (CASCADE to handle dependencies)
+                    for table in tables:
+                        conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+                    conn.commit()
+                    return len(tables)
+                else:
+                    return 0
+                    
+        except Exception as e:
+            print(f"⚠️  Could not drop tables: {e}")
+            return 0
+
     async def execute_sql_file(self, file_path: str) -> Dict[str, Any]:
         with open(file_path, 'r') as f:
             content = f.read()
@@ -80,7 +132,8 @@ class DatabaseManager:
             'result_sets': 0,
             'errors': 0,
             'warnings': 0,
-            'statement_details': []
+            'statement_details': [],
+            'output_content': []  # Capture actual query results
         }
         start_all = datetime.now()
 
@@ -94,12 +147,24 @@ class DatabaseManager:
                     detail = _init_detail(idx, stmt, self.detailed)
                     stmt_start = datetime.now() if self.detailed else None
                     try:
-                        result = await conn.fetch(stmt)
-                        count = len(result)
-                        if count > 0:
-                            summary['result_sets'] += 1
-                            if self.detailed:
-                                detail['rows_returned'] = count
+                        # Check if this is a SELECT statement
+                        is_select = stmt.strip().upper().startswith('SELECT')
+                        
+                        if is_select:
+                            result = await conn.fetch(stmt)
+                            count = len(result)
+                            if count > 0:
+                                summary['result_sets'] += 1
+                                # Capture actual query results for SELECT statements
+                                result_text = _format_query_results(stmt, result)
+                                summary['output_content'].append(result_text)
+                                if self.detailed:
+                                    detail['rows_returned'] = count
+                        else:
+                            # For non-SELECT statements, use execute instead of fetch
+                            await conn.execute(stmt)
+                            summary['output_content'].append(f"Statement executed: {stmt.strip()[:50]}...")
+                            
                         if self.detailed:
                             detail['execution_time_ms'] = _elapsed_ms(stmt_start)
                             summary['statement_details'].append(detail)
@@ -123,11 +188,15 @@ class DatabaseManager:
                     if result.returns_rows:
                         rows = result.fetchall()
                         summary['result_sets'] += 1
+                        # Capture actual query results for SELECT statements
+                        result_text = _format_sync_query_results(stmt, rows, result.keys())
+                        summary['output_content'].append(result_text)
                         if self.detailed:
                             detail['rows_returned'] = len(rows)
                     else:
                         affected = result.rowcount or 0
                         summary['rows_affected'] += affected
+                        summary['output_content'].append(f"Statement executed: {stmt.strip()[:50]}... (Rows affected: {affected})")
                         if self.detailed:
                             detail['rows_affected'] = affected
                     if self.detailed:
@@ -145,7 +214,71 @@ class DatabaseManager:
             conn.close()
 
         summary['execution_time_ms'] = int((datetime.now() - start_all).total_seconds() * 1000)
+        
+        # Format the complete output content
+        if summary['output_content']:
+            summary['output_content'] = '\n\n'.join(summary['output_content'])
+        else:
+            summary['output_content'] = 'No output generated'
+            
         return summary
+
+
+def _format_query_results(stmt: str, result) -> str:
+    """Format asyncpg query results for display"""
+    if not result:
+        return f"Query: {stmt.strip()}\nNo results returned."
+    
+    # Get column names from the first record
+    columns = list(result[0].keys()) if result else []
+    
+    # Format as a simple table
+    output = [f"Query: {stmt.strip()}", ""]
+    
+    if columns:
+        # Header
+        header = " | ".join(str(col).ljust(15) for col in columns)
+        output.append(header)
+        output.append("-" * len(header))
+        
+        # Rows (limit to first 10 for readability)
+        for i, row in enumerate(result[:10]):
+            row_data = " | ".join(str(row[col]).ljust(15)[:15] for col in columns)
+            output.append(row_data)
+            
+        if len(result) > 10:
+            output.append(f"... and {len(result) - 10} more rows")
+            
+        output.append(f"\nTotal rows: {len(result)}")
+    
+    return "\n".join(output)
+
+
+def _format_sync_query_results(stmt: str, rows, columns) -> str:
+    """Format SQLAlchemy query results for display"""
+    if not rows:
+        return f"Query: {stmt.strip()}\nNo results returned."
+    
+    # Format as a simple table
+    output = [f"Query: {stmt.strip()}", ""]
+    
+    if columns:
+        # Header
+        header = " | ".join(str(col).ljust(15) for col in columns)
+        output.append(header)
+        output.append("-" * len(header))
+        
+        # Rows (limit to first 10 for readability)
+        for i, row in enumerate(rows[:10]):
+            row_data = " | ".join(str(val).ljust(15)[:15] for val in row)
+            output.append(row_data)
+            
+        if len(rows) > 10:
+            output.append(f"... and {len(rows) - 10} more rows")
+            
+        output.append(f"\nTotal rows: {len(rows)}")
+    
+    return "\n".join(output)
 
 
 def _init_detail(index: int, stmt: str, detailed: bool) -> Dict[str, Any]:
