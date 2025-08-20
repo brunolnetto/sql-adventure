@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Main PostgreSQL instance - hosts both databases
   postgres:
     image: postgres:17
     restart: unless-stopped
@@ -8,17 +9,17 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-sql_adventure_db}
+      - POSTGRES_DB=${POSTGRES_DB:-sql_adventure_quests}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "${HOST_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./:/workspace/
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sql-adventure_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sql_adventure_quests}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,4 +50,11 @@ services:
 
 volumes:
   postgres-data:
-  pgadmin-data: 
+  pgadmin-data:
+
+# Database Architecture Notes:
+# - Single PostgreSQL instance hosts multiple databases:
+#   * sql_adventure_quests: For SQL learning exercises and practice
+#   * sql_adventure_evaluator: For evaluation metadata storage (created by evaluator)
+# - Evaluator system uses separate configuration in scripts/evaluator/.env
+# - Both databases can be managed through pgAdmin interface
