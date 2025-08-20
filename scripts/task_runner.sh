@@ -29,7 +29,6 @@ print_usage() {
     echo ""
     echo "Evaluation Commands:"
     echo "  evaluate <path>   Evaluate SQL file or quest directory"
-    echo "  ai-demo <file>    Quick AI analysis of a single SQL file"
     echo "  summary          Generate evaluation summary report"
     echo "  basic <path>      Basic SQL validation (syntax, style)"
     echo "  test             Run test suite"
@@ -42,11 +41,10 @@ print_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 setup                           # Initial setup"
-    echo "  $0 ai-demo file.sql                # Quick AI analysis"
+    echo "  $0 evaluate file.sql               # Evaluate single file"
     echo "  $0 evaluate quests/1-data-modeling # Evaluate entire quest"
     echo "  $0 summary                         # Generate evaluation report"
     echo "  $0 basic file.sql                  # Basic validation"
-    echo "  $0 evaluate file.sql               # Evaluate single file"
 }
 
 setup() {
@@ -179,36 +177,6 @@ print('🎉 Configuration is valid!')
 print(f'Model: {config.model_name}')
 print(f'Database: {config.postgres_db_name}@{config.db_host}')
 "
-}
-
-ai_demo() {
-    local target="$1"
-    if [ -z "$target" ]; then
-        echo -e "${RED}❌ Please specify a SQL file for AI analysis${NC}"
-        echo "Usage: $0 ai-demo <file.sql>"
-        exit 1
-    fi
-    
-    echo -e "${BLUE}🤖 Running AI-powered analysis...${NC}"
-    cd "$PROJECT_ROOT"
-    
-    if [ ! -f "$target" ]; then
-        echo -e "${RED}❌ File not found: $target${NC}"
-        exit 1
-    fi
-    
-    # Load environment variables
-    if [ -f ".env" ]; then
-        echo -e "${BLUE}📋 Loading configuration from .env...${NC}"
-        set -a
-        source .env
-        set +a
-    else
-        echo -e "${YELLOW}⚠️  No .env file found. Some features may not work.${NC}"
-    fi
-    
-    # Use the existing run_evaluation.py script for single file analysis
-    PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/evaluator/run_evaluation.py "$target"
 }
 
 summary() {
@@ -345,9 +313,6 @@ case "$1" in
         ;;
     evaluate)
         evaluate "$2"
-        ;;
-    ai-demo)
-        ai_demo "$2"
         ;;
     summary)
         summary
