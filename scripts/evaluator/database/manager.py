@@ -44,8 +44,13 @@ class DatabaseManager:
         if self._db_pool is None:
             self._db_pool = await asyncpg.create_pool(
                 dsn=self.connection_string,
-                min_size=1,
-                max_size=5
+                min_size=2,
+                max_size=10,  # Increased to handle concurrent access
+                command_timeout=30,  # Add timeout to prevent hanging
+                max_inactive_connection_lifetime=300,  # 5 minutes
+                server_settings={
+                    'application_name': f'sql_adventure_{self.database_type}'
+                }
             )
         return self._db_pool
 
@@ -53,10 +58,15 @@ class DatabaseManager:
         try:
             self.engine = create_engine(
                 self.connection_string,
-                pool_size=10,
-                max_overflow=20,
+                pool_size=15,  # Increased to handle concurrent access
+                max_overflow=25,  # Allow more overflow connections
                 pool_pre_ping=True,
-                echo=False
+                pool_recycle=3600,  # Recycle connections after 1 hour
+                echo=False,
+                connect_args={
+                    "application_name": f"sql_adventure_{self.database_type}",
+                    "connect_timeout": 30
+                }
             )
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
@@ -139,62 +149,75 @@ class DatabaseManager:
 
         if self.use_pool:
             pool = await self._get_db_pool()
-            async with pool.acquire() as conn:
-                tx = conn.transaction()
-                if self.atomic:
-                    await tx.start()
-                for idx, stmt in enumerate(statements, start=1):
-                    detail = _init_detail(idx, stmt, self.detailed)
-                    stmt_start = datetime.now() if self.detailed else None
+            try:
+                async with pool.acquire() as conn:
+                    # Set shorter lock timeout to prevent deadlocks
+                    await conn.execute("SET lock_timeout = '10s'")
+                    await conn.execute("SET statement_timeout = '30s'")
+                    
+                    tx = conn.transaction()
+                    if self.atomic:
+                        await tx.start()
+                    
                     try:
-                        # Check if this is a SELECT statement (more robust detection)
-                        stmt_clean = stmt.strip().upper()
-                        is_select = (stmt_clean.startswith('SELECT') or 
-                                   ('SELECT' in stmt_clean and stmt_clean.find('SELECT') < stmt_clean.find(';') if ';' in stmt_clean else True))
-                        
-                        if is_select:
+                        for idx, stmt in enumerate(statements, start=1):
+                            detail = _init_detail(idx, stmt, self.detailed)
+                            stmt_start = datetime.now() if self.detailed else None
                             try:
-                                result = await conn.fetch(stmt)
-                                count = len(result)
-                                summary['result_sets'] += 1
-                                # Capture actual query results for SELECT statements
-                                result_text = _format_query_results(stmt, result)
-                                summary['output_content'].append(result_text)
+                                # Check if this is a SELECT statement (more robust detection)
+                                stmt_clean = stmt.strip().upper()
+                                is_select = (stmt_clean.startswith('SELECT') or 
+                                           ('SELECT' in stmt_clean and stmt_clean.find('SELECT') < stmt_clean.find(';') if ';' in stmt_clean else True))
+                                
+                                if is_select:
+                                    try:
+                                        result = await conn.fetch(stmt)
+                                        count = len(result)
+                                        summary['result_sets'] += 1
+                                        # Capture actual query results for SELECT statements
+                                        result_text = _format_query_results(stmt, result)
+                                        summary['output_content'].append(result_text)
+                                        if self.detailed:
+                                            detail['rows_returned'] = count
+                                    except Exception as select_error:
+                                        # If SELECT fails, treat as regular statement
+                                        print(f"⚠️  SELECT execution failed, treating as regular statement: {select_error}")
+                                        result = await conn.execute(stmt)
+                                        summary['output_content'].append(f"Query: {stmt}\nNo results returned.\n")
+                                else:
+                                    # For non-SELECT statements, get affected rows count
+                                    result = await conn.execute(stmt)
+                                    # Extract affected rows count from result string (format: "INSERT 0 5")
+                                    affected_rows = 0
+                                    if hasattr(result, 'split'):
+                                        parts = result.split()
+                                        if len(parts) >= 2 and parts[-1].isdigit():
+                                            affected_rows = int(parts[-1])
+                                    summary['rows_affected'] += affected_rows
+                                    
+                                    # Show full SQL statement for technical analysis
+                                    summary['output_content'].append(f"Query: {stmt}\nNo results returned.\n")
+                                    
                                 if self.detailed:
-                                    detail['rows_returned'] = count
-                            except Exception as select_error:
-                                # If SELECT fails, treat as regular statement
-                                print(f"⚠️  SELECT execution failed, treating as regular statement: {select_error}")
-                                result = await conn.execute(stmt)
-                                summary['output_content'].append(f"Statement executed: {stmt.strip()}")
-                        else:
-                            # For non-SELECT statements, get affected rows count
-                            result = await conn.execute(stmt)
-                            # Extract affected rows count from result string (format: "INSERT 0 5")
-                            affected_rows = 0
-                            if hasattr(result, 'split'):
-                                parts = result.split()
-                                if len(parts) >= 2 and parts[-1].isdigit():
-                                    affected_rows = int(parts[-1])
-                            summary['rows_affected'] += affected_rows
-                            
-                            # Show full SQL statement for technical analysis
-                            summary['output_content'].append(f"Statement executed: {stmt.strip()}")
-                            if affected_rows > 0:
-                                summary['output_content'].append(f"Rows affected: {affected_rows}")
-                            
-                        if self.detailed:
-                            detail['execution_time_ms'] = _elapsed_ms(stmt_start)
-                            summary['statement_details'].append(detail)
-                    except Exception as exc:
-                        summary['errors'] += 1
-                        summary['success'] = False
-                        if self.detailed:
-                            detail['error_message'] = str(exc)
-                            detail['execution_time_ms'] = _elapsed_ms(stmt_start)
-                            summary['statement_details'].append(detail)
-                if self.atomic:
-                    await (tx.commit() if summary['success'] else tx.rollback())
+                                    detail['execution_time_ms'] = _elapsed_ms(stmt_start)
+                                    summary['statement_details'].append(detail)
+                            except Exception as exc:
+                                summary['errors'] += 1
+                                summary['success'] = False
+                                if self.detailed:
+                                    detail['error_message'] = str(exc)
+                                    detail['execution_time_ms'] = _elapsed_ms(stmt_start)
+                                    summary['statement_details'].append(detail)
+                    finally:
+                        if self.atomic and tx:
+                            try:
+                                await (tx.commit() if summary['success'] else tx.rollback())
+                            except Exception as tx_error:
+                                print(f"⚠️  Transaction error: {tx_error}")
+            except Exception as pool_error:
+                print(f"⚠️  Pool connection error: {pool_error}")
+                summary['success'] = False
+                summary['errors'] += 1
         else:
             conn = self.engine.connect()
             trans = conn.begin() if self.atomic else None
@@ -316,3 +339,28 @@ def _elapsed_ms(start: datetime) -> int:
 def _safe_split_sql(content: str) -> List[str]:
     # Naive split, can be replaced with sqlparse for more robust behavior
     return [s.strip() for s in content.split(';') if s.strip()]
+
+def _make_concurrent_safe(stmt: str) -> str:
+    """Make SQL statements more concurrent-safe by adding IF NOT EXISTS where appropriate"""
+    stmt_upper = stmt.strip().upper()
+    
+    # Add IF NOT EXISTS to CREATE TABLE statements
+    if stmt_upper.startswith('CREATE TABLE') and 'IF NOT EXISTS' not in stmt_upper:
+        return stmt.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS', 1)
+    
+    # Add IF NOT EXISTS to CREATE TYPE statements  
+    if stmt_upper.startswith('CREATE TYPE') and 'IF NOT EXISTS' not in stmt_upper:
+        return stmt.replace('CREATE TYPE', 'CREATE TYPE IF NOT EXISTS', 1)
+    
+    # Add IF NOT EXISTS to CREATE FUNCTION statements
+    if stmt_upper.startswith('CREATE FUNCTION') and 'IF NOT EXISTS' not in stmt_upper:
+        return stmt.replace('CREATE FUNCTION', 'CREATE OR REPLACE FUNCTION', 1)
+    
+    # Convert INSERT to INSERT ... ON CONFLICT DO NOTHING for tables that might have conflicts
+    if stmt_upper.startswith('INSERT INTO') and 'ON CONFLICT' not in stmt_upper:
+        # Only add for simple INSERT statements
+        lines = stmt.split('\n')
+        if len(lines) <= 5:  # Simple insert
+            return stmt + ' ON CONFLICT DO NOTHING'
+    
+    return stmt

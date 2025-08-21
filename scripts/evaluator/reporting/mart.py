@@ -464,9 +464,11 @@ class AnalyticsViewManager:
         
         conn.execute(text(trend_function_sql))
 
-        # Function to get improvement opportunities
+        # Function to get improvement opportunities - drop old version first
+        conn.execute(text("DROP FUNCTION IF EXISTS get_improvement_opportunities(INTEGER)"))
+        
         improvement_function_sql = """
-        CREATE OR REPLACE FUNCTION get_improvement_opportunities(score_threshold INTEGER DEFAULT 6)
+        CREATE OR REPLACE FUNCTION get_improvement_opportunities()
         RETURNS TABLE(
             file_path VARCHAR,
             filename VARCHAR,
@@ -475,7 +477,9 @@ class AnalyticsViewManager:
             latest_grade VARCHAR,
             recommendation_count BIGINT,
             high_priority_recommendations BIGINT,
-            primary_issues TEXT
+            primary_issues TEXT,
+            high_priority_recommendations_text TEXT,
+            medium_priority_recommendations_text TEXT
         ) AS $$
         BEGIN
             RETURN QUERY
@@ -497,12 +501,34 @@ class AnalyticsViewManager:
                     FROM recommendations_dashboard rd 
                     WHERE rd.file_path = fp.file_path 
                     AND rd.priority IN ('High', 'Medium')
-                ), 'No specific issues identified')::TEXT as primary_issues
+                ), 'No specific issues identified')::TEXT as primary_issues,
+                COALESCE((
+                    SELECT STRING_AGG(rd.recommendation_text, ' | ')
+                    FROM recommendations_dashboard rd 
+                    WHERE rd.file_path = fp.file_path 
+                    AND rd.priority = 'High'
+                ), 'No high priority recommendations')::TEXT as high_priority_text,
+                COALESCE((
+                    SELECT STRING_AGG(rd.recommendation_text, ' | ')
+                    FROM recommendations_dashboard rd 
+                    WHERE rd.file_path = fp.file_path 
+                    AND rd.priority = 'Medium'
+                ), 'No medium priority recommendations')::TEXT as medium_priority_text
             FROM file_progress fp
             WHERE fp.latest_score IS NOT NULL 
-              AND fp.latest_score <= score_threshold
               AND fp.status NOT IN ('Never Evaluated', 'Outdated')
-            ORDER BY fp.latest_score ASC, high_priority_recs DESC;
+              AND EXISTS (
+                  SELECT 1 FROM recommendations_dashboard rd 
+                  WHERE rd.file_path = fp.file_path
+              )
+            ORDER BY 
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM recommendations_dashboard rd 
+                    WHERE rd.file_path = fp.file_path 
+                    AND rd.priority = 'High'
+                ), 0) DESC, 
+                fp.latest_score ASC;
         END;
         $$ LANGUAGE plpgsql;
         """
@@ -517,80 +543,64 @@ class AnalyticsViewManager:
         try:
             session = self.db_manager.SessionLocal()
             
-            # Enhanced summary with more detailed metrics
+            # Fixed summary query with proper counting
             summary_query = text("""
-                WITH quest_stats AS (
+                WITH system_counts AS (
                     SELECT 
-                        q.id as quest_id,
-                        q.name as quest_name,
-                        q.display_name as quest_display_name,
-                        COUNT(DISTINCT sc.id) as subcategory_count,
-                        COUNT(DISTINCT sf.id) as file_count,
-                        COUNT(DISTINCT e.id) as evaluation_count,
-                        ROUND(AVG(e.numeric_score), 2) as avg_score,
+                        (SELECT COUNT(*) FROM quests) as total_quests,
+                        (SELECT COUNT(*) FROM subcategories) as total_subcategories,
+                        (SELECT COUNT(*) FROM sql_files) as total_sql_files,
+                        (SELECT COUNT(*) FROM evaluations) as total_evaluations,
+                        (SELECT COUNT(*) FROM sql_patterns) as total_patterns,
+                        (SELECT COUNT(DISTINCT category) FROM sql_patterns) as pattern_categories
+                ),
+                evaluation_metrics AS (
+                    SELECT 
+                        ROUND(AVG(e.numeric_score), 2) as overall_avg_score,
                         COUNT(CASE WHEN em.execution_success = true THEN 1 END)::float / 
-                        NULLIF(COUNT(e.id), 0) * 100 as success_rate,
-                        MAX(e.last_evaluated) as last_evaluated
-                    FROM quests q
-                    LEFT JOIN subcategories sc ON q.id = sc.quest_id
-                    LEFT JOIN sql_files sf ON sc.id = sf.subcategory_id
-                    LEFT JOIN evaluations e ON sf.id = e.sql_file_id
+                        NULLIF(COUNT(*), 0) * 100 as overall_success_rate,
+                        COUNT(CASE WHEN e.letter_grade IN ('A+', 'A', 'A-') THEN 1 END) as excellent_evaluations,
+                        COUNT(CASE WHEN e.letter_grade IN ('B+', 'B', 'B-') THEN 1 END) as good_evaluations,
+                        COUNT(CASE WHEN e.letter_grade IN ('C+', 'C', 'C-') THEN 1 END) as fair_evaluations,
+                        COUNT(CASE WHEN e.letter_grade IN ('D+', 'D', 'D-', 'F') THEN 1 END) as poor_evaluations
+                    FROM evaluations e
                     LEFT JOIN execution_metadata em ON e.id = em.evaluation_id
-                    GROUP BY q.id, q.name, q.display_name
                 ),
-                pattern_stats AS (
-                    SELECT 
-                        COUNT(DISTINCT sp.id) as total_patterns,
-                        COUNT(DISTINCT sp.category) as pattern_categories,
-                        COUNT(DISTINCT e.id) as analyses_with_patterns
-                    FROM sql_patterns sp
-                    LEFT JOIN evaluations e ON e.detected_patterns::text LIKE '%"' || sp.name || '"%'
-                ),
-                recent_activity AS (
+                activity_metrics AS (
                     SELECT 
                         COUNT(CASE WHEN e.last_evaluated >= CURRENT_DATE - INTERVAL '1 day' THEN 1 END) as evals_last_day,
                         COUNT(CASE WHEN e.last_evaluated >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as evals_last_week,
                         COUNT(CASE WHEN e.last_evaluated >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as evals_last_month
                     FROM evaluations e
                 ),
-                quality_metrics AS (
+                recommendation_metrics AS (
                     SELECT 
-                        COUNT(CASE WHEN e.letter_grade IN ('A+', 'A', 'A-') THEN 1 END) as excellent_evaluations,
-                        COUNT(CASE WHEN e.letter_grade IN ('B+', 'B', 'B-') THEN 1 END) as good_evaluations,
-                        COUNT(CASE WHEN e.letter_grade IN ('C+', 'C', 'C-') THEN 1 END) as fair_evaluations,
-                        COUNT(CASE WHEN e.letter_grade IN ('D+', 'D', 'D-', 'F') THEN 1 END) as poor_evaluations,
-                        COUNT(DISTINCT CASE WHEN r.priority = 'High' THEN e.id END) as high_priority_issues,
-                        COUNT(DISTINCT CASE WHEN r.priority = 'Medium' THEN e.id END) as medium_priority_issues
+                        COUNT(DISTINCT CASE WHEN r.priority = 'High' THEN r.evaluation_id END) as high_priority_issues,
+                        COUNT(DISTINCT CASE WHEN r.priority = 'Medium' THEN r.evaluation_id END) as medium_priority_issues
+                    FROM recommendations r
+                ),
+                pattern_metrics AS (
+                    SELECT 
+                        COUNT(DISTINCT e.id) as analyses_with_patterns
                     FROM evaluations e
-                    LEFT JOIN recommendations r ON e.id = r.evaluation_id
+                    WHERE e.detected_patterns IS NOT NULL 
+                    AND e.detected_patterns::text != '[]'
+                    AND e.detected_patterns::text != 'null'
+                    AND e.detected_patterns::text != ''
                 )
                 SELECT 
-                    (SELECT COUNT(*) FROM quests) as total_quests,
-                    (SELECT COUNT(*) FROM subcategories) as total_subcategories,
-                    (SELECT COUNT(*) FROM sql_files) as total_sql_files,
-                    (SELECT COUNT(*) FROM evaluations) as total_evaluations,
-                    (SELECT ROUND(AVG(numeric_score), 2) FROM evaluations WHERE numeric_score IS NOT NULL) as overall_avg_score,
-                    (SELECT COUNT(*)::float / NULLIF((SELECT COUNT(*) FROM evaluations), 0) * 100 
-                     FROM evaluations e JOIN execution_metadata em ON e.id = em.evaluation_id 
-                     WHERE em.execution_success = true) as overall_success_rate,
-                    ps.total_patterns,
-                    ps.pattern_categories,
-                    ps.analyses_with_patterns,
-                    ra.evals_last_day,
-                    ra.evals_last_week,
-                    ra.evals_last_month,
-                    qm.excellent_evaluations,
-                    qm.good_evaluations,
-                    qm.fair_evaluations,
-                    qm.poor_evaluations,
-                    qm.high_priority_issues,
-                    qm.medium_priority_issues
-                FROM pattern_stats ps, recent_activity ra, quality_metrics qm
+                    sc.*,
+                    em.*,
+                    am.*,
+                    rm.*,
+                    pm.analyses_with_patterns
+                FROM system_counts sc, evaluation_metrics em, activity_metrics am, 
+                     recommendation_metrics rm, pattern_metrics pm
             """)
             
             summary_result = session.execute(summary_query).fetchone()
             
-            # Get quest breakdown
+            # Get quest breakdown with corrected calculations
             quest_breakdown_query = text("""
                 SELECT 
                     q.name as quest_name,
@@ -598,20 +608,22 @@ class AnalyticsViewManager:
                     COUNT(DISTINCT sc.id) as subcategory_count,
                     COUNT(DISTINCT sf.id) as file_count,
                     COUNT(DISTINCT e.id) as evaluation_count,
-                    ROUND(AVG(e.numeric_score), 2) as avg_score,
-                    COUNT(CASE WHEN em.execution_success = true THEN 1 END)::float / 
-                    NULLIF(COUNT(e.id), 0) * 100 as success_rate,
+                    ROUND(AVG(e.numeric_score)::numeric, 2) as avg_score,
+                    CASE 
+                        WHEN COUNT(e.id) > 0 THEN
+                            ROUND((COUNT(CASE WHEN em.execution_success = true THEN 1 END)::numeric / 
+                            COUNT(e.id) * 100), 1)
+                        ELSE 0
+                    END as success_rate,
                     MAX(e.last_evaluated) as last_evaluated,
-                    COUNT(CASE WHEN e.letter_grade IN ('A+', 'A', 'A-') THEN 1 END) as excellent_count,
-                    COUNT(CASE WHEN r.priority = 'High' THEN 1 END) as high_priority_issues
+                    COUNT(CASE WHEN e.letter_grade IN ('A+', 'A', 'A-') THEN 1 END) as excellent_count
                 FROM quests q
                 LEFT JOIN subcategories sc ON q.id = sc.quest_id
                 LEFT JOIN sql_files sf ON sc.id = sf.subcategory_id
                 LEFT JOIN evaluations e ON sf.id = e.sql_file_id
                 LEFT JOIN execution_metadata em ON e.id = em.evaluation_id
-                LEFT JOIN recommendations r ON e.id = r.evaluation_id
-                GROUP BY q.id, q.name, q.display_name
-                ORDER BY q.name
+                GROUP BY q.id, q.name, q.display_name, q.order_index
+                ORDER BY q.order_index
             """)
             
             quest_breakdown = session.execute(quest_breakdown_query).fetchall()
@@ -643,19 +655,31 @@ class AnalyticsViewManager:
             
             top_performers = session.execute(top_performers_query).fetchall()
             
-            # Get pattern insights
+            # Get pattern insights with improved accuracy
             pattern_insights_query = text("""
                 SELECT 
                     sp.display_name,
                     sp.category,
                     sp.complexity_level,
-                    COUNT(CASE WHEN e.detected_patterns::text LIKE '%"' || sp.name || '"%' THEN 1 END) as usage_count,
-                    ROUND(AVG(CASE WHEN e.detected_patterns::text LIKE '%"' || sp.name || '"%' THEN e.numeric_score END), 2) as avg_score_when_used
+                    COUNT(DISTINCT CASE 
+                        WHEN e.detected_patterns IS NOT NULL 
+                        AND e.detected_patterns::text LIKE '%"' || sp.name || '"%' 
+                        THEN e.id 
+                    END) as usage_count,
+                    ROUND(AVG(CASE 
+                        WHEN e.detected_patterns IS NOT NULL 
+                        AND e.detected_patterns::text LIKE '%"' || sp.name || '"%' 
+                        THEN e.numeric_score 
+                    END)::numeric, 1) as avg_score_when_used
                 FROM sql_patterns sp
                 LEFT JOIN evaluations e ON e.detected_patterns IS NOT NULL
                 GROUP BY sp.id, sp.display_name, sp.category, sp.complexity_level
-                HAVING COUNT(CASE WHEN e.detected_patterns::text LIKE '%"' || sp.name || '"%' THEN 1 END) > 0
-                ORDER BY usage_count DESC, avg_score_when_used DESC
+                HAVING COUNT(DISTINCT CASE 
+                    WHEN e.detected_patterns IS NOT NULL 
+                    AND e.detected_patterns::text LIKE '%"' || sp.name || '"%' 
+                    THEN e.id 
+                END) > 0
+                ORDER BY usage_count DESC, avg_score_when_used DESC NULLS LAST
                 LIMIT 10
             """)
             
@@ -663,10 +687,15 @@ class AnalyticsViewManager:
             
             session.close()
             
-            # Calculate additional insights
+            # Calculate additional insights with proper bounds checking
             total_evals = summary_result.total_evaluations or 0
-            excellent_percentage = round((summary_result.excellent_evaluations or 0) / max(total_evals, 1) * 100, 1)
+            excellent_count = summary_result.excellent_evaluations or 0
+            excellent_percentage = round(excellent_count / max(total_evals, 1) * 100, 1) if total_evals > 0 else 0
+            # Ensure percentage doesn't exceed 100%
+            excellent_percentage = min(excellent_percentage, 100.0)
+            
             active_percentage = round((summary_result.evals_last_week or 0) / max(total_evals, 1) * 100, 1) if total_evals > 0 else 0
+            active_percentage = min(active_percentage, 100.0)
             
             return {
                 'system_overview': {
@@ -729,9 +758,9 @@ class AnalyticsViewManager:
                 LIMIT 10
             """)).fetchall()
             
-            # Get improvement opportunities
+            # Get improvement opportunities - show all files with recommendations regardless of score
             improvements = session.execute(text("""
-                SELECT * FROM get_improvement_opportunities(6) LIMIT 10
+                SELECT * FROM get_improvement_opportunities() LIMIT 10
             """)).fetchall()
             
             session.close()

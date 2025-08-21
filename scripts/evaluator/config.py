@@ -107,7 +107,7 @@ class EvaluationConfig(BaseSettings):
     detailed_logging: bool = Field(False, description="Enable detailed logging")
     
     # Evaluation Settings
-    max_concurrent_files: int = Field(3, description="Parallel files per quest")
+    max_concurrent_files: int = Field(1, description="Parallel files per quest")
     cache_enabled: bool = Field(True, description="Enable caching of results")
     skip_unchanged: bool = Field(True, description="Skip files unchanged since last evaluation")
     output_dir: Optional[Path] = Field(None, description="Custom output directory for evaluations")

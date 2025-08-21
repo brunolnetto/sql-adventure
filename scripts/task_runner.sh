@@ -244,12 +244,6 @@ clean() {
     echo -e "${BLUE}🧹 Cleaning temporary files...${NC}"
     cd "$PROJECT_ROOT"
     
-    # Remove cache directories
-    rm -rf .evaluations-cache/
-    rm -rf scripts/evaluator/__pycache__/
-    rm -rf scripts/evaluator/utils/__pycache__/
-    rm -rf scripts/evaluator/core/__pycache__/
-    
     # Remove temporary files
     find . -name "*.pyc" -delete
     find . -name "*.pyo" -delete

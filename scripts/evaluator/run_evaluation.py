@@ -49,6 +49,7 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
     
     is_quests_root = target_path.is_dir() and (target_path == ProjectFolderConfig().quests_dir or target_path.name == "quests")
     is_quest_dir = target_path.is_dir() and "quests/" in str(target_path) and target_path.name.startswith(('1-', '2-', '3-', '4-', '5-'))
+    is_subcategory_dir = target_path.is_dir() and "quests/" in str(target_path) and any(sql_file.exists() for sql_file in target_path.rglob("*.sql"))
     is_sql_file = target_path.is_file() and target.endswith(".sql")
     
     if target == "all":
@@ -61,6 +62,10 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
     
     elif is_quest_dir:
         print(f"📁 Evaluating quest directory: {target}")
+        return await evaluator.evaluate_quest(target_path)
+    
+    elif is_subcategory_dir:
+        print(f"📁 Evaluating subcategory directory: {target}")
         return await evaluator.evaluate_quest(target_path)
     
     elif is_sql_file:
