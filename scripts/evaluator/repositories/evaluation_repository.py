@@ -568,23 +568,6 @@ class EvaluationRepository(BaseRepository[Evaluation]):
             print(f"❌ Error retrieving file evaluation history: {e}")
             return []
     
-    def _categorize_recommendation(self, recommendation_text: str) -> str:
-        """Categorize recommendation based on content keywords"""
-        text = recommendation_text.lower()
-        
-        if any(word in text for word in ['performance', 'slow', 'optimize', 'efficient', 'index']):
-            return 'Performance'
-        elif any(word in text for word in ['syntax', 'error', 'correct', 'format']):
-            return 'Syntax'
-        elif any(word in text for word in ['practice', 'convention', 'standard', 'style']):
-            return 'Best Practices'
-        elif any(word in text for word in ['security', 'secure', 'safe', 'injection']):
-            return 'Security'
-        elif any(word in text for word in ['comment', 'document', 'explain', 'clarity']):
-            return 'Documentation'
-        else:
-            return 'General'
-    
     def _normalize_effort(self, effort: str) -> str:
         """Normalize implementation effort to valid constraint values"""
         effort_lower = effort.lower() if effort else 'medium'
