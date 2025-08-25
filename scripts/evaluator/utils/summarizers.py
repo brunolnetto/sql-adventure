@@ -5,7 +5,7 @@ Provides unified summarization for quests and subcategories using dependency inj
 
 import asyncio
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
 from utils.discovery import MetadataExtractor
 
 
@@ -58,7 +58,9 @@ def generate_quest_description_fallback(aggregated_content: str) -> str:
     
     for line in lines[:20]:  # Check first 20 lines
         line_lower = line.lower()
-        if any(keyword in line_lower for keyword in ['modeling', 'performance', 'window', 'json', 'recursive', 'normalization']):
+        if any(keyword in line_lower for keyword in [
+            'modeling', 'performance', 'window', 'json', 'recursive', 'normalization'
+        ]):
             topics.append(line.strip()[:50])  # Truncate long lines
         if 'quest:' in line_lower or 'title:' in line_lower:
             quest_type = line.split(':')[-1].strip()
@@ -232,23 +234,45 @@ def generate_subcategory_description_fallback(subcategory_path: Path) -> str:
 # UNIFIED INTERFACE FUNCTIONS
 # =============================================================================
 
-def generate_quest_description(aggregated_content: str) -> str:
+def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, str, int]]) -> str:
     """
-    Generate a quest description using AI when available, fallback otherwise.
-    
-    Args:
-        aggregated_content: All quest content as single text
-        
-    Returns:
-        Generated quest description string
+    Generate quest description using AI agent if available, fallback to content-based method otherwise.
     """
     try:
-        # Try AI generation first
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(generate_quest_description_ai(aggregated_content))
+        import asyncio
+        
+        # Aggregate all quest content into a single text
+        aggregated_content = f"Quest: {quest_name}\n"
+        
+        # Add subcategory information
+        if subcategories:
+            aggregated_content += "Subcategories:\n"
+            for sub_name, display_name, difficulty, description, order in subcategories:
+                aggregated_content += f"- {display_name} ({difficulty}): {description}\n"
+        
+        # Try AI description first
+        try:           
+            description = loop.run_until_complete(generate_quest_description_ai(aggregated_content))
+            return description
+        except Exception as e:
+            print(f"⚠️  AI quest description failed: {e}")
+            # Fallback to simple description
+            return generate_quest_description_fallback(aggregated_content)
+            
     except Exception:
-        # Fallback to simple description
-        return generate_quest_description_fallback(aggregated_content)
+        # Final fallback to previous content-based method
+        if not subcategories:
+            quest_type = '-'.join(quest_name.split('-')[1:])
+            return f"SQL {quest_type.replace('-', ' ')} exercises and concepts"
+        subcategory_names = [display_name for _, display_name, _, _, _ in subcategories]
+        if len(subcategory_names) == 1:
+            return f"Focused training on {subcategory_names[0].lower()}"
+        elif len(subcategory_names) <= 3:
+            return f"Comprehensive coverage of {', '.join(subcategory_names).lower()}"
+        else:
+            primary_topics = subcategory_names[:2]
+            remaining_count = len(subcategory_names) - 2
+            return f"In-depth exploration of {', '.join(primary_topics).lower()} and {remaining_count} additional topics"
 
 
 def generate_subcategory_description(subcategory_path: Path) -> str:
@@ -277,3 +301,33 @@ def generate_subcategory_description(subcategory_path: Path) -> str:
         print(f"⚠️  AI subcategory description failed: {e}")
         # Fallback to simple description
         return generate_subcategory_description_fallback(subcategory_path)
+
+async def generate_sql_pattern_description(pattern_name: str, context: dict) -> str:
+    from core.agents import pattern_description_agent
+    
+    # Create prompt for AI analysis
+    prompt = f"""
+    Analyze this SQL pattern and create an educational description:
+    
+    Pattern: {pattern_name.replace('_', ' ').title()}
+    Technical Description: {context['base_description']}
+    Examples: {'; '.join(context['examples'][:2])}
+    Category: {context['category']}
+    Complexity: {context['complexity']}
+    
+    Create a comprehensive description that explains:
+    1. What this pattern accomplishes
+    2. When developers should use it
+    3. Its practical value in real applications
+    
+    Keep it concise but educational (2-3 sentences).
+    """
+    
+    try:
+        result = await pattern_description_agent.run(prompt)
+        ai_description = result.data if hasattr(result, 'data') else str(result)
+    except Exception as e:
+        print(f"⚠️  AI generation failed for {pattern_name}: {e}")
+        ai_description = context['base_description']
+        
+    return ai_description

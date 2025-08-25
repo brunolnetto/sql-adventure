@@ -111,7 +111,6 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                         self._detect_and_associate_patterns(sql_file, file_path)
                         
                         self.session.commit()
-                        print(f"✅ Created SQL file record: {normalized_path}")
                         return sql_file
                     else:
                         print(f"⚠️  Subcategory not found: {subcategory_name} in quest {quest_name}")

@@ -7,6 +7,7 @@ Creates the evaluator database with proper content discovery and AI-enhanced des
 import os
 import sys
 from pathlib import Path
+import asyncio
 
 # Add evaluator directory to path
 evaluator_dir = Path(__file__).parent
@@ -20,12 +21,15 @@ except ImportError:
     print("⚠️  Environment loader not available, using system environment")
 
 from database.manager import DatabaseManager
-from database.tables import EvaluationBase, Quest, Subcategory, SQLFile
-from utils.discovery import discover_quests_from_filesystem
+from database.tables import (
+    EvaluationBase, Quest, Subcategory, SQLFile, SQLPattern,
+)
+from utils.discovery import discover_quests_from_filesystem, generate_sql_patterns
 from repositories.quest_repository import QuestRepository
 from repositories.sqlfile_repository import SQLFileRepository
+from repositories.sql_pattern_repository import SQLPatternRepository
 
-def main():
+async def main():
     """Main initialization with AI-enhanced content"""
     print("🚀 Initializing SQL Adventure Evaluator Database")
     print("🧠 With AI-enhanced quest descriptions...")
@@ -49,7 +53,7 @@ def main():
         
         try:
             # 1. Discover and create quest data with AI descriptions
-            print("📝 Discovering quests with AI-generated descriptions...")
+            print("📝 Discovering quests...")
             quests_dir = Path("quests")
             
             if not quests_dir.exists():
@@ -64,7 +68,7 @@ def main():
             quest_repo = QuestRepository(session)
             quest_repo.upsert(quests_data)
             session.commit()
-            print(f"✅ Processed {len(quests_data)} quests with AI descriptions")
+            print(f"✅ Processed {len(quests_data)} quests")
             
             # 2. Create SQL file records
             print("📄 Creating SQL file records...")
@@ -80,8 +84,6 @@ def main():
                     
                     if sql_file:
                         sql_files_added += 1
-                        if sql_files_added <= 5:  # Show first 5
-                            print(f"✅ Added: {sql_file.filename}")
                     else:
                         sql_files_skipped += 1
                         
@@ -92,16 +94,25 @@ def main():
             session.commit()
             print(f"✅ Added {sql_files_added} SQL files, skipped {sql_files_skipped}")
             
+            pattern_repo = SQLPatternRepository(session)
+            patterns = await generate_sql_patterns()
+            pattern_repo.upsert(patterns)
+            session.commit()
+            
+            print(f"✅ Added SQL files patterns")
+            
             # Final summary
             quest_count = session.query(Quest).count()
             subcategory_count = session.query(Subcategory).count()
             sql_file_count = session.query(SQLFile).count()
+            sql_pattern_count = session.query(SQLPattern).count()
             
             print("\n📊 Database Summary:")
             print(f"   - {quest_count} quests with AI descriptions")
             print(f"   - {subcategory_count} subcategories")  
             print(f"   - {sql_file_count} SQL files")
-            print("\n✅ Enhanced initialization completed!")
+            print(f"   - {sql_pattern_count} SQL Patterns")
+            print("\n✅ Database initialization completed!")
             
         finally:
             session.close()
@@ -115,5 +126,5 @@ def main():
     return True
 
 if __name__ == "__main__":
-    success = main()
+    success = asyncio.run(main())
     sys.exit(0 if success else 1)

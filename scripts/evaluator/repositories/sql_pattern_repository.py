@@ -13,15 +13,15 @@ class SQLPatternRepository(BaseRepository[SQLPattern]):
 
     def upsert(self, patterns_data: List[Tuple[str, str, str, str, str]]):
         """Initialize SQL pattern catalog from discovered data"""
-        for pattern_name, display_name, category, complexity, regex in patterns_data:
+        for pattern_name, display_name, description, category, complexity in patterns_data:
             existing_pattern = self.session.query(SQLPattern).filter_by(name=pattern_name).first()
             if not existing_pattern:
                 pattern = SQLPattern(
                     name=pattern_name,
                     display_name=display_name,
+                    description=description,
                     category=category,
-                    complexity_level=complexity,
-                    description=f"Pattern for {display_name}"  # Use description instead of regex
+                    complexity_level=complexity
                 )
                 self.session.add(pattern)
                 print(f"✅ Added pattern: {display_name}")

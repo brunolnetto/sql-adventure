@@ -49,8 +49,6 @@ class MetadataExtractor:
 
 
 # Use parse_header_level from difficulty.py
-
-
 def infer_difficulty(
     sql_file_path: Path, default: str = 'Intermediate'
 ) -> str:
@@ -168,57 +166,6 @@ def determine_subcategory_difficulty(
             return level_name
     
     return default
-
-def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, str, str, str, int]]) -> str:
-    """
-    Generate quest description using AI agent if available, fallback to content-based method otherwise.
-    """
-    try:
-        from utils.summarizers import generate_quest_description_ai, generate_quest_description_fallback
-        import asyncio
-        
-        # Aggregate all quest content into a single text
-        aggregated_content = f"Quest: {quest_name}\n"
-        
-        # Add subcategory information
-        if subcategories:
-            aggregated_content += "Subcategories:\n"
-            for sub_name, display_name, difficulty, description, order in subcategories:
-                aggregated_content += f"- {display_name} ({difficulty}): {description}\n"
-        
-        # Try AI description first
-        try:
-            # Try to get existing event loop, create new one if needed
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If loop is already running, use fallback
-                    return generate_quest_description_fallback(aggregated_content)
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            description = loop.run_until_complete(generate_quest_description_ai(aggregated_content))
-            return description
-        except Exception as e:
-            print(f"⚠️  AI quest description failed: {e}")
-            # Fallback to simple description
-            return generate_quest_description_fallback(aggregated_content)
-            
-    except Exception:
-        # Final fallback to previous content-based method
-        if not subcategories:
-            quest_type = '-'.join(quest_name.split('-')[1:])
-            return f"SQL {quest_type.replace('-', ' ')} exercises and concepts"
-        subcategory_names = [display_name for _, display_name, _, _, _ in subcategories]
-        if len(subcategory_names) == 1:
-            return f"Focused training on {subcategory_names[0].lower()}"
-        elif len(subcategory_names) <= 3:
-            return f"Comprehensive coverage of {', '.join(subcategory_names).lower()}"
-        else:
-            primary_topics = subcategory_names[:2]
-            remaining_count = len(subcategory_names) - 2
-            return f"In-depth exploration of {', '.join(primary_topics).lower()} and {remaining_count} additional topics"
 
 
 def discover_subcategories_from_filesystem(quest_dir: Path, quest_name: str) -> List[Tuple[str, str, str, str, int]]:
@@ -396,10 +343,9 @@ def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
 # ENHANCED PATTERN DISCOVERY WITH AI DESCRIPTIONS
 # =============================================================================
 
-async def generate_enhanced_sql_patterns() -> List[Dict[str, Any]]:
+async def generate_sql_patterns() -> List[Tuple[str, str, str, str, str]]:
     """Generate enhanced SQL patterns with AI-powered descriptions"""
     import asyncio
-    from core.agents import pattern_description_agent
     
     # Enhanced pattern definitions with context for AI analysis
     pattern_contexts = {
@@ -537,45 +483,24 @@ async def generate_enhanced_sql_patterns() -> List[Dict[str, Any]]:
         }
     }
     
-    enhanced_patterns = []
+    patterns = []
+    from utils.summarizers import generate_sql_pattern_description
     
     for pattern_name, context in pattern_contexts.items():
-        print(f"🧠 Generating AI description for pattern: {pattern_name}")
+        print(f"⌛ Generating pattern: {pattern_name}")
         
-        # Create prompt for AI analysis
-        prompt = f"""
-        Analyze this SQL pattern and create an educational description:
+        ai_description = await generate_sql_pattern_description(pattern_name, context)
         
-        Pattern: {pattern_name.replace('_', ' ').title()}
-        Technical Description: {context['base_description']}
-        Examples: {'; '.join(context['examples'][:2])}
-        Category: {context['category']}
-        Complexity: {context['complexity']}
+        patterns.append((
+            pattern_name,
+            pattern_name.replace('_', ' ').title(),
+            ai_description,
+            context['category'],
+            context['complexity']
+        ))
         
-        Create a comprehensive description that explains:
-        1. What this pattern accomplishes
-        2. When developers should use it
-        3. Its practical value in real applications
-        
-        Keep it concise but educational (2-3 sentences).
-        """
-        
-        try:
-            result = await pattern_description_agent.run(prompt)
-            ai_description = result.data if hasattr(result, 'data') else str(result)
-        except Exception as e:
-            print(f"⚠️  AI generation failed for {pattern_name}: {e}")
-            ai_description = context['base_description']
-        
-        enhanced_patterns.append({
-            'name': pattern_name,
-            'display_name': pattern_name.replace('_', ' ').title(),
-            'description': ai_description,
-            'category': context['category'],
-            'complexity_level': context['complexity']
-        })
         
         # Small delay to avoid rate limiting
         await asyncio.sleep(0.1)
     
-    return enhanced_patterns
+    return patterns

@@ -416,7 +416,7 @@ class SQLEvaluator:
                 
                 sql_file_repository = SQLFileRepository(session)
                 sql_file = sql_file_repository.get_by_path(lookup_path)
-                
+
                 if sql_file:
                     # Save evaluation with the existing SQL file
                     print(f"✅ Found SQL file (ID: {sql_file.id}) for path: {file_path}")
