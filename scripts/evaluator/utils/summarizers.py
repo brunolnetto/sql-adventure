@@ -263,8 +263,17 @@ def generate_subcategory_description(subcategory_path: Path) -> str:
     """
     try:
         # Try AI generation first
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is already running, use fallback
+                return generate_subcategory_description_fallback(subcategory_path)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
         return loop.run_until_complete(generate_subcategory_description_ai(subcategory_path))
-    except Exception:
+    except Exception as e:
+        print(f"⚠️  AI subcategory description failed: {e}")
         # Fallback to simple description
         return generate_subcategory_description_fallback(subcategory_path)

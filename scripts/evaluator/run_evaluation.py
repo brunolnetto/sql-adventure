@@ -33,6 +33,10 @@ from dataclasses import dataclass
 
 from core.evaluators import QuestEvaluator
 from config import ProjectFolderConfig, EvaluationConfig
+from database.manager import DatabaseManager
+from database.tables import EvaluationBase
+from repositories.sqlfile_repository import SQLFileRepository
+from repositories.evaluation_repository import EvaluationRepository
 
 
 async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
@@ -62,17 +66,56 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
     
     elif is_quest_dir:
         print(f"📁 Evaluating quest directory: {target}")
-        return await evaluator.evaluate_quest(target_path)
+        result = await evaluator.evaluate_quest(target_path)
+        
+        # Save each evaluation result to database
+        if "files" in result and isinstance(result["files"], list):
+            saved_count = 0
+            for file_result in result["files"]:
+                if isinstance(file_result, dict) and "metadata" in file_result:
+                    # Extract file path from metadata
+                    metadata = file_result["metadata"]
+                    if "full_path" in metadata:
+                        file_path = metadata["full_path"]
+                        success = await save_evaluation_to_database(file_path, file_result)
+                        if success:
+                            saved_count += 1
+            
+            if saved_count > 0:
+                print(f"💾 Saved {saved_count} quest evaluations to database successfully")
+        
+        return result
     
     elif is_subcategory_dir:
         print(f"📁 Evaluating subcategory directory: {target}")
-        return await evaluator.evaluate_quest(target_path)
+        result = await evaluator.evaluate_quest(target_path)
+        
+        # Save each evaluation result to database
+        if "files" in result and isinstance(result["files"], list):
+            saved_count = 0
+            for file_result in result["files"]:
+                if isinstance(file_result, dict) and "metadata" in file_result:
+                    # Extract file path from metadata
+                    metadata = file_result["metadata"]
+                    if "full_path" in metadata:
+                        file_path = metadata["full_path"]
+                        success = await save_evaluation_to_database(file_path, file_result)
+                        if success:
+                            saved_count += 1
+            
+            if saved_count > 0:
+                print(f"💾 Saved {saved_count} evaluations to database successfully")
+        
+        return result
     
     elif is_sql_file:
         print(f"📄 Evaluating single file: {target}")
         result = await evaluator.evaluate_subcategory(target_path)
         
-        # Print results instead of saving for now
+        # Save evaluation result to database
+        success = await save_evaluation_to_database(target, result)
+        
+        # Print results
         print("\n" + "="*60)
         print("🎯 EVALUATION RESULTS")
         print("="*60)
@@ -82,10 +125,59 @@ async def evaluate(target: str, config: EvaluationConfig) -> Dict[str, Any]:
             print(result)
         print("="*60)
         
+        if success:
+            print("💾 Evaluation saved to database successfully")
+        else:
+            print("⚠️  Note: Evaluation completed but not saved to database")
+        
         return {"files": [result], "total": 1, "success": 1 if result.get("success", True) else 0}
     
     else:
         raise ValueError(f"Invalid target: {target}")
+
+async def save_evaluation_to_database(file_path: str, evaluation_result: Dict[str, Any]) -> bool:
+    """Save evaluation result to database with proper error handling"""
+    try:
+        # Initialize database connection
+        db_manager = DatabaseManager(EvaluationBase, database_type="evaluator")
+        session = db_manager.SessionLocal()
+        
+        try:
+            # Initialize repositories
+            sql_file_repo = SQLFileRepository(session)
+            evaluation_repo = EvaluationRepository(session)
+            
+            # Ensure SQL file exists in database (create if needed)
+            sql_file = sql_file_repo.upsert_by_path(file_path)
+            if not sql_file:
+                print(f"❌ Could not create/find SQL file record for: {file_path}")
+                return False
+            
+            # Prepare evaluation data for storage
+            evaluation_data = {
+                'file_path': sql_file.file_path,  # Use normalized path from database
+                'llm_analysis': evaluation_result.get('llm_analysis', {}),
+                'execution': evaluation_result.get('execution', {}),
+                'metadata': evaluation_result.get('metadata', {}),
+                'intent': evaluation_result.get('intent', {}),
+                'evaluated_at': evaluation_result.get('evaluated_at')
+            }
+            
+            # Save evaluation to database
+            evaluation = evaluation_repo.upsert_evaluation(evaluation_data)
+            if evaluation:
+                print(f"✅ Evaluation saved for file ID {sql_file.id}")
+                return True
+            else:
+                print(f"❌ Failed to save evaluation")
+                return False
+                
+        finally:
+            session.close()
+            
+    except Exception as e:
+        print(f"❌ Error saving evaluation to database: {e}")
+        return False
 
 def main():
     """Main function with command line interface"""

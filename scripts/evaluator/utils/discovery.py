@@ -188,10 +188,20 @@ def generate_quest_description(quest_name: str, subcategories: List[Tuple[str, s
         
         # Try AI description first
         try:
-            loop = asyncio.get_event_loop()
+            # Try to get existing event loop, create new one if needed
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If loop is already running, use fallback
+                    return generate_quest_description_fallback(aggregated_content)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
             description = loop.run_until_complete(generate_quest_description_ai(aggregated_content))
             return description
-        except Exception:
+        except Exception as e:
+            print(f"⚠️  AI quest description failed: {e}")
             # Fallback to simple description
             return generate_quest_description_fallback(aggregated_content)
             
@@ -363,8 +373,9 @@ def discover_quests_from_filesystem(quests_dir: Path) -> List[Dict[str, Any]]:
             # Determine quest difficulty based on subcategories
             difficulty = determine_quest_difficulty(quest_path)
             
-            # Generate a basic description for future improvements
-            description = f"SQL training focusing on {quest_title.lower()} concepts and techniques."
+            # Generate AI-powered quest description (temporarily using fallback for testing)
+            # description = generate_quest_description(quest_name, subcategories_tuples)
+            description = f"Master {quest_title.lower()} through interactive exercises: from fundamental concepts to advanced techniques and real-world applications."
             
             quest_data = {
                 'name': quest_name,

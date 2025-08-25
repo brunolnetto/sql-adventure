@@ -402,16 +402,16 @@ class SQLEvaluator:
                 from database.tables import SQLFile, Quest, Subcategory
                 from repositories.sqlfile_repository import SQLFileRepository
                 
-                # Convert absolute path to relative path as stored in database
-                # Database stores paths like: "1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"
+                # Normalize path for database lookup 
+                # Database stores paths like: "quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"
                 file_path_str = str(file_path)
                 if "quests/" in file_path_str:
-                    # Extract the part after "quests/" (remove "quests/" prefix)
-                    quests_index = file_path_str.find("quests/") + len("quests/")
-                    relative_path = file_path_str[quests_index:]
-                    lookup_path = relative_path
-                    print(f"🔍 Using relative path for database lookup: {relative_path}")
+                    # Extract from "quests/" onwards (keep "quests/" prefix)
+                    quests_index = file_path_str.find("quests/")
+                    lookup_path = file_path_str[quests_index:]
+                    print(f"🔍 Using normalized path for database lookup: {lookup_path}")
                 else:
+                    # If path doesn't contain quests/, assume it's already normalized
                     lookup_path = file_path_str
                 
                 sql_file_repository = SQLFileRepository(session)
