@@ -154,23 +154,23 @@ evaluate() {
 run_sql() {
     local target="$1"
     local quiet_mode="$2"
-    
+
     if [ -z "$target" ]; then
         echo -e "${RED}❌ Please specify a file or directory to run${NC}"
         echo "Usage: $0 run <path> [--quiet]"
         exit 1
     fi
-    
+
     echo -e "${BLUE}🚀 Running SQL: $target${NC}"
     cd "$PROJECT_ROOT"
-    
+
     # Check if Docker is running
     if ! docker-compose ps | grep -q "Up"; then
         echo -e "${YELLOW}⚠️  PostgreSQL Docker container is not running. Starting it...${NC}"
         docker-compose up -d
         sleep 3  # Wait for database to be ready
     fi
-    
+
     # Load environment variables
     if [ -f ".env" ]; then
         echo -e "${BLUE}📋 Loading configuration from .env...${NC}"
@@ -180,14 +180,65 @@ run_sql() {
     else
         echo -e "${YELLOW}⚠️  No .env file found. Using default configuration.${NC}"
     fi
-    
+
     # Determine target type and run accordingly
     if [ -f "$target" ]; then
-        # Single file
-        PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py $quiet_mode "$target"
+        # Single file - show detailed output
+        echo -e "${BLUE}📄 Processing file: $target${NC}"
+        PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py "$target"
     elif [ -d "$target" ]; then
-        # Directory - run all SQL files
-        PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py $quiet_mode --dir "$target"
+        # Directory - run all SQL files with comprehensive error reporting
+        echo -e "${BLUE}� Processing directory: $target${NC}"
+
+        # Find all SQL files
+        sql_files=$(find "$target" -name "*.sql" -type f | sort)
+
+        if [ -z "$sql_files" ]; then
+            echo -e "${RED}❌ No SQL files found in $target${NC}"
+            exit 1
+        fi
+
+        echo -e "${BLUE}🔍 Found $(echo "$sql_files" | wc -l) SQL files${NC}"
+
+        # Process each file
+        total_files=0
+        successful_files=0
+        failed_files=0
+
+        while read -r sql_file; do
+            total_files=$((total_files + 1))
+            echo -e "${BLUE}📄 Executing: $sql_file${NC}"
+
+            # Capture both stdout and stderr
+            output=$(PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py "$sql_file" 2>&1)
+            exit_code=$?
+
+            if [ $exit_code -eq 0 ] && echo "$output" | grep -q "✅ Execution successful"; then
+                successful_files=$((successful_files + 1))
+                if [ "$quiet_mode" != "--quiet" ]; then
+                    echo "$output" | grep -E "(✅ Execution successful|📊 Statements run|📈 Result sets|⚡ Execution time)"
+                fi
+            else
+                failed_files=$((failed_files + 1))
+                echo -e "${RED}❌ FAILED: $sql_file${NC}"
+                # Show detailed error information
+                echo "$output" | grep -E "(🚨 Errors:|⚠️  Warnings:|❌ ERROR|⚠️  SELECT execution failed|⚠️  Transaction error|⚠️  Pool connection error)" || true
+
+                # Show the last few lines which often contain the most relevant errors
+                echo "$output" | tail -5 | grep -v "^✅ " | grep -v "^📄 " || true
+            fi
+
+            # Add spacing between files
+            if [ "$quiet_mode" != "--quiet" ]; then
+                echo ""
+            fi
+        done < <(echo "$sql_files")
+
+        # Summary
+        echo -e "${BLUE}📊 Summary:${NC}"
+        echo -e "${BLUE}   📁 Total files: $total_files${NC}"
+        echo -e "${GREEN}   ✅ Successful: $successful_files${NC}"
+        echo -e "${RED}   ❌ Failed: $failed_files${NC}"
     else
         echo -e "${RED}❌ File or directory not found: $target${NC}"
         exit 1
@@ -323,17 +374,6 @@ print('✅ Database reset complete')
     fi
 }
 
-show_logs() {
-    echo -e "${BLUE}📋 Recent evaluation logs...${NC}"
-    cd "$PROJECT_ROOT"
-    
-    if [ -f "ai-evaluations/evaluations.log" ]; then
-        tail -n 50 ai-evaluations/evaluations.log
-    else
-        echo -e "${YELLOW}⚠️  No log file found${NC}"
-    fi
-}
-
 # Main command dispatcher
 case "$1" in
     setup)
@@ -351,17 +391,17 @@ case "$1" in
     docker-down)
         docker_down
         ;;
-    evaluate)
-        evaluate "$2"
+    basic)
+        basic_validate "$2"
         ;;
     run)
         run_sql "$2" "$3"
         ;;
+    evaluate)
+        evaluate "$2"
+        ;;
     summary)
         summary
-        ;;
-    basic)
-        basic_validate "$2"
         ;;
     test)
         run_tests
@@ -374,9 +414,6 @@ case "$1" in
         ;;
     reset-db)
         reset_db
-        ;;
-    logs)
-        show_logs
         ;;
     *)
         print_usage

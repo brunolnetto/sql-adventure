@@ -108,14 +108,16 @@ INSERT INTO orders VALUES
 -- Example 4: Constraint Violation Examples
 -- Demonstrate what happens when constraints are violated
 
--- This would fail due to NOT NULL constraint
--- INSERT INTO employees (employee_id, first_name, last_name, email) VALUES (4, NULL, 'Test', 'test@email.com');
+/*
+This would fail due to NOT NULL constraint:
+INSERT INTO employees (employee_id, first_name, last_name, email) VALUES (4, NULL, 'Test', 'test@email.com');
 
--- This would fail due to UNIQUE constraint
--- INSERT INTO employees VALUES (5, 'John', 'Doe', 'john.doe@company.com', '555-9999', '2024-01-01', 50000.00, 'Engineering', true);
+This would fail due to UNIQUE constraint:
+INSERT INTO employees VALUES (5, 'John', 'Doe', 'john.doe@company.com', '555-9999', '2024-01-01', 50000.00, 'Engineering', true);
 
--- This would fail due to CHECK constraint
--- INSERT INTO products VALUES (4, 'Invalid Product', -10.00, 'Electronics', 10, 4.0, false);
+This would fail due to CHECK constraint:
+INSERT INTO products VALUES (4, 'Invalid Product', -10.00, 'Electronics', 10, 4.0, false);
+*/
 
 -- Example 5: Querying with Constraints
 -- Demonstrate how constraints help maintain data quality

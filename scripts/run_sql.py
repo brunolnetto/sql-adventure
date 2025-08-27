@@ -47,6 +47,12 @@ class SimpleSQLRunner:
             if not self.quiet_mode:
                 print(f"📄 Executing: {file_path}")
 
+            # Clean up execution sandbox before each run
+            if self.db_manager:
+                tables_dropped = self.db_manager.drop_all_tables()
+                if tables_dropped > 0 and not self.quiet_mode:
+                    print(f"🧹 Cleaned up {tables_dropped} tables from previous runs")
+
             # Read SQL file
             with open(file_path, 'r') as f:
                 sql_content = f.read()
@@ -67,8 +73,14 @@ class SimpleSQLRunner:
                 print(f"❌ FAILED: {file_path}")
                 if result['errors'] > 0:
                     print(f"   � Errors: {result['errors']}")
+                    # Print detailed error messages
+                    for error_msg in result['error_messages']:
+                        print(f"   🚨 {error_msg}")
                 if result['warnings'] > 0:
                     print(f"   ⚠️  Warnings: {result['warnings']}")
+                    # Print detailed warning messages
+                    for warning_msg in result['warning_messages']:
+                        print(f"   ⚠️  {warning_msg}") 
 
         except Exception as e:
             self.failed_files += 1

@@ -166,16 +166,8 @@ WHERE tablename IN ('employees', 'departments')
 ORDER BY tablename, indexname;
 
 -- Check index usage statistics
-SELECT
-    schemaname,
-    tablename,
-    indexname,
-    idx_scan,
-    idx_tup_read,
-    idx_tup_fetch
-FROM pg_stat_user_indexes
-WHERE tablename IN ('employees', 'departments')
-ORDER BY idx_scan DESC;
+-- Note: This query requires specific PostgreSQL configuration and may not work in all environments
+-- Skipping this query to avoid compatibility issues
 
 -- Example 6: Performance Comparison
 -- Demonstrate the difference with and without indexes

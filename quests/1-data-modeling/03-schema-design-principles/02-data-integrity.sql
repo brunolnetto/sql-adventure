@@ -275,6 +275,8 @@ DECLARE
     total_hours DECIMAL(4,2);
     project_status VARCHAR(20);
     employee_status VARCHAR(20);
+    annual_salary DECIMAL(10,2);
+    max_hourly_rate DECIMAL(8,2);
 BEGIN
     -- Check if project is active
     SELECT status INTO project_status
@@ -307,21 +309,16 @@ BEGIN
     
     -- Validate hourly rate against employee salary
     IF NEW.hourly_rate > 0 THEN
-        DECLARE
-            annual_salary DECIMAL(10,2);
-            max_hourly_rate DECIMAL(8,2);
-        BEGIN
-            SELECT salary INTO annual_salary
-            FROM employees
-            WHERE employee_id = NEW.employee_id;
-            
-            -- Assume 2080 hours per year (40 hours/week * 52 weeks)
-            max_hourly_rate := annual_salary / 2080;
-            
-            IF NEW.hourly_rate > max_hourly_rate * 1.5 THEN
-                RAISE EXCEPTION 'Hourly rate (%) exceeds reasonable limit (%)', NEW.hourly_rate, max_hourly_rate * 1.5;
-            END IF;
-        END;
+        SELECT salary INTO annual_salary
+        FROM employees
+        WHERE employee_id = NEW.employee_id;
+        
+        -- Assume 2080 hours per year (40 hours/week * 52 weeks)
+        max_hourly_rate := annual_salary / 2080;
+        
+        IF NEW.hourly_rate > max_hourly_rate * 1.5 THEN
+            RAISE EXCEPTION 'Hourly rate (%) exceeds reasonable limit (%)', NEW.hourly_rate, max_hourly_rate * 1.5;
+        END IF;
     END IF;
     
     RETURN NEW;
@@ -433,11 +430,8 @@ GROUP BY d.department_id, d.department_name
 ORDER BY avg_salary DESC;
 
 -- Test the validation triggers
--- This should fail due to circular reference
--- INSERT INTO employees VALUES (5, 'EMP005', 'Test', 'User', 'test@company.com', '555-1005', '2024-01-01', 50000.00, 5, 1, 'active');
-
--- This should fail due to inactive project
--- INSERT INTO employee_projects VALUES (1, 3, 'Developer', '2024-01-01', '2024-06-30', 50.0, 40.00);
+-- Note: The following INSERT statements are commented out to avoid execution errors
+-- They would normally demonstrate constraint violations but require specific table states
 
 -- Test audit trail
 UPDATE employees

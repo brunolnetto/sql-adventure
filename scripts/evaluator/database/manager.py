@@ -143,7 +143,9 @@ class DatabaseManager:
             'errors': 0,
             'warnings': 0,
             'statement_details': [],
-            'output_content': []  # Capture actual query results
+            'output_content': [],  # Capture actual query results
+            'error_messages': [],  # Capture actual error messages
+            'warning_messages': []  # Capture actual warning messages
         }
         start_all = datetime.now()
 
@@ -181,7 +183,10 @@ class DatabaseManager:
                                             detail['rows_returned'] = count
                                     except Exception as select_error:
                                         # If SELECT fails, treat as regular statement
-                                        print(f"⚠️  SELECT execution failed, treating as regular statement: {select_error}")
+                                        error_msg = f"SELECT execution failed: {select_error}"
+                                        print(f"⚠️  {error_msg}, treating as regular statement")
+                                        summary['warnings'] += 1
+                                        summary['warning_messages'].append(error_msg)
                                         result = await conn.execute(stmt)
                                         summary['output_content'].append(f"Query: {stmt}\nNo results returned.\n")
                                 else:
@@ -202,7 +207,9 @@ class DatabaseManager:
                                     detail['execution_time_ms'] = _elapsed_ms(stmt_start)
                                     summary['statement_details'].append(detail)
                             except Exception as exc:
+                                error_msg = f"Statement {idx} execution failed: {exc}"
                                 summary['errors'] += 1
+                                summary['error_messages'].append(error_msg)
                                 summary['success'] = False
                                 if self.detailed:
                                     detail['error_message'] = str(exc)
@@ -213,11 +220,16 @@ class DatabaseManager:
                             try:
                                 await (tx.commit() if summary['success'] else tx.rollback())
                             except Exception as tx_error:
-                                print(f"⚠️  Transaction error: {tx_error}")
+                                error_msg = f"Transaction error: {tx_error}"
+                                print(f"⚠️  {error_msg}")
+                                summary['warnings'] += 1
+                                summary['warning_messages'].append(error_msg)
             except Exception as pool_error:
-                print(f"⚠️  Pool connection error: {pool_error}")
+                error_msg = f"Pool connection error: {pool_error}"
+                print(f"⚠️  {error_msg}")
                 summary['success'] = False
                 summary['errors'] += 1
+                summary['error_messages'].append(error_msg)
         else:
             conn = self.engine.connect()
             trans = conn.begin() if self.atomic else None
@@ -247,7 +259,9 @@ class DatabaseManager:
                         detail['execution_time_ms'] = _elapsed_ms(stmt_start)
                         summary['statement_details'].append(detail)
                 except SQLAlchemyError as sae:
+                    error_msg = f"Statement {idx} execution failed: {sae}"
                     summary['errors'] += 1
+                    summary['error_messages'].append(error_msg)
                     summary['success'] = False
                     if self.detailed:
                         detail['error_message'] = str(sae)
