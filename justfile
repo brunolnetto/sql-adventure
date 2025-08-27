@@ -26,6 +26,9 @@ docker-down:
 evaluate path:
     scripts/task_runner.sh evaluate "{{path}}"
 
+run path quiet="":
+    scripts/task_runner.sh run "{{path}}" {{quiet}}
+
 summary:
     scripts/task_runner.sh summary
 
