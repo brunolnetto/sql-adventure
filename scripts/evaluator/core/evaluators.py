@@ -35,7 +35,7 @@ from utils.cache import (
     _save_cached_result
 )
 
-from repositories.sqlfile_repository import SQLFileRepository
+from repositories.sql_file_repository import SQLFileRepository
 
 # Handle relative imports
 evaluator_dir = Path(__file__).parent.parent
@@ -400,7 +400,7 @@ class SQLEvaluator:
             try:
                 # Get existing SQL file from database
                 from database.tables import SQLFile, Quest, Subcategory
-                from repositories.sqlfile_repository import SQLFileRepository
+                from repositories.sql_file_repository import SQLFileRepository
                 
                 # Normalize path for database lookup 
                 # Database stores paths like: "quests/1-data-modeling/00-basic-concepts/01-basic-table-creation.sql"

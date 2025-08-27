@@ -13,17 +13,29 @@ class SQLFileRepository(BaseRepository[SQLFile]):
         super().__init__(session, SQLFile)
     
     def _detect_and_associate_patterns(self, sql_file: SQLFile, file_path: str):
-        """Simplified: No automatic pattern detection - patterns detected by AI during evaluation"""
+        """Populate description and time estimate using AI analysis"""
         try:
-            with open(file_path, 'r') as f:
-                content = f.read()
-            
-            # Simplified: No automatic pattern detection
-            # Patterns will be detected during evaluation by AI agents
-            print(f"   ✅ SQL file processed: {sql_file.filename}")
-            
+            import asyncio
+            from utils.summarizers import analyze_sql_file_async
+
+            # Get AI analysis asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                description, estimated_time = loop.run_until_complete(analyze_sql_file_async(file_path))
+            finally:
+                loop.close()
+
+            # Update the SQL file record with AI analysis
+            sql_file.description = description
+            sql_file.estimated_time_minutes = estimated_time
+            print(f"   ✅ SQL file processed: {sql_file.filename} ({sql_file.estimated_time_minutes} min)")
+
         except Exception as e:
             print(f"   ❌ Error processing SQL file: {e}")
+            # Set fallback values if anything fails
+            sql_file.description = f"SQL exercise: {sql_file.display_name}"
+            sql_file.estimated_time_minutes = 15
     
     def _generate_display_name(self, filename: str) -> str:
         """Generate human-readable display name from filename"""
@@ -138,6 +150,17 @@ class SQLFileRepository(BaseRepository[SQLFile]):
             print(f"⚠️  Error getting SQL file by path: {e}")
             return None
     
-    def upsert_by_path(self, file_path: str) -> Optional[SQLFile]:
-        """Upsert SQL file record - create if doesn't exist, update if it does"""
-        return self.get_or_create(file_path)
+    def bulk_create_or_get(self, file_paths: list) -> list:
+        """Bulk create or get SQL file records for better performance"""
+        created_files = []
+
+        for file_path in file_paths:
+            try:
+                sql_file = self.get_or_create(file_path)
+                if sql_file:
+                    created_files.append(sql_file)
+            except Exception as e:
+                print(f"⚠️  Error in bulk processing {file_path}: {e}")
+                continue
+
+        return created_files

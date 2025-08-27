@@ -32,8 +32,8 @@ quality_assessor_agent = Agent(
 quest_summary_agent = Agent(
     config.model_name,
     output_type=str,
-    retries=3,
-    output_retries=5,
+    retries=1,  # Reduced for faster failure
+    output_retries=2,  # Reduced for faster failure
     system_prompt="""
     You are an expert SQL instructor. Your task is to analyze aggregated quest content 
     and generate a succinct but elucidative description of what the quest covers.
@@ -50,8 +50,8 @@ quest_summary_agent = Agent(
 subcategory_summary_agent = Agent(
     config.model_name,
     output_type=str,
-    retries=3,
-    output_retries=5,
+    retries=1,  # Reduced for faster failure
+    output_retries=2,  # Reduced for faster failure
     system_prompt="""
     You are an expert SQL instructor. Your task is to analyze SQL files from a subcategory 
     and generate a concise, informative description of what this subcategory teaches.
@@ -87,5 +87,35 @@ pattern_description_agent = Agent(
     - 2-3 sentences maximum but information-rich
     
     Focus on the learning value and practical applications of each SQL pattern.
+    """
+)
+
+sql_file_summarizer_agent = Agent(
+    config.model_name,
+    output_type=str,
+    retries=1,  # Reduced to 1 for faster failure
+    output_retries=2,  # Reduced to 2 for faster failure
+    system_prompt="""
+    You are an expert SQL instructor. Your task is to analyze individual SQL exercise files 
+    and provide educational metadata that helps learners understand what they'll accomplish.
+    
+    For each SQL file, provide:
+    1. A clear, concise description (1-2 sentences) of what the exercise teaches
+    2. An estimated completion time in minutes (realistic for a learner to understand and complete)
+    
+    Consider:
+    - The complexity of SQL concepts used
+    - The number of steps or operations required
+    - Whether it's a simple query or complex multi-step exercise
+    - Typical learner pace for this difficulty level
+    
+    Return your analysis in this exact JSON format:
+    {
+        "description": "Brief description of what this SQL exercise teaches",
+        "estimated_time_minutes": 15
+    }
+    
+    Keep descriptions focused on learning outcomes and practical skills.
+    Time estimates should be realistic: 5-10 minutes for simple queries, 15-30 minutes for complex exercises.
     """
 )

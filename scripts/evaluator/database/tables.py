@@ -219,22 +219,32 @@ class Recommendation(EvaluationBase):
         Index('idx_recommendation_category', 'category'),
     )
 
-# SIMPLIFIED: Pattern catalog for reference only (no relationships needed with JSONB approach)
+# ENHANCED: Pattern catalog with regex patterns and examples
 class SQLPattern(EvaluationBase):
-    """Simple catalog of SQL patterns for reference"""
+    """Enhanced catalog of SQL patterns with regex patterns and examples"""
     __tablename__ = 'sql_patterns'
-    
+
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
     display_name = Column(String(200), nullable=False)
     description = Column(Text)
-    category = Column(String(50), nullable=False)  # DDL, DML, DQL, etc.
+    category = Column(String(50), nullable=False)  # DDL, DML, DQL, DCL, TCL, ANALYTICS, JSON, RECURSIVE
     complexity_level = Column(String(20), nullable=False)
-    
-    # No relationships needed with JSONB pattern storage
-    
+
+    # Fields for pattern matching and examples
+    regex_pattern = Column(String(500))  # Regular expression for pattern detection
+    base_description = Column(Text)      # Base description for the pattern
+    examples = Column(JSON)              # List of example SQL statements
+    usage_count = Column(Integer, default=0)  # How many times pattern is detected
+
+    # Metadata
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
     __table_args__ = (
         CheckConstraint("category IN ('DDL', 'DML', 'DQL', 'DCL', 'TCL', 'ANALYTICS', 'JSON', 'RECURSIVE')", name='valid_pattern_category'),
         CheckConstraint("complexity_level IN ('Basic', 'Intermediate', 'Advanced', 'Expert')", name='valid_pattern_complexity'),
         Index('idx_pattern_category', 'category'),
+        Index('idx_pattern_complexity', 'complexity_level'),
+        Index('idx_pattern_usage', 'usage_count'),
     )

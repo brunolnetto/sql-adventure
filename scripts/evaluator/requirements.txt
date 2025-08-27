@@ -12,8 +12,8 @@ python-dotenv>=1.0.0
 # Additional database support
 alembic>=1.12.0
 
-# Environment management
-python-dotenv>=1.0.0
+# Async utilities
+nest_asyncio>=1.5.0
 
 # Validation and data processing
 jsonschema>=4.17.0

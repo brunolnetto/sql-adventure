@@ -29,6 +29,7 @@ print_usage() {
     echo ""
     echo "Evaluation Commands:"
     echo "  evaluate <path>   Evaluate SQL file or quest directory"
+    echo "  run <path>        Run SQL file or directory (no evaluation)"
     echo "  summary          Generate evaluation summary report"
     echo "  basic <path>      Basic SQL validation (syntax, style)"
     echo "  test             Run test suite"
@@ -43,6 +44,8 @@ print_usage() {
     echo "  $0 setup                           # Initial setup"
     echo "  $0 evaluate file.sql               # Evaluate single file"
     echo "  $0 evaluate quests/1-data-modeling # Evaluate entire quest"
+    echo "  $0 run file.sql                    # Run single file (no evaluation)"
+    echo "  $0 run quests/1-data-modeling --quiet # Run quest with errors only"
     echo "  $0 summary                         # Generate evaluation report"
     echo "  $0 basic file.sql                  # Basic validation"
 }
@@ -142,6 +145,49 @@ evaluate() {
     elif [ -d "$target" ]; then
         # Directory evaluation
         PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/evaluator/run_evaluation.py "$target"
+    else
+        echo -e "${RED}❌ File or directory not found: $target${NC}"
+        exit 1
+    fi
+}
+
+run_sql() {
+    local target="$1"
+    local quiet_mode="$2"
+    
+    if [ -z "$target" ]; then
+        echo -e "${RED}❌ Please specify a file or directory to run${NC}"
+        echo "Usage: $0 run <path> [--quiet]"
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🚀 Running SQL: $target${NC}"
+    cd "$PROJECT_ROOT"
+    
+    # Check if Docker is running
+    if ! docker-compose ps | grep -q "Up"; then
+        echo -e "${YELLOW}⚠️  PostgreSQL Docker container is not running. Starting it...${NC}"
+        docker-compose up -d
+        sleep 3  # Wait for database to be ready
+    fi
+    
+    # Load environment variables
+    if [ -f ".env" ]; then
+        echo -e "${BLUE}📋 Loading configuration from .env...${NC}"
+        set -a
+        source .env
+        set +a
+    else
+        echo -e "${YELLOW}⚠️  No .env file found. Using default configuration.${NC}"
+    fi
+    
+    # Determine target type and run accordingly
+    if [ -f "$target" ]; then
+        # Single file
+        PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py $quiet_mode "$target"
+    elif [ -d "$target" ]; then
+        # Directory - run all SQL files
+        PYTHONPATH="$PWD/scripts/evaluator:$PYTHONPATH" python3 scripts/run_sql.py $quiet_mode --dir "$target"
     else
         echo -e "${RED}❌ File or directory not found: $target${NC}"
         exit 1
@@ -307,6 +353,9 @@ case "$1" in
         ;;
     evaluate)
         evaluate "$2"
+        ;;
+    run)
+        run_sql "$2" "$3"
         ;;
     summary)
         summary

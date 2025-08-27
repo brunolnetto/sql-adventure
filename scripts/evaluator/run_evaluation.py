@@ -35,7 +35,7 @@ from core.evaluators import QuestEvaluator
 from config import ProjectFolderConfig, EvaluationConfig
 from database.manager import DatabaseManager
 from database.tables import EvaluationBase
-from repositories.sqlfile_repository import SQLFileRepository
+from repositories.sql_file_repository import SQLFileRepository
 from repositories.evaluation_repository import EvaluationRepository
 
 
@@ -148,7 +148,7 @@ async def save_evaluation_to_database(file_path: str, evaluation_result: Dict[st
             evaluation_repo = EvaluationRepository(session)
             
             # Ensure SQL file exists in database (create if needed)
-            sql_file = sql_file_repo.upsert_by_path(file_path)
+            sql_file = sql_file_repo.get_or_create(file_path)
             if not sql_file:
                 print(f"❌ Could not create/find SQL file record for: {file_path}")
                 return False
