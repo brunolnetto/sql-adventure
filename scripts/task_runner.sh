@@ -221,11 +221,8 @@ run_sql() {
             else
                 failed_files=$((failed_files + 1))
                 echo -e "${RED}❌ FAILED: $sql_file${NC}"
-                # Show detailed error information
-                echo "$output" | grep -E "(🚨 Errors:|⚠️  Warnings:|❌ ERROR|⚠️  SELECT execution failed|⚠️  Transaction error|⚠️  Pool connection error)" || true
-
-                # Show the last few lines which often contain the most relevant errors
-                echo "$output" | tail -5 | grep -v "^✅ " | grep -v "^📄 " || true
+                # Show full error output for debugging
+                echo "$output" | grep -A 50 -B 5 "❌ FAILED:" || echo "$output"
             fi
 
             # Add spacing between files

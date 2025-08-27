@@ -42,7 +42,7 @@ class SimpleSQLRunner:
     async def run_sql_file(self, file_path: str):
         """Execute a single SQL file"""
         self.total_files += 1
-        
+
         try:
             if not self.quiet_mode:
                 print(f"📄 Executing: {file_path}")
@@ -73,14 +73,14 @@ class SimpleSQLRunner:
                 print(f"❌ FAILED: {file_path}")
                 if result['errors'] > 0:
                     print(f"   � Errors: {result['errors']}")
-                    # Print detailed error messages
+                    # Always print detailed error messages for debugging
                     for error_msg in result['error_messages']:
                         print(f"   🚨 {error_msg}")
                 if result['warnings'] > 0:
                     print(f"   ⚠️  Warnings: {result['warnings']}")
-                    # Print detailed warning messages
+                    # Always print detailed warning messages for debugging
                     for warning_msg in result['warning_messages']:
-                        print(f"   ⚠️  {warning_msg}") 
+                        print(f"   ⚠️  {warning_msg}")
 
         except Exception as e:
             self.failed_files += 1
@@ -89,13 +89,13 @@ class SimpleSQLRunner:
     async def run_multiple_files(self, file_paths: list):
         """Execute multiple SQL files with minimal output"""
         print(f"� Processing {len(file_paths)} SQL files...")
-        
+
         for file_path in file_paths:
             if os.path.exists(file_path):
                 await self.run_sql_file(file_path)
             else:
                 print(f"❌ File not found: {file_path}")
-        
+
         # Summary
         print(f"\n📊 Summary:")
         print(f"   📁 Total files: {self.total_files}")
@@ -127,7 +127,7 @@ async def main():
     quiet_mode = '--quiet' in sys.argv
     if quiet_mode:
         sys.argv.remove('--quiet')
-    
+
     if sys.argv[1] == '--dir':
         if len(sys.argv) < 3:
             print("Usage: python3 scripts/run_sql.py --dir <directory>")
@@ -139,7 +139,7 @@ async def main():
             sys.exit(1)
     else:
         file_paths = sys.argv[1:]
-    
+
     runner = SimpleSQLRunner(quiet_mode=quiet_mode)
     await runner.initialize()
 
