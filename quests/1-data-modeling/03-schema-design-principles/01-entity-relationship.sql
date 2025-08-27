@@ -61,6 +61,7 @@ CREATE TABLE courses (
 CREATE TABLE sections (
     section_id INT PRIMARY KEY,
     course_id INT NOT NULL REFERENCES courses (course_id),
+    faculty_id INT REFERENCES faculty (faculty_id),
     section_number VARCHAR(10) NOT NULL,
     semester VARCHAR(20) NOT NULL,
     year INT NOT NULL,
@@ -266,6 +267,7 @@ INSERT INTO sections VALUES
 (
     1,
     1,
+    1,  -- faculty_id
     '001',
     'Spring',
     2024,
@@ -280,6 +282,7 @@ INSERT INTO sections VALUES
 (
     2,
     1,
+    2,  -- faculty_id
     '002',
     'Spring',
     2024,
@@ -294,6 +297,7 @@ INSERT INTO sections VALUES
 (
     3,
     2,
+    1,  -- faculty_id
     '001',
     'Spring',
     2024,
@@ -308,6 +312,7 @@ INSERT INTO sections VALUES
 (
     4,
     3,
+    3,  -- faculty_id
     '001',
     'Spring',
     2024,

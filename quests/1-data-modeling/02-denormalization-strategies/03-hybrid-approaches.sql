@@ -281,7 +281,7 @@ SELECT
     ROUND(AVG(o.total_amount), 2) AS avg_order_value,
     MIN(DATE(o.order_date)) AS first_order_date,
     MAX(DATE(o.order_date)) AS last_order_date,
-    EXTRACT(days FROM (CURRENT_DATE - MAX(DATE(o.order_date))))
+    EXTRACT(day FROM AGE(CURRENT_DATE, MAX(DATE(o.order_date))))
         AS days_since_last_order,
     CASE
         WHEN SUM(o.total_amount) >= 1000 THEN 'Premium'
@@ -377,128 +377,13 @@ ORDER BY o.order_date DESC;
 -- Example 4: Synchronization Strategies
 -- Demonstrate how to keep normalized and denormalized data in sync
 
--- Function to update customer analytics when orders change
-CREATE OR REPLACE FUNCTION UPDATE_CUSTOMER_ANALYTICS()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Update customer analytics when orders are inserted/updated
-    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-        -- Refresh the materialized view
-        REFRESH MATERIALIZED VIEW mv_customer_analytics;
-        
-        -- Update the denormalized customer_analytics table
-        UPDATE customer_analytics SET
-            total_orders = (
-                SELECT COUNT(DISTINCT order_id) 
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            total_spent = (
-                SELECT COALESCE(SUM(total_amount), 0)
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            avg_order_value = (
-                SELECT COALESCE(AVG(total_amount), 0)
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            first_order_date = (
-                SELECT MIN(DATE(order_date))
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            last_order_date = (
-                SELECT MAX(DATE(order_date))
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            days_since_last_order = (
-                SELECT EXTRACT(DAYS FROM (CURRENT_DATE - MAX(DATE(order_date))))
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            customer_segment = (
-                SELECT CASE 
-                    WHEN SUM(total_amount) >= 1000 THEN 'Premium'
-                    WHEN SUM(total_amount) >= 100 THEN 'Standard'
-                    ELSE 'Basic'
-                END
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            is_active = (
-                SELECT CASE WHEN MAX(order_date) >= CURRENT_DATE - INTERVAL '90 days' THEN true ELSE false END
-                FROM orders_oltp 
-                WHERE customer_id = NEW.customer_id
-            ),
-            last_updated = CURRENT_TIMESTAMP
-        WHERE customer_id = NEW.customer_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Note: For production use, you would implement triggers and functions to
+-- automatically sync data between normalized and denormalized tables.
+-- Here we demonstrate manual synchronization:
 
--- Create trigger to maintain customer analytics
-CREATE TRIGGER trigger_update_customer_analytics
-AFTER INSERT OR UPDATE ON orders_oltp
-FOR EACH ROW EXECUTE FUNCTION UPDATE_CUSTOMER_ANALYTICS();
-
--- Function to update product analytics when order items change
-CREATE OR REPLACE FUNCTION UPDATE_PRODUCT_ANALYTICS()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Update product analytics when order items are inserted/updated
-    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-        -- Refresh the materialized view
-        REFRESH MATERIALIZED VIEW mv_product_analytics;
-        
-        -- Update the denormalized product_analytics table
-        UPDATE product_analytics SET
-            total_quantity_sold = (
-                SELECT COALESCE(SUM(oi.quantity), 0)
-                FROM order_items_oltp oi
-                JOIN orders_oltp o ON oi.order_id = o.order_id
-                WHERE oi.product_id = NEW.product_id
-            ),
-            total_revenue = (
-                SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0)
-                FROM order_items_oltp oi
-                JOIN orders_oltp o ON oi.order_id = o.order_id
-                WHERE oi.product_id = NEW.product_id
-            ),
-            total_profit = (
-                SELECT COALESCE(SUM(oi.quantity * (oi.unit_price - p.cost_price)), 0)
-                FROM order_items_oltp oi
-                JOIN orders_oltp o ON oi.order_id = o.order_id
-                JOIN products_oltp p ON oi.product_id = p.product_id
-                WHERE oi.product_id = NEW.product_id
-            ),
-            avg_order_quantity = (
-                SELECT COALESCE(AVG(oi.quantity), 0)
-                FROM order_items_oltp oi
-                JOIN orders_oltp o ON oi.order_id = o.order_id
-                WHERE oi.product_id = NEW.product_id
-            ),
-            is_bestseller = (
-                SELECT CASE WHEN SUM(oi.quantity) >= 10 THEN true ELSE false END
-                FROM order_items_oltp oi
-                JOIN orders_oltp o ON oi.order_id = o.order_id
-                WHERE oi.product_id = NEW.product_id
-            ),
-            last_updated = CURRENT_TIMESTAMP
-        WHERE product_id = NEW.product_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to maintain product analytics
-CREATE TRIGGER trigger_update_product_analytics
-AFTER INSERT OR UPDATE ON order_items_oltp
-FOR EACH ROW EXECUTE FUNCTION UPDATE_PRODUCT_ANALYTICS();
+-- Manual refresh of materialized views
+REFRESH MATERIALIZED VIEW mv_customer_analytics;
+REFRESH MATERIALIZED VIEW mv_product_analytics;
 
 -- Example 5: Performance Comparison
 -- Demonstrate the performance benefits of hybrid approach
@@ -514,31 +399,26 @@ GROUP BY customer_segment;
 
 -- Equivalent query using normalized data (slower but more flexible)
 EXPLAIN (ANALYZE, BUFFERS)
-WITH customer_totals AS (
+WITH customer_segments AS (
     SELECT
-        customer_id,
-        SUM(total_amount) AS total_spent
-    FROM orders_oltp
-    GROUP BY customer_id
+        c.customer_id,
+        c.customer_name,
+        CASE
+            WHEN COALESCE(SUM(o.total_amount), 0) >= 1000 THEN 'Premium'
+            WHEN COALESCE(SUM(o.total_amount), 0) >= 100 THEN 'Standard'
+            ELSE 'Basic'
+        END AS customer_segment,
+        COALESCE(SUM(o.total_amount), 0) AS total_spent
+    FROM customers_oltp AS c
+    LEFT JOIN orders_oltp AS o ON c.customer_id = o.customer_id
+    GROUP BY c.customer_id, c.customer_name
 )
-
 SELECT
-    CASE
-        WHEN SUM(o.total_amount) >= 1000 THEN 'Premium'
-        WHEN SUM(o.total_amount) >= 100 THEN 'Standard'
-        ELSE 'Basic'
-    END AS customer_segment,
-    COUNT(DISTINCT c.customer_id) AS customer_count,
-    ROUND(AVG(customer_totals.total_spent), 2) AS avg_total_spent
-FROM customers_oltp AS c
-LEFT JOIN customer_totals ON c.customer_id = customer_totals.customer_id
-LEFT JOIN orders_oltp AS o ON c.customer_id = o.customer_id
-GROUP BY
-    CASE
-        WHEN SUM(o.total_amount) >= 1000 THEN 'Premium'
-        WHEN SUM(o.total_amount) >= 100 THEN 'Standard'
-        ELSE 'Basic'
-    END;
+    customer_segment,
+    COUNT(*) AS customer_count,
+    ROUND(AVG(total_spent), 2) AS avg_total_spent
+FROM customer_segments
+GROUP BY customer_segment;
 
 -- Test the synchronization
 INSERT INTO orders_oltp (
@@ -589,5 +469,3 @@ DROP TABLE IF EXISTS product_analytics CASCADE;
 DROP TABLE IF EXISTS sales_summary CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_customer_analytics CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS mv_product_analytics CASCADE;
-DROP FUNCTION IF EXISTS update_customer_analytics() CASCADE;
-DROP FUNCTION IF EXISTS update_product_analytics() CASCADE;

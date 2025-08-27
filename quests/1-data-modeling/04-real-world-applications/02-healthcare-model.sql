@@ -519,33 +519,38 @@ GROUP BY gender
 ORDER BY patient_count DESC;
 
 -- Provider workload analysis
+WITH encounter_times AS (
+    SELECT
+        p.provider_id,
+        e.encounter_date,
+        EXTRACT(
+            EPOCH FROM (
+                e.encounter_date
+                - LAG(e.encounter_date)
+                    OVER (
+                        PARTITION BY p.provider_id ORDER BY e.encounter_date
+                    )
+            )
+        ) / 3600 AS hours_since_last_encounter
+    FROM providers AS p
+    LEFT JOIN encounters AS e ON p.provider_id = e.provider_id
+    WHERE p.is_active = true
+    AND e.encounter_date >= CURRENT_DATE - INTERVAL '30 days'
+)
 SELECT
     p.specialty,
     d.department_name,
     p.first_name || ' ' || p.last_name AS provider_name,
-    COUNT(e.encounter_id) AS total_encounters,
+    COUNT(DISTINCT e.encounter_id) AS total_encounters,
     COUNT(DISTINCT e.patient_id) AS unique_patients,
-    ROUND(
-        AVG(
-            EXTRACT(
-                EPOCH FROM (
-                    e.encounter_date
-                    - LAG(e.encounter_date)
-                        OVER (
-                            PARTITION BY p.provider_id ORDER BY e.encounter_date
-                        )
-                )
-            )
-            / 3600
-        ),
-        2
-    ) AS avg_hours_between_encounters
+    ROUND(AVG(et.hours_since_last_encounter), 2) AS avg_hours_between_encounters
 FROM providers AS p
 LEFT JOIN
     provider_departments AS pd
     ON p.provider_id = pd.provider_id AND pd.is_primary = true
 LEFT JOIN departments AS d ON pd.department_id = d.department_id
 LEFT JOIN encounters AS e ON p.provider_id = e.provider_id
+LEFT JOIN encounter_times AS et ON p.provider_id = et.provider_id
 WHERE
     p.is_active = true
     AND e.encounter_date >= CURRENT_DATE - INTERVAL '30 days'
@@ -632,7 +637,7 @@ WITH prescription_analysis AS (
         pr.quantity_dispensed,
         pr.start_date,
         pr.end_date,
-        EXTRACT(pr.days FROM (pr.end_date - pr.start_date)) AS days_prescribed,
+        EXTRACT(days FROM AGE(pr.end_date, pr.start_date)) AS days_prescribed,
         CASE
             WHEN pr.frequency LIKE '%daily%' THEN 1
             WHEN pr.frequency LIKE '%twice%' THEN 2
@@ -778,7 +783,7 @@ WITH encounter_analysis AS (
             OVER (PARTITION BY e.patient_id ORDER BY e.encounter_date)
             AS previous_encounter_date,
         EXTRACT(
-            e.days FROM (
+            days FROM (
                 e.encounter_date
                 - LAG(e.encounter_date)
                     OVER (PARTITION BY e.patient_id ORDER BY e.encounter_date)
@@ -816,36 +821,43 @@ WHERE
 ORDER BY ea.days_since_previous;
 
 -- Provider performance metrics
-SELECT
-    p.specialty,
-    p.first_name || ' ' || p.last_name AS provider_name,
-    COUNT(e.encounter_id) AS total_encounters,
-    COUNT(DISTINCT e.patient_id) AS unique_patients,
-    ROUND(
-        AVG(
-            EXTRACT(
-                EPOCH FROM (
-                    e.encounter_date
-                    - LAG(e.encounter_date)
-                        OVER (
-                            PARTITION BY p.provider_id ORDER BY e.encounter_date
-                        )
-                )
+WITH encounter_times AS (
+    SELECT
+        p.provider_id,
+        p.specialty,
+        p.first_name,
+        p.last_name,
+        e.encounter_id,
+        e.encounter_date,
+        pr.prescription_id,
+        EXTRACT(
+            EPOCH FROM (
+                e.encounter_date
+                - LAG(e.encounter_date)
+                    OVER (
+                        PARTITION BY p.provider_id ORDER BY e.encounter_date
+                    )
             )
-            / 3600
-        ),
-        2
-    ) AS avg_hours_between_encounters,
-    COUNT(pr.prescription_id) AS prescriptions_written,
-    ROUND(COUNT(pr.prescription_id)::DECIMAL / COUNT(e.encounter_id), 2)
+        ) / 3600 AS hours_since_last_encounter
+    FROM providers AS p
+    LEFT JOIN encounters AS e ON p.provider_id = e.provider_id
+    LEFT JOIN prescriptions AS pr ON e.encounter_id = pr.encounter_id
+    WHERE
+        p.is_active = true
+        AND e.encounter_date >= CURRENT_DATE - INTERVAL '90 days'
+)
+
+SELECT
+    specialty,
+    first_name || ' ' || last_name AS provider_name,
+    COUNT(encounter_id) AS total_encounters,
+    COUNT(DISTINCT provider_id) AS unique_patients,
+    ROUND(AVG(hours_since_last_encounter), 2) AS avg_hours_between_encounters,
+    COUNT(prescription_id) AS prescriptions_written,
+    ROUND(COUNT(prescription_id)::DECIMAL / COUNT(encounter_id), 2)
         AS prescriptions_per_encounter
-FROM providers AS p
-LEFT JOIN encounters AS e ON p.provider_id = e.provider_id
-LEFT JOIN prescriptions AS pr ON e.encounter_id = pr.encounter_id
-WHERE
-    p.is_active = true
-    AND e.encounter_date >= CURRENT_DATE - INTERVAL '90 days'
-GROUP BY p.provider_id, p.first_name, p.last_name, p.specialty
+FROM encounter_times
+GROUP BY provider_id, first_name, last_name, specialty
 ORDER BY total_encounters DESC;
 
 -- Clean up

@@ -1,6 +1,6 @@
 -- Data Modeling Quest: Basic Constraints
--- PURPOSE: Demonstrate fundamental constraint concepts for beginners
--- DIFFICULTY: 🟢 Beginner (5-10 min)
+-- PURPOSE: Demonstrate fundamental constraint concepts for begin-- Example 4: Querying with Constraints
+-- Demonstrate how constraints help maintain data qualityLTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: NOT NULL, UNIQUE, CHECK, DEFAULT constraints
 
 -- Example 1: NOT NULL and UNIQUE Constraints
@@ -104,20 +104,6 @@ INSERT INTO orders VALUES
 (1, 1, '2024-01-15', 150.00, 'pending', null),
 (2, 2, '2024-01-20', 75.50, 'shipped', '123 Main St, City, State 12345'),
 (3, 3, '2024-01-25', 200.00, 'delivered', '456 Oak Ave, City, State 12345');
-
--- Example 4: Constraint Violation Examples
--- Demonstrate what happens when constraints are violated
-
-/*
-This would fail due to NOT NULL constraint:
-INSERT INTO employees (employee_id, first_name, last_name, email) VALUES (4, NULL, 'Test', 'test@email.com');
-
-This would fail due to UNIQUE constraint:
-INSERT INTO employees VALUES (5, 'John', 'Doe', 'john.doe@company.com', '555-9999', '2024-01-01', 50000.00, 'Engineering', true);
-
-This would fail due to CHECK constraint:
-INSERT INTO products VALUES (4, 'Invalid Product', -10.00, 'Electronics', 10, 4.0, false);
-*/
 
 -- Example 5: Querying with Constraints
 -- Demonstrate how constraints help maintain data quality
