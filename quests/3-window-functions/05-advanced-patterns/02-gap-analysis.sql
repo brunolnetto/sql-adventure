@@ -379,33 +379,32 @@ WITH comprehensive_gaps AS (
 
     UNION ALL
 
-    SELECT
-        'time_series' AS data_type,
-        EXTRACT(EPOCH FROM timestamp)::INT AS identifier,
-        EXTRACT(
-            EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp))
-        ) AS gap_size,
-        'Time series gap' AS gap_description
-    FROM time_series_data
-    WHERE
-        timestamp - LAG(timestamp) OVER (ORDER BY timestamp)
-        > INTERVAL '15 minutes'
+    SELECT * FROM (
+        SELECT
+            'time_series' AS data_type,
+            EXTRACT(EPOCH FROM timestamp)::INT AS identifier,
+            EXTRACT(
+                EPOCH FROM (timestamp - LAG(timestamp) OVER (ORDER BY timestamp))
+            ) AS gap_size,
+            'Time series gap' AS gap_description
+        FROM time_series_data
+    ) ts
+    WHERE ts.gap_size > 15 * 60  -- 15 minutes in seconds
 
     UNION ALL
 
-    SELECT
-        'financial' AS data_type,
-        EXTRACT(EPOCH FROM transaction_date)::INT AS identifier,
-        (
-            transaction_date
-            - LAG(transaction_date) OVER (ORDER BY transaction_date)
-        )::INT AS gap_size,
-        'Financial data gap' AS gap_description
-    FROM financial_transactions
-    WHERE
-        transaction_date
-        - LAG(transaction_date) OVER (ORDER BY transaction_date)
-        > 1
+    SELECT * FROM (
+        SELECT
+            'financial' AS data_type,
+            EXTRACT(EPOCH FROM transaction_date)::INT AS identifier,
+            (
+                transaction_date
+                - LAG(transaction_date) OVER (ORDER BY transaction_date)
+            )::INT AS gap_size,
+            'Financial data gap' AS gap_description
+        FROM financial_transactions
+    ) ft
+    WHERE ft.gap_size > 1
 )
 
 SELECT

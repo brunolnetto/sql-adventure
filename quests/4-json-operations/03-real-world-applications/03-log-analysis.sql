@@ -51,141 +51,27 @@ CREATE TABLE performance_logs (
 
 -- Insert sample application log data
 INSERT INTO application_logs VALUES
-(1, '2024-01-15 10:00:00', 'INFO', 'user-service', '{
-    "action": "user_login",
-    "user_id": 12345,
-    "ip_address": "192.168.1.100",
-    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "session_id": "sess_abc123",
-    "metadata": {
-        "login_method": "password",
-        "two_factor": false,
-        "location": "New York"
-    }
-}', 12345),
-(2, '2024-01-15 10:01:00', 'WARN', 'payment-service', '{
-    "action": "payment_processing",
-    "transaction_id": "txn_789",
-    "amount": 99.99,
-    "currency": "USD",
-    "payment_method": "credit_card",
-    "status": "pending",
-    "metadata": {
-        "retry_count": 1,
-        "gateway": "stripe",
-        "risk_score": 0.3
-    }
-}', 12345),
-(3, '2024-01-15 10:02:00', 'ERROR', 'database-service', '{
-    "action": "database_query",
-    "query_type": "SELECT",
-    "table": "users",
-    "duration_ms": 2500,
-    "error": {
-        "code": "TIMEOUT",
-        "message": "Query execution timeout",
-        "details": "Query took longer than 2000ms"
-    },
-    "metadata": {
-        "connection_pool": "main",
-        "query_hash": "abc123def456"
-    }
-}', null),
-(4, '2024-01-15 10:03:00', 'INFO', 'notification-service', '{
-    "action": "email_sent",
-    "recipient": "user@example.com",
-    "template": "welcome_email",
-    "status": "delivered",
-    "metadata": {
-        "provider": "sendgrid",
-        "delivery_time_ms": 150,
-        "bounce_rate": 0.01
-    }
-}', 12345),
-(5, '2024-01-15 10:04:00', 'DEBUG', 'cache-service', '{
-    "action": "cache_hit",
-    "key": "user_profile_12345",
-    "cache_type": "redis",
-    "ttl_seconds": 3600,
-    "metadata": {
-        "cache_size_bytes": 2048,
-        "hit_rate": 0.85
-    }
-}', 12345);
+(1, '2024-01-15 10:00:00', 'INFO', 'user-service', jsonb_build_object('action', 'user_login', 'user_id', 12345, 'ip_address', '192.168.1.100', 'user_agent', 'Mozilla/5.0', 'session_id', 'sess_abc123', 'metadata', jsonb_build_object('login_method', 'password', 'two_factor', false, 'location', 'New York')), 12345),
+(2, '2024-01-15 10:01:00', 'INFO', 'payment-service', jsonb_build_object('action', 'payment_initiation', 'transaction_id', 'txn_abc456', 'amount', 25.50, 'currency', 'USD', 'user_id', 12345), 12345),
+(3, '2024-01-15 10:02:00', 'ERROR', 'database-service', jsonb_build_object('action', 'database_query', 'query_type', 'SELECT', 'table', 'users', 'duration_ms', 2500, 'error', jsonb_build_object('code', 'TIMEOUT', 'message', 'Query execution timeout', 'details', 'Query took longer than 2000ms'), 'metadata', jsonb_build_object('connection_pool', 'main', 'query_hash', 'abc123def456')), NULL),
+(4, '2024-01-15 10:03:00', 'INFO', 'auth-service', jsonb_build_object('action', 'user_logout', 'user_id', 67890, 'session_id', 'sess_456def', 'logout_reason', 'user_initiated', 'duration_seconds', 1800, 'metadata', jsonb_build_object('ip_address', '192.168.1.100', 'user_agent', 'Mozilla/5.0')), NULL),
+(5, '2024-01-15 10:04:00', 'WARN', 'payment-service', jsonb_build_object('action', 'payment_processing', 'transaction_id', 'txn_789ghi', 'amount', 99.99, 'currency', 'USD', 'status', 'failed', 'error', jsonb_build_object('code', 'INSUFFICIENT_FUNDS', 'message', 'Account balance insufficient', 'details', 'Required: $99.99, Available: $50.00'), 'metadata', jsonb_build_object('payment_method', 'credit_card', 'card_last4', '1234')), NULL),
+(6, '2024-01-15 10:05:00', 'DEBUG', 'cache-service', jsonb_build_object('action', 'cache_hit', 'key', 'user_profile_12345', 'cache_type', 'redis', 'ttl_seconds', 3600, 'metadata', jsonb_build_object('cache_size_bytes', 2048, 'hit_rate', 0.85)), 12345);
+
 
 -- Insert sample error log data
 INSERT INTO error_logs VALUES
-(1, '2024-01-15 10:02:00', 'DatabaseTimeout', '{
-    "service": "database-service",
-    "query": "SELECT * FROM users WHERE email = $1",
-    "parameters": ["user@example.com"],
-    "timeout_ms": 2000,
-    "actual_duration_ms": 2500,
-    "stack_trace": "DatabaseConnection.execute() at line 45",
-    "context": {
-        "user_id": 12345,
-        "session_id": "sess_abc123",
-        "request_id": "req_xyz789"
-    }
-}', 'HIGH', false),
-(2, '2024-01-15 10:05:00', 'ValidationError', '{
-    "service": "user-service",
-    "field": "email",
-    "value": "invalid-email",
-    "rule": "email_format",
-    "message": "Invalid email format",
-    "context": {
-        "action": "user_registration",
-        "ip_address": "192.168.1.101"
-    }
-}', 'MEDIUM', true),
-(3, '2024-01-15 10:06:00', 'AuthenticationError', '{
-    "service": "auth-service",
-    "user_id": 12346,
-    "attempt_count": 3,
-    "ip_address": "192.168.1.102",
-    "reason": "Invalid credentials",
-    "context": {
-        "login_method": "password",
-        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0)"
-    }
-}', 'MEDIUM', false);
+(1, '2024-01-15 10:02:00', 'DatabaseTimeout', jsonb_build_object('service', 'database-service', 'query', 'SELECT * FROM users WHERE email = $1', 'parameters', jsonb_build_array('user@example.com'), 'timeout_ms', 2000, 'actual_duration_ms', 2500, 'stack_trace', 'DatabaseConnection.execute() at line 45', 'context', jsonb_build_object('user_id', 12345, 'session_id', 'sess_abc123', 'request_id', 'req_xyz789')), 'HIGH', false),
+(2, '2024-01-15 10:05:00', 'ValidationError', jsonb_build_object('service', 'user-service', 'field', 'email', 'value', 'invalid-email', 'rule', 'email_format', 'message', 'Invalid email format', 'context', jsonb_build_object('action', 'user_registration', 'ip_address', '192.168.1.101')), 'MEDIUM', true),
+(3, '2024-01-15 10:06:00', 'AuthenticationError', jsonb_build_object('service', 'auth-service', 'user_id', 12346, 'attempt_count', 3, 'ip_address', '192.168.1.102', 'reason', 'Invalid credentials', 'context', jsonb_build_object('login_method', 'password', 'user_agent', 'Mozilla/5.0')), 'MEDIUM', false);
+
 
 -- Insert sample performance log data
 INSERT INTO performance_logs VALUES
-(1, '2024-01-15 10:00:00', '/api/users/profile', 150, 200, '{
-    "method": "GET",
-    "user_id": 12345,
-    "cache_hit": true,
-    "database_queries": 1,
-    "external_calls": 0,
-    "memory_usage_mb": 45.2
-}'),
-(2, '2024-01-15 10:01:00', '/api/payments/process', 2500, 500, '{
-    "method": "POST",
-    "user_id": 12345,
-    "cache_hit": false,
-    "database_queries": 3,
-    "external_calls": 2,
-    "memory_usage_mb": 67.8,
-    "error": "Database timeout"
-}'),
-(3, '2024-01-15 10:02:00', '/api/products/search', 89, 200, '{
-    "method": "GET",
-    "user_id": 12347,
-    "cache_hit": true,
-    "database_queries": 0,
-    "external_calls": 0,
-    "memory_usage_mb": 32.1
-}'),
-(4, '2024-01-15 10:03:00', '/api/orders/create', 1200, 201, '{
-    "method": "POST",
-    "user_id": 12348,
-    "cache_hit": false,
-    "database_queries": 5,
-    "external_calls": 1,
-    "memory_usage_mb": 78.9
-}');
+(1, '2024-01-15 10:00:00', '/api/users/profile', 150, 200, jsonb_build_object('method', 'GET', 'user_id', 12345, 'cache_hit', true, 'database_queries', 1, 'external_calls', 0, 'memory_usage_mb', 45.2)),
+(2, '2024-01-15 10:01:00', '/api/payments/process', 2500, 500, jsonb_build_object('method', 'POST', 'user_id', 12345, 'cache_hit', false, 'database_queries', 3, 'external_calls', 2, 'memory_usage_mb', 67.8, 'error', 'Database timeout')),
+(3, '2024-01-15 10:02:00', '/api/products/search', 89, 200, jsonb_build_object('method', 'GET', 'user_id', 12347, 'cache_hit', true, 'database_queries', 0, 'external_calls', 0, 'memory_usage_mb', 32.1)),
+(4, '2024-01-15 10:03:00', '/api/orders/create', 1200, 201, jsonb_build_object('method', 'POST', 'user_id', 12348, 'cache_hit', false, 'database_queries', 5, 'external_calls', 1, 'memory_usage_mb', 78.9));
 
 -- Example 1: Log Entry Parsing and Analysis
 -- Parse and analyze different types of log entries
@@ -427,21 +313,9 @@ SELECT
                 WHERE severity = 'HIGH'
             ),
             'error_trend', jsonb_build_object(
-                'DatabaseTimeout', count(*) FILTER (WHERE EXISTS (
-                    SELECT 1
-                    FROM error_logs AS el
-                    WHERE el.error_type = 'DatabaseTimeout'
-                )),
-                'ValidationError', count(*) FILTER (WHERE EXISTS (
-                    SELECT 1
-                    FROM error_logs AS el
-                    WHERE el.error_type = 'ValidationError'
-                )),
-                'AuthenticationError', count(*) FILTER (WHERE EXISTS (
-                    SELECT 1
-                    FROM error_logs AS el
-                    WHERE el.error_type = 'AuthenticationError'
-                ))
+                'DatabaseTimeout', (SELECT count(*) FROM error_logs WHERE error_type = 'DatabaseTimeout'),
+                'ValidationError', (SELECT count(*) FROM error_logs WHERE error_type = 'ValidationError'),
+                'AuthenticationError', (SELECT count(*) FROM error_logs WHERE error_type = 'AuthenticationError')
             )
         )
     ) AS health_metrics

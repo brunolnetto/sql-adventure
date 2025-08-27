@@ -107,24 +107,29 @@ INSERT INTO student_scores VALUES
 
 -- Example 3: Top N Students by Subject
 -- Find top 3 students in each subject based on score and attendance
+WITH ranked_students AS (
+    SELECT
+        student_id,
+        name,
+        subject,
+        score,
+        attendance_percentage,
+        ROW_NUMBER()
+            OVER (
+                PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC
+            )
+            AS subject_rank
+    FROM student_scores
+)
 SELECT
     student_id,
     name,
     subject,
     score,
     attendance_percentage,
-    ROW_NUMBER()
-        OVER (
-            PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC
-        )
-        AS subject_rank
-FROM student_scores
-WHERE
-    ROW_NUMBER()
-        OVER (
-            PARTITION BY subject ORDER BY score DESC, attendance_percentage DESC
-        )
-    <= 3
+    subject_rank
+FROM ranked_students
+WHERE subject_rank <= 3
 ORDER BY subject, subject_rank;
 
 -- Create department salaries table

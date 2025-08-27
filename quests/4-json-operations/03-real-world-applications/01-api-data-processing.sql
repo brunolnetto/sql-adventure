@@ -47,7 +47,7 @@ CREATE TABLE user_api_logs (
 
 -- Insert sample API response data
 INSERT INTO api_responses VALUES
-(1, '/api/weather/current', '{
+(1, '/api/weather/current', $${
     "status": "success",
     "data": {
         "location": {
@@ -69,8 +69,8 @@ INSERT INTO api_responses VALUES
         ]
     },
     "timestamp": "2024-01-15T10:30:00Z"
-}', 200, '2024-01-15 10:30:00'),
-(2, '/api/weather/current', '{
+}$$', 200, '2024-01-15 10:30:00'),
+(2, '/api/weather/current', $${
     "status": "error",
     "error": {
         "code": 404,
@@ -78,8 +78,8 @@ INSERT INTO api_responses VALUES
         "details": "Weather data unavailable for specified location"
     },
     "timestamp": "2024-01-15 10:35:00Z"
-}', 404, '2024-01-15 10:35:00'),
-(3, '/api/users/profile', '{
+}$$', 404, '2024-01-15 10:35:00'),
+(3, '/api/users/profile', $${
     "status": "success",
     "data": {
         "user_id": 12345,
@@ -102,29 +102,29 @@ INSERT INTO api_responses VALUES
         "version": "2.1",
         "generated_at": "2024-01-15T10:40:00Z"
     }
-}', 200, '2024-01-15 10:40:00');
+}$$', 200, '2024-01-15 10:40:00');
 
 -- Insert sample user API logs
 INSERT INTO user_api_logs VALUES
-(1, 1001, '{
+(1, 1001, $${
     "method": "GET",
     "endpoint": "/api/weather/current",
     "params": {"city": "New York", "units": "metric"},
     "headers": {"Authorization": "Bearer token123"}
-}', '{
+}$$', $${
     "status": "success",
     "data": {"temperature": 22.5, "condition": "Partly cloudy"}
-}', 'processed'),
-(2, 1002, '{
+}$$', 'processed'),
+(2, 1002, $${
     "method": "POST",
     "endpoint": "/api/users/profile",
     "body": {"name": "Jane Smith", "email": "jane@example.com"},
     "headers": {"Content-Type": "application/json"}
-}', '{
+}$$', $${
     "status": "error",
     "message": "Validation failed",
     "errors": ["Email already exists"]
-}', 'failed');
+}$$', 'failed');
 
 -- Example 1: API Response Processing and Validation
 -- Process API responses and handle different status codes
