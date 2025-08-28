@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(__file__))
 
 # Re-export from the parent config.py
 try:
-    from ..config import ProjectFolderConfig, EvaluatorDatabaseConfig, QuestsDatabaseConfig, EvaluationConfig
+    from .models import ProjectFolderConfig, EvaluatorDatabaseConfig, QuestsDatabaseConfig, EvaluationConfig
 except ImportError:
     # If relative import fails, try absolute import
     import importlib.util
