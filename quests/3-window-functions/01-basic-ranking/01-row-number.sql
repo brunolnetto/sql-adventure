@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Sales Ranking with ROW_NUMBER()
+-- Window Functions quest: Sales Ranking with ROW_NUMBER()
 -- =====================================================
 
 -- PURPOSE: Demonstrate basic ROW_NUMBER() function for sales ranking

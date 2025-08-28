@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Composite Indexing
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate advanced composite indexing strategies
 -- DIFFICULTY: 🟡 Intermediate (10-15 min)
 -- CONCEPTS: Composite indexes, index column order, covering indexes, index selectivity

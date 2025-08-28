@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Cumulative Sums & Complex Aggregations
+-- Window Functions quest: Cumulative Sums & Complex Aggregations
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced window function aggregation for complex

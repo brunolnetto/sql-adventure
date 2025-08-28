@@ -1,5 +1,5 @@
 -- =====================================================
--- Inventory Simulation Example
+-- Recursive CTE quest: Inventory Simulation Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for business process simulation and state management

@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Financial Data Model
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate financial data modeling for banking and transaction systems
 -- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: Financial modeling, banking systems, transaction processing, risk management

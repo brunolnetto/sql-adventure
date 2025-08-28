@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Log Analysis
+-- JSON Operations quest: Log Analysis
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate JSON log parsing and analysis techniques for

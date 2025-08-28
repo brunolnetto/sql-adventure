@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Join Optimization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate advanced join optimization techniques
 -- DIFFICULTY: 🟡 Intermediate (10-15 min)
 -- CONCEPTS: Join types, join order, join conditions, performance optimization

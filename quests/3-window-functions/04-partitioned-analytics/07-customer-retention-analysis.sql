@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Customer Advanced Analytics
+-- Window Functions quest: Customer Advanced Analytics
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced window functions for customer retention analysis

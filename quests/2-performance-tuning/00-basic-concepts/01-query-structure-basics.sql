@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Query Structure Basics
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate fundamental query structure optimization for beginners
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: SELECT optimization, WHERE clause efficiency, basic query structure

@@ -1,6 +1,7 @@
 -- =====================================================
 -- Performance Tuning: Aggregation Optimization
 -- =====================================================
+-- 
 -- PURPOSE: Learn GROUP BY optimization and aggregate function efficiency
 -- LEARNING OUTCOMES: Optimize GROUP BY operations, choose efficient aggregate functions, use HAVING effectively
 -- EXPECTED RESULTS: Improved aggregation query performance

@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Schema Evolution
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate managing schema changes over time
 -- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: Schema evolution, versioning, migration strategies, backward compatibility

@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Data Integrity
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate data integrity principles, constraints, triggers, and validation
 -- DIFFICULTY: 🟡 Intermediate (15-20 min)
 -- CONCEPTS: Data integrity, constraints, triggers, validation, business rules

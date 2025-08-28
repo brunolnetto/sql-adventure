@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Customer Segmentation Analysis
+-- Window Functions quest: Customer Segmentation Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced window functions for customer segmentation

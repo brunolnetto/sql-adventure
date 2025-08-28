@@ -1,6 +1,9 @@
+-- =====================================================
 -- Data Modeling Quest: Basic Constraints
--- PURPOSE: Demonstrate fundamental constraint concepts for begin-- Example 4: Querying with Constraints
--- Demonstrate how constraints help maintain data qualityLTY: 🟢 Beginner (5-10 min)
+-- =====================================================
+-- 
+-- PURPOSE: Demonstrate fundamental constraint concepts for beginners
+-- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: NOT NULL, UNIQUE, CHECK, DEFAULT constraints
 
 -- Example 1: NOT NULL and UNIQUE Constraints

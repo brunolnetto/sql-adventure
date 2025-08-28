@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Basic Category Ranking
+-- Window Functions quest: Basic Category Ranking
 -- =====================================================
 
 -- PURPOSE: Demonstrate fundamental window function partitioning for 

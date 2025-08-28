@@ -1,5 +1,5 @@
 -- =====================================================
--- Filling Gaps in Sequences Example
+-- Recursive CTE quest: Filling Gaps in Sequences Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for detecting and filling gaps in sequences

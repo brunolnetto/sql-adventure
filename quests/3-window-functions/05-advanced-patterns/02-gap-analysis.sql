@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Gap Analysis and Sequence Detection
+-- Window Functions quest: Gap Analysis and Sequence Detection
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced gap analysis techniques using window functions

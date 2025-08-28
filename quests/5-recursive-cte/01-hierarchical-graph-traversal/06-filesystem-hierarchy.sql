@@ -1,5 +1,5 @@
 -- =====================================================
--- Filesystem Hierarchy Example
+-- Recursive CTE quest: Filesystem Hierarchy Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for filesystem hierarchy traversal and size calculation

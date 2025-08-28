@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Advanced Query Optimization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate expert-level query optimization techniques
 -- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Query rewriting, advanced indexing, materialized views, query hints

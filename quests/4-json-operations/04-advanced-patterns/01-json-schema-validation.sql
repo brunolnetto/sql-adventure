@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Schema Validation
+-- JSON Operations quest: Schema Validation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate advanced JSON schema validation techniques for

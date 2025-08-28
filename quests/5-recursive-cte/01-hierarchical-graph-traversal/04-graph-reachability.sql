@@ -1,5 +1,5 @@
 -- =====================================================
--- Recursive CTE: Graph Reachability Analysis
+-- Recursive CTE quest: Graph Reachability Analysis
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for graph traversal and reachability analysis

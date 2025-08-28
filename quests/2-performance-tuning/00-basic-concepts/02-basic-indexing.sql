@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Basic Indexing
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate fundamental indexing concepts for beginners
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: Basic indexes, index types, when to use indexes

@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Customer Segmentation Analysis
+-- Window Functions quest: Customer Segmentation Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced customer segmentation using RFM analysis and behavioral scoring

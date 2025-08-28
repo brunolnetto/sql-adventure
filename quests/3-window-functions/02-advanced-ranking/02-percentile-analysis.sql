@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Percentile Analysis with PERCENT_RANK
+-- Window Functions quest: Percentile Analysis with PERCENT_RANK
 -- =====================================================
 
 -- PURPOSE: Demonstrate percentile calculations and ranking using PERCENT_RANK function

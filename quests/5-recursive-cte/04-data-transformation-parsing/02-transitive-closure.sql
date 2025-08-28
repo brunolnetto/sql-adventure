@@ -1,5 +1,5 @@
 -- =====================================================
--- Transitive Closure Example
+-- Recursive CTE quest: Transitive Closure Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for computing transitive closure of relationships

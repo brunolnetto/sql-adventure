@@ -1,4 +1,4 @@
--- Window Functions: Advanced Salary Analysis
+-- Window Functions quest: Advanced Salary Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced salary analysis using multiple window functions

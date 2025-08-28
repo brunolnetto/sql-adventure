@@ -1,5 +1,5 @@
 -- =====================================================
--- Running Total Example
+-- Recursive CTE quest: Running Total Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for cumulative calculations and running totals

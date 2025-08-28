@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Performance Denormalization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate strategic denormalization for read performance optimization
 -- DIFFICULTY: 🟡 Intermediate (15-20 min)
 -- CONCEPTS: Read performance, query optimization, strategic redundancy, materialized views

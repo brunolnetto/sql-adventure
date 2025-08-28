@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Nested Extraction
+-- JSON Operations quest: Nested Extraction
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate advanced JSON querying techniques in PostgreSQL

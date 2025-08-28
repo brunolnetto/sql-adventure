@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Simple Relationships
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate basic relationship concepts for beginners
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: Foreign keys, one-to-many relationships, JOIN queries

@@ -1,5 +1,5 @@
 -- =====================================================
--- Recursive CTE: Category Tree Navigation
+-- Recursive CTE quest: Category Tree Navigation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for category tree navigation and path building

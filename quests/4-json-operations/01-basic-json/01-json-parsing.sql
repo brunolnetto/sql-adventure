@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Basic JSON Parsing
+-- JSON Operations quest: Basic JSON Parsing
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate fundamental JSON parsing techniques in PostgreSQL

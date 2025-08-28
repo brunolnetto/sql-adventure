@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Performance Monitoring
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate expert-level performance monitoring techniques
 -- DIFFICULTY: ⚫ Expert (30-45 min)
 -- CONCEPTS: Performance monitoring, query analysis, system statistics, optimization

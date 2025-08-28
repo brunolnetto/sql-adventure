@@ -1,5 +1,5 @@
 -- =====================================================
--- String Splitting Example
+-- Recursive CTE quest: String Splitting Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for parsing and splitting delimited strings

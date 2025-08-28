@@ -1,5 +1,5 @@
 -- =====================================================
--- Factorial Calculation Example
+-- Recursive CTE quest: Factorial Calculation Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for mathematical factorial calculation

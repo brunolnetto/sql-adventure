@@ -1,5 +1,5 @@
 -- =====================================================
--- Number Series Generation Example
+-- Recursive CTE quest: Number Series Generation Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate basic recursive CTE for generating number series

@@ -1,5 +1,5 @@
 -- =====================================================
--- Recursive CTE: Bill of Materials (BOM) Cost Calculation
+-- Recursive CTE quest: Bill of Materials (BOM) Cost Calculation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for complex hierarchical cost calculations

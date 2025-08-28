@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Category Comparisons & Advanced Analysis
+-- Window Functions quest: Category Comparisons & Advanced Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced window function partitioning for 

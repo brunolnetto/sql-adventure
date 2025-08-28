@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Basic Table Creation
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate fundamental table creation concepts for beginners
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: Table creation, data types, primary keys, basic constraints

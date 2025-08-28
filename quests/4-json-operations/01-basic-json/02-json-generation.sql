@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: JSON Generation
+-- JSON Operations quest: JSON Generation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate JSON generation techniques in PostgreSQL

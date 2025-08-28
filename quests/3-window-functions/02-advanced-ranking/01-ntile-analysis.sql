@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: NTILE Analysis and Advanced Ranking
+-- Window Functions quest: NTILE Analysis and Advanced Ranking
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced ranking techniques using NTILE function for creating

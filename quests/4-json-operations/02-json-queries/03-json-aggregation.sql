@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: JSON Aggregation
+-- JSON Operations quest: JSON Aggregation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate advanced JSON aggregation techniques in PostgreSQL

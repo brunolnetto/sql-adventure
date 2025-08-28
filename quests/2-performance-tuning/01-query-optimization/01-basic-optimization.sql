@@ -1,6 +1,7 @@
 -- =====================================================
 -- Performance Tuning: Basic Query Optimization
 -- =====================================================
+-- 
 -- PURPOSE: Learn fundamental query optimization techniques
 -- LEARNING OUTCOMES: Understand query execution order, optimize WHERE clauses, choose efficient JOINs
 -- EXPECTED RESULTS: Improved query performance through optimization

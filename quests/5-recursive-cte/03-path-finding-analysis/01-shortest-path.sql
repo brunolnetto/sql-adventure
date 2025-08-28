@@ -1,5 +1,5 @@
 -- =====================================================
--- Shortest Path Example (BFS style)
+-- Recursive CTE quest: Shortest Path Example (BFS style)
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for graph traversal and shortest path finding

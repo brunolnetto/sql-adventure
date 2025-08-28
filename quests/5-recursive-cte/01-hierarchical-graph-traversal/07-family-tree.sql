@@ -1,5 +1,5 @@
 -- =====================================================
--- Family Tree Example
+-- Recursive CTE quest: Family Tree Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for complex family relationship analysis

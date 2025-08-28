@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Trend Detection and Pattern Analysis
+-- Window Functions quest: Trend Detection and Pattern Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced trend detection techniques using window functions

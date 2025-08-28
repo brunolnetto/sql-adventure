@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Configuration Management
+-- JSON Operations quest: Configuration Management
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate JSON-based configuration management techniques for

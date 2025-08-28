@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Basic RANK and DENSE_RANK
+-- Window Functions quest: Basic RANK and DENSE_RANK
 -- =====================================================
 
 -- PURPOSE: Demonstrate RANK() and DENSE_RANK() functions for handling ties

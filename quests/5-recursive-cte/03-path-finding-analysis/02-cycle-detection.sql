@@ -1,5 +1,5 @@
 -- =====================================================
--- Cycle Detection Example
+-- Recursive CTE quest: Cycle Detection Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for detecting cycles in directed graphs

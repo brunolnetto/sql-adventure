@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Performance Optimization
+-- JSON Operations quest: Performance Optimization
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate JSON performance optimization techniques for

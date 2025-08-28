@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Lead-Lag Analysis
+-- Window Functions quest: Lead-Lag Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced time series analysis using LEAD and LAG functions

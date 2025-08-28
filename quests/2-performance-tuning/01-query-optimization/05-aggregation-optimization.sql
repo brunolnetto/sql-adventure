@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Aggregation Optimization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate optimizing aggregation queries for better performance
 -- DIFFICULTY: 🟡 Intermediate (10-15 min)
 -- CONCEPTS: Aggregation optimization, GROUP BY efficiency, window functions vs aggregations

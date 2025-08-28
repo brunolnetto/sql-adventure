@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Running Totals and Cumulative Sums
+-- Window Functions quest: Running Totals and Cumulative Sums
 -- =====================================================
 
 -- PURPOSE: Demonstrate basic window function aggregation for running totals

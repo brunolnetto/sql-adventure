@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: Array Operations
+-- JSON Operations quest: Array Operations
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate advanced array manipulation techniques in PostgreSQL

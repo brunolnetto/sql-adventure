@@ -1,4 +1,7 @@
+-- =====================================================
 -- Performance Tuning Quest: Query Planning Basics
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate fundamental query planning concepts for beginners
 -- DIFFICULTY: 🟢 Beginner (5-10 min)
 -- CONCEPTS: EXPLAIN, query plans, basic optimization, execution analysis

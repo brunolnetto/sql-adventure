@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Moving Averages & Rolling Calculations
+-- Window Functions quest: Moving Averages & Rolling Calculations
 -- =====================================================
 
 -- PURPOSE: Demonstrate window function aggregation for moving averages

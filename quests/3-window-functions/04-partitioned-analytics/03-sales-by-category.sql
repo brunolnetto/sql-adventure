@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Sales by Category Analysis
+-- Window Functions quest: Sales by Category Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate window functions for category-based sales analysis and ranking

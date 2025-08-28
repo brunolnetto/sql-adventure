@@ -1,5 +1,5 @@
 -- =====================================================
--- Recursive CTE: Employee Hierarchy Traversal
+-- Recursive CTE quest: Employee Hierarchy Traversal
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate basic recursive CTE for hierarchical data traversal

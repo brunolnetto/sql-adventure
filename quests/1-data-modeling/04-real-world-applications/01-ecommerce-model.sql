@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: E-commerce Data Model
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate comprehensive e-commerce data modeling
 -- DIFFICULTY: 🔴 Advanced (20-25 min)
 -- CONCEPTS: E-commerce modeling, inventory management, order processing, customer analytics

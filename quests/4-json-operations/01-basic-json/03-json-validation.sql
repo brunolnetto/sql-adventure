@@ -1,5 +1,5 @@
 -- =====================================================
--- JSON Operations: JSON Validation
+-- JSON Operations quest: JSON Validation
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate JSON validation techniques in PostgreSQL

@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Advanced Normalization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate BCNF and higher normal forms with simple examples
 -- DIFFICULTY: 🔴 Advanced (15-20 min)
 -- CONCEPTS: BCNF, 4NF, 5NF, multivalued dependencies

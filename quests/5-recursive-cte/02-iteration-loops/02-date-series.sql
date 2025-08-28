@@ -1,5 +1,5 @@
 -- =====================================================
--- Date Series Generation Example
+-- Recursive CTE quest: Date Series Generation Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for date series generation and business day filtering

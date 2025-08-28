@@ -1,6 +1,7 @@
 -- =====================================================
 -- Performance Tuning: Subquery Optimization
 -- =====================================================
+-- 
 -- PURPOSE: Learn subquery optimization techniques and best practices
 -- LEARNING OUTCOMES: Choose between EXISTS and IN, optimize correlated subqueries, use CTEs effectively
 -- EXPECTED RESULTS: Improved subquery performance through optimization

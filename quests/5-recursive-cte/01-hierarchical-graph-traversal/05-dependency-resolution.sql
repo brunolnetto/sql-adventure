@@ -1,5 +1,5 @@
 -- =====================================================
--- Recursive CTE: Dependency Resolution and Chain Analysis
+-- Recursive CTE quest: Dependency Resolution and Chain Analysis
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for dependency resolution and cycle detection

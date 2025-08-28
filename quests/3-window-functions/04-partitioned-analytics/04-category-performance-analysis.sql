@@ -1,5 +1,5 @@
 -- =====================================================
--- Window Functions: Category Performance Analysis
+-- Window Functions quest: Category Performance Analysis
 -- =====================================================
 
 -- PURPOSE: Demonstrate advanced window function partitioning for 

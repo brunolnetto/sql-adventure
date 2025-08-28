@@ -1,4 +1,7 @@
+-- =====================================================
 -- Data Modeling Quest: Basic Normalization
+-- =====================================================
+-- 
 -- PURPOSE: Demonstrate 1NF, 2NF, and 3NF with simple examples
 -- DIFFICULTY: 🟡 Intermediate (10-15 min)
 -- CONCEPTS: 1NF, 2NF, 3NF, atomic values, functional dependencies

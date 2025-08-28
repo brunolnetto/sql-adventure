@@ -1,5 +1,5 @@
 -- =====================================================
--- Forward Fill Nulls Example
+-- Recursive CTE quest: Forward Fill Nulls Example
 -- =====================================================
 -- 
 -- PURPOSE: Demonstrate recursive CTE for forward-filling missing values in time series data
