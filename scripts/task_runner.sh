@@ -94,7 +94,8 @@ init_db() {
     fi
     
     python3 scripts/evaluator/init_database.py
-    echo -e "${GREEN}✅ Database initialized${NC}"
+    python3 scripts/evaluator/init_views.py
+    echo -e "${GREEN}✅ Views initialized${NC}"
 }
 
 docker_up() {
