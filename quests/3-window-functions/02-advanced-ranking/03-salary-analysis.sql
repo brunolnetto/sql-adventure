@@ -54,10 +54,10 @@ SELECT
     department,
     salary,
     years_experience,
-    ROUND(PERCENT_RANK() OVER (ORDER BY salary) * 100, 2) AS salary_percentile,
+    ROUND((PERCENT_RANK() OVER (ORDER BY salary) * 100)::numeric, 2) AS salary_percentile,
     NTILE(4) OVER (ORDER BY salary) AS salary_quartile,
     ROUND(
-        PERCENT_RANK() OVER (PARTITION BY department ORDER BY salary) * 100, 2
+        (PERCENT_RANK() OVER (PARTITION BY department ORDER BY salary) * 100)::numeric, 2
     ) AS dept_percentile,
     CASE
         WHEN PERCENT_RANK() OVER (ORDER BY salary) >= 0.8 THEN 'Top 20%'
@@ -96,10 +96,10 @@ SELECT
     ROUND(AVG(salary), 2) AS avg_salary,
     ROUND(MIN(salary), 2) AS min_salary,
     ROUND(MAX(salary), 2) AS max_salary,
-    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary), 2)
+    ROUND((PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary))::numeric, 2)
         AS median_salary,
-    ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary), 2) AS q3_salary,
-    ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary), 2) AS q1_salary
+    ROUND((PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary))::numeric, 2) AS q3_salary,
+    ROUND((PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary))::numeric, 2) AS q1_salary
 FROM employee_salaries
 GROUP BY department
 ORDER BY avg_salary DESC;
@@ -111,7 +111,7 @@ SELECT
     years_experience,
     COUNT(*) AS employee_count,
     ROUND(AVG(salary), 2) AS avg_salary,
-    ROUND(PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100)::numeric, 2)
         AS education_experience_percentile,
     NTILE(3) OVER (ORDER BY AVG(salary)) AS salary_tier
 FROM employee_salaries
@@ -129,23 +129,23 @@ WITH salary_analysis AS (
         years_experience,
         education_level,
         -- Overall company percentile
-        ROUND(PERCENT_RANK() OVER (ORDER BY salary) * 100, 2)
+        ROUND((PERCENT_RANK() OVER (ORDER BY salary) * 100)::numeric, 2)
             AS company_percentile,
         -- Department percentile
         ROUND(
-            PERCENT_RANK() OVER (PARTITION BY department ORDER BY salary) * 100,
+            (PERCENT_RANK() OVER (PARTITION BY department ORDER BY salary) * 100)::numeric,
             2
         ) AS dept_percentile,
         -- Experience-based percentile
         ROUND(
-            PERCENT_RANK() OVER (PARTITION BY years_experience ORDER BY salary)
-            * 100,
+            (PERCENT_RANK() OVER (PARTITION BY years_experience ORDER BY salary)
+            * 100)::numeric,
             2
         ) AS exp_percentile,
         -- Education-based percentile
         ROUND(
-            PERCENT_RANK() OVER (PARTITION BY education_level ORDER BY salary)
-            * 100,
+            (PERCENT_RANK() OVER (PARTITION BY education_level ORDER BY salary)
+            * 100)::numeric,
             2
         ) AS edu_percentile,
         -- Salary bands
@@ -184,15 +184,21 @@ ORDER BY company_percentile DESC;
 
 -- Example 6: Salary Distribution Analysis
 -- Analyze salary distribution patterns
+WITH salary_deciles AS (
+    SELECT
+        salary,
+        NTILE(10) OVER (ORDER BY salary) AS salary_decile
+    FROM employee_salaries
+)
 SELECT
-    NTILE(10) OVER (ORDER BY salary) AS salary_decile,
+    salary_decile,
     COUNT(*) AS employee_count,
     ROUND(MIN(salary), 2) AS min_salary,
     ROUND(MAX(salary), 2) AS max_salary,
     ROUND(AVG(salary), 2) AS avg_salary,
     ROUND((MAX(salary) - MIN(salary)), 2) AS salary_range
-FROM employee_salaries
-GROUP BY NTILE(10) OVER (ORDER BY salary)
+FROM salary_deciles
+GROUP BY salary_decile
 ORDER BY salary_decile;
 
 -- Example 7: Department Performance Comparison
@@ -201,10 +207,10 @@ SELECT
     department,
     COUNT(*) AS total_employees,
     ROUND(AVG(salary), 2) AS avg_salary,
-    ROUND(PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100)::numeric, 2)
         AS salary_percentile,
     ROUND(AVG(years_experience), 1) AS avg_experience,
-    ROUND(PERCENT_RANK() OVER (ORDER BY AVG(years_experience)) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY AVG(years_experience)) * 100)::numeric, 2)
         AS exp_percentile,
     ROUND(AVG(salary) / AVG(years_experience), 2) AS salary_per_year_experience,
     NTILE(3) OVER (ORDER BY AVG(salary)) AS salary_tier
@@ -218,7 +224,7 @@ SELECT
     EXTRACT(YEAR FROM hire_date) AS hire_year,
     COUNT(*) AS employees_hired,
     ROUND(AVG(salary), 2) AS avg_starting_salary,
-    ROUND(PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY AVG(salary)) * 100)::numeric, 2)
         AS year_percentile,
     NTILE(4) OVER (ORDER BY AVG(salary)) AS salary_quartile
 FROM employee_salaries

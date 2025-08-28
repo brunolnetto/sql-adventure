@@ -388,7 +388,7 @@ SELECT
             close_price > prev_close AND prev_close <= two_days_ago
             THEN 'Reversal Up'
         WHEN
-            close_price < prev_close AND prev_temp >= two_days_ago
+            close_price < prev_close AND prev_close >= two_days_ago
             THEN 'Reversal Down'
         ELSE 'Sideways'
     END AS price_pattern,

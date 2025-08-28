@@ -52,7 +52,7 @@ SELECT
     name,
     region,
     monthly_sales,
-    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100)::numeric, 2)
         AS percentile_rank,
     CASE
         WHEN PERCENT_RANK() OVER (ORDER BY monthly_sales) >= 0.8 THEN 'Top 20%'
@@ -72,10 +72,10 @@ SELECT
     region,
     monthly_sales,
     ROUND(
-        PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) * 100,
+        (PERCENT_RANK() OVER (PARTITION BY region ORDER BY monthly_sales) * 100)::numeric,
         2
     ) AS regional_percentile,
-    ROUND(PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY monthly_sales) * 100)::numeric, 2)
         AS overall_percentile,
     CASE
         WHEN
@@ -120,7 +120,7 @@ SELECT
     name,
     subject,
     grade,
-    ROUND(PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (PARTITION BY subject ORDER BY grade) * 100)::numeric, 2)
         AS subject_percentile,
     CASE
         WHEN
@@ -186,7 +186,7 @@ SELECT
     name,
     department,
     overall_score,
-    ROUND(PERCENT_RANK() OVER (ORDER BY overall_score DESC) * 100, 2)
+    ROUND((PERCENT_RANK() OVER (ORDER BY overall_score DESC) * 100)::numeric, 2)
         AS percentile_rank,
     CASE
         WHEN

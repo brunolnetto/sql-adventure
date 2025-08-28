@@ -123,17 +123,17 @@ WITH customer_retention AS (
         cp.registration_date,
         COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
             AS active_months,
-        EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+        EXTRACT(MONTH FROM AGE(CURRENT_DATE, cp.registration_date))
             AS months_since_registration,
         CASE
             WHEN
                 COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
-                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+                >= EXTRACT(MONTH FROM AGE(CURRENT_DATE, cp.registration_date))
                 * 0.8
                 THEN 'High Retention'
             WHEN
                 COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date))
-                >= EXTRACT(MONTH FROM (CURRENT_DATE - cp.registration_date))
+                >= EXTRACT(MONTH FROM AGE(CURRENT_DATE, cp.registration_date))
                 * 0.5
                 THEN 'Medium Retention'
             ELSE 'Low Retention'
@@ -177,26 +177,21 @@ WITH customer_predictions AS (
         COUNT(*) AS transaction_count,
         SUM(ct.amount) AS total_spent,
         AVG(ct.amount) AS avg_transaction,
-        EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date))
-            AS customer_age_days,
-        EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date)))
-            AS days_since_last_purchase,
+        (CURRENT_DATE - cp.registration_date) AS customer_age_days,
+        (CURRENT_DATE - MAX(ct.transaction_date)) AS days_since_last_purchase,
         -- Predicted annual value
         ROUND(
             (
                 SUM(ct.amount)
                 * 365.0
-                / NULLIF(
-                    EXTRACT(DAY FROM (CURRENT_DATE - cp.registration_date)), 0
-                )
+                / NULLIF((CURRENT_DATE - cp.registration_date), 0)
             ),
             2
         ) AS predicted_annual_value,
         -- Churn risk (higher days since last purchase = higher risk)
         NTILE(5)
             OVER (
-                ORDER BY
-                    EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date)))
+                ORDER BY (CURRENT_DATE - MAX(ct.transaction_date))
             )
             AS churn_risk_score
     FROM customer_transactions AS ct

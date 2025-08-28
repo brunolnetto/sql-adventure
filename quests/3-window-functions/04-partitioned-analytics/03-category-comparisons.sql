@@ -229,24 +229,35 @@ ORDER BY category, sales_amount;
 -- =====================================================
 
 -- Comprehensive category performance summary
+WITH category_summary AS (
+    SELECT
+        category,
+        COUNT(*) AS total_products,
+        ROUND(AVG(sales_amount), 2) AS avg_sales,
+        ROUND(SUM(sales_amount), 2) AS total_sales,
+        ROUND(MAX(sales_amount), 2) AS max_sales,
+        ROUND(MIN(sales_amount), 2) AS min_sales,
+        ROUND(
+            (MAX(sales_amount) - MIN(sales_amount)) * 100.0 / AVG(sales_amount), 2
+        ) AS variation_pct
+    FROM product_sales
+    GROUP BY category
+)
 SELECT
     category,
-    COUNT(*) AS total_products,
-    ROUND(AVG(sales_amount), 2) AS avg_sales,
-    ROUND(SUM(sales_amount), 2) AS total_sales,
-    ROUND(MAX(sales_amount), 2) AS max_sales,
-    ROUND(MIN(sales_amount), 2) AS min_sales,
+    total_products,
+    avg_sales,
+    total_sales,
+    max_sales,
+    min_sales,
+    variation_pct,
     ROUND(
-        (MAX(sales_amount) - MIN(sales_amount)) * 100.0 / AVG(sales_amount), 2
-    ) AS variation_pct,
-    ROUND(
-        SUM(sales_amount) * 100.0 / SUM(SUM(sales_amount)) OVER (), 2
+        total_sales * 100.0 / SUM(total_sales) OVER (), 2
     ) AS market_share_pct,
     ROUND(
-        PERCENT_RANK() OVER (ORDER BY SUM(sales_amount)) * 100, 1
+        (PERCENT_RANK() OVER (ORDER BY total_sales) * 100)::numeric, 1
     ) AS category_percentile
-FROM product_sales
-GROUP BY category
+FROM category_summary
 ORDER BY total_sales DESC;
 
 -- Clean up

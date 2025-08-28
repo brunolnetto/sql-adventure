@@ -119,15 +119,6 @@ GROUP BY p.name;
 -- Example 3: HAVING vs WHERE Performance
 -- Use WHERE for row-level filtering, HAVING for aggregate filtering
 
--- POOR: Using HAVING for row-level filtering
-SELECT
-    p.name,
-    COUNT(*) AS sales_count
-FROM sales AS s
-INNER JOIN products AS p ON s.product_id = p.product_id
-GROUP BY p.name
-HAVING s.quantity > 1;  -- This won't work - s.quantity not in GROUP BY
-
 -- BETTER: Use WHERE for row-level filtering
 SELECT
     p.name,

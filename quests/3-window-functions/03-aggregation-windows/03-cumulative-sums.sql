@@ -14,6 +14,8 @@
 -- 5. Multi-dimensional rolling calculations
 -- DIFFICULTY: 🟡 Intermediate (10-20 min)
 -- CONCEPTS: Multiple window functions, complex aggregations, project tracking, financial analysis
+
+-- Clean up existing tables (idempotent)
 DROP TABLE IF EXISTS sales_transactions CASCADE;
 DROP TABLE IF EXISTS project_tasks CASCADE;
 DROP TABLE IF EXISTS customer_orders CASCADE;
@@ -324,6 +326,40 @@ INSERT INTO customer_orders VALUES
 (15, 101, '2024-01-08', 220.00, 10.00, 22.00, 'Bronze');
 
 -- Analyze customer spending patterns
+WITH customer_spending AS (
+    SELECT
+        customer_id,
+        order_date,
+        order_amount,
+        shipping_cost,
+        discount_amount,
+        customer_tier,
+        -- Net amount (order - discount + shipping)
+        order_amount - discount_amount + shipping_cost AS net_amount,
+        -- Cumulative spending by customer
+        SUM(order_amount) OVER (
+            PARTITION BY customer_id
+            ORDER BY order_date
+            ROWS UNBOUNDED PRECEDING
+        ) AS customer_cumulative_spending,
+        -- Cumulative net amount by customer
+        SUM(order_amount - discount_amount + shipping_cost) OVER (
+            PARTITION BY customer_id
+            ORDER BY order_date
+            ROWS UNBOUNDED PRECEDING
+        ) AS customer_cumulative_net,
+        -- Running average order amount by customer
+        AVG(order_amount) OVER (
+            PARTITION BY customer_id
+            ORDER BY order_date
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) AS customer_avg_order,
+        -- Days since first order
+        order_date - MIN(order_date) OVER (
+            PARTITION BY customer_id
+        ) AS days_since_first_order
+    FROM customer_orders
+)
 SELECT
     customer_id,
     order_date,
@@ -331,40 +367,17 @@ SELECT
     shipping_cost,
     discount_amount,
     customer_tier,
-    -- Net amount (order - discount + shipping)
-    order_amount - discount_amount + shipping_cost AS net_amount,
-    -- Cumulative spending by customer
-    SUM(order_amount) OVER (
-        PARTITION BY customer_id
-        ORDER BY order_date
-        ROWS UNBOUNDED PRECEDING
-    ) AS customer_cumulative_spending,
-    -- Cumulative net amount by customer
-    SUM(order_amount - discount_amount + shipping_cost) OVER (
-        PARTITION BY customer_id
-        ORDER BY order_date
-        ROWS UNBOUNDED PRECEDING
-    ) AS customer_cumulative_net,
-    -- Running average order amount by customer
-    AVG(order_amount) OVER (
-        PARTITION BY customer_id
-        ORDER BY order_date
-        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-    ) AS customer_avg_order,
-    -- Customer ranking within tier
+    net_amount,
+    customer_cumulative_spending,
+    customer_cumulative_net,
+    customer_avg_order,
+    -- Customer ranking within tier based on cumulative spending
     RANK() OVER (
         PARTITION BY customer_tier
-        ORDER BY SUM(order_amount) OVER (
-            PARTITION BY customer_id
-            ORDER BY order_date
-            ROWS UNBOUNDED PRECEDING
-        ) DESC
+        ORDER BY customer_cumulative_spending DESC
     ) AS tier_ranking,
-    -- Days since first order
-    order_date - MIN(order_date) OVER (
-        PARTITION BY customer_id
-    ) AS days_since_first_order
-FROM customer_orders
+    days_since_first_order
+FROM customer_spending
 ORDER BY customer_id, order_date;
 
 -- =====================================================
@@ -441,53 +454,42 @@ ORDER BY date, product_category;
 -- =====================================================
 
 -- Calculate financial metrics using cumulative functions
-SELECT
-    date,
-    product_category,
-    sales_amount,
-    -- Cumulative revenue
-    SUM(sales_amount) OVER (
-        ORDER BY date
-        ROWS UNBOUNDED PRECEDING
-    ) AS total_revenue,
-    -- Cumulative revenue by category
-    SUM(sales_amount) OVER (
-        PARTITION BY product_category
-        ORDER BY date
-        ROWS UNBOUNDED PRECEDING
-    ) AS category_revenue,
-    -- Revenue growth rate
-    CASE
-        WHEN
-            LAG(SUM(sales_amount) OVER (
-                ORDER BY date
-                ROWS UNBOUNDED PRECEDING
-            ), 1) OVER (ORDER BY date) > 0
-            THEN
-                ROUND(
-                    (SUM(sales_amount) OVER (
-                        ORDER BY date
-                        ROWS UNBOUNDED PRECEDING
-                    ) - LAG(SUM(sales_amount) OVER (
-                        ORDER BY date
-                        ROWS UNBOUNDED PRECEDING
-                    ), 1) OVER (ORDER BY date)) * 100.0
-                    / LAG(SUM(sales_amount) OVER (
-                        ORDER BY date
-                        ROWS UNBOUNDED PRECEDING
-                    ), 1) OVER (ORDER BY date), 2
-                )
-    END AS revenue_growth_percent,
-    -- Category contribution to total
-    ROUND(
+WITH sales_with_cumulative AS (
+    SELECT
+        date,
+        product_category,
+        sales_amount,
+        -- Cumulative revenue
+        SUM(sales_amount) OVER (
+            ORDER BY date
+            ROWS UNBOUNDED PRECEDING
+        ) AS total_revenue,
+        -- Cumulative revenue by category
         SUM(sales_amount) OVER (
             PARTITION BY product_category
             ORDER BY date
             ROWS UNBOUNDED PRECEDING
-        ) * 100.0 / SUM(sales_amount) OVER (
-            ORDER BY date
-            ROWS UNBOUNDED PRECEDING
-        ), 2
+        ) AS category_revenue
+    FROM sales_transactions
+)
+SELECT
+    date,
+    product_category,
+    sales_amount,
+    total_revenue,
+    category_revenue,
+    -- Revenue growth rate
+    CASE
+        WHEN LAG(total_revenue, 1) OVER (ORDER BY date) > 0
+            THEN
+                ROUND(
+                    (total_revenue - LAG(total_revenue, 1) OVER (ORDER BY date)) * 100.0
+                    / LAG(total_revenue, 1) OVER (ORDER BY date), 2
+                )
+    END AS revenue_growth_percent,
+    -- Category contribution to total
+    ROUND(
+        category_revenue * 100.0 / total_revenue, 2
     ) AS category_contribution_percent,
     -- Running profit margin (assuming 30% margin)
     ROUND(
@@ -499,7 +501,7 @@ SELECT
             ROWS UNBOUNDED PRECEDING
         ), 2
     ) AS cumulative_profit_margin
-FROM sales_transactions
+FROM sales_with_cumulative
 ORDER BY date, product_category;
 
 -- Clean up

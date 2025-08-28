@@ -282,18 +282,28 @@ ORDER BY category ASC, sale_amount DESC;
 -- =====================================================
 
 -- Analyze category performance with multiple metrics
+WITH category_summary AS (
+    SELECT
+        category,
+        COUNT(*) AS total_sales,
+        SUM(sale_amount) AS total_revenue,
+        AVG(sale_amount) AS avg_sale_amount,
+        MAX(sale_amount) AS max_sale_amount,
+        MIN(sale_amount) AS min_sale_amount
+    FROM sales_data
+    GROUP BY category
+)
 SELECT
     category,
-    COUNT(*) AS total_sales,
-    SUM(sale_amount) AS total_revenue,
-    AVG(sale_amount) AS avg_sale_amount,
-    MAX(sale_amount) AS max_sale_amount,
-    MIN(sale_amount) AS min_sale_amount,
-    ROUND(AVG(sale_amount) OVER (ORDER BY SUM(sale_amount) DESC), 2)
+    total_sales,
+    total_revenue,
+    avg_sale_amount,
+    max_sale_amount,
+    min_sale_amount,
+    ROUND(AVG(avg_sale_amount) OVER (ORDER BY total_revenue DESC), 2)
         AS overall_avg,
-    RANK() OVER (ORDER BY SUM(sale_amount) DESC) AS revenue_rank
-FROM sales_data
-GROUP BY category
+    RANK() OVER (ORDER BY total_revenue DESC) AS revenue_rank
+FROM category_summary
 ORDER BY total_revenue DESC;
 
 -- =====================================================
@@ -301,23 +311,32 @@ ORDER BY total_revenue DESC;
 -- =====================================================
 
 -- Analyze subcategories within each category
+WITH subcategory_summary AS (
+    SELECT
+        category,
+        subcategory,
+        COUNT(*) AS sales_count,
+        SUM(sale_amount) AS subcategory_revenue,
+        AVG(sale_amount) AS avg_sale_amount
+    FROM sales_data
+    GROUP BY category, subcategory
+)
 SELECT
     category,
     subcategory,
-    COUNT(*) AS sales_count,
-    SUM(sale_amount) AS subcategory_revenue,
-    AVG(sale_amount) AS avg_sale_amount,
+    sales_count,
+    subcategory_revenue,
+    avg_sale_amount,
     ROW_NUMBER()
-        OVER (PARTITION BY category ORDER BY SUM(sale_amount) DESC)
+        OVER (PARTITION BY category ORDER BY subcategory_revenue DESC)
         AS subcategory_rank,
     ROUND(
-        SUM(sale_amount)
+        subcategory_revenue
         * 100.0
-        / SUM(SUM(sale_amount)) OVER (PARTITION BY category),
+        / SUM(subcategory_revenue) OVER (PARTITION BY category),
         2
     ) AS revenue_percentage
-FROM sales_data
-GROUP BY category, subcategory
+FROM subcategory_summary
 ORDER BY category ASC, subcategory_revenue DESC;
 
 -- =====================================================

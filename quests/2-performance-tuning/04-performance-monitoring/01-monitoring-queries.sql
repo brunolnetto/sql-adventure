@@ -197,7 +197,7 @@ ORDER BY avg_execution_time DESC;
 -- Analyze database connection usage
 SELECT
     DATE(timestamp) AS stat_date,
-    HOUR(timestamp) AS stat_hour,
+    EXTRACT(hour FROM timestamp) AS stat_hour,
     AVG(active_connections) AS avg_active_connections,
     AVG(idle_connections) AS avg_idle_connections,
     MAX(active_connections) AS max_active_connections,
@@ -205,7 +205,7 @@ SELECT
     ROUND((AVG(active_connections) / MAX(max_connections)) * 100, 2)
         AS connection_utilization_percent
 FROM connection_stats
-GROUP BY DATE(timestamp), HOUR(timestamp)
+GROUP BY DATE(timestamp), EXTRACT(hour FROM timestamp)
 ORDER BY stat_date DESC, stat_hour DESC;
 
 -- Example 5: Query Performance Categories

@@ -117,12 +117,12 @@ INSERT INTO customer_transactions VALUES
 
 -- Calculate RFM metrics for each customer
 WITH rfm_metrics AS (
-    SELECT 
+    SELECT
         ct.customer_id,
         cp.customer_name,
         cp.customer_tier,
         -- Recency: Days since last purchase
-        EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date))) as recency_days,
+        (CURRENT_DATE - MAX(ct.transaction_date)) as recency_days,
         -- Frequency: Number of transactions
         COUNT(*) as frequency,
         -- Monetary: Total amount spent
@@ -151,14 +151,14 @@ ORDER BY monetary_value DESC;
 
 -- Create customer segments based on RFM scores
 WITH rfm_scores AS (
-    SELECT 
+    SELECT
         ct.customer_id,
         cp.customer_name,
         cp.customer_tier,
-        EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date))) as recency_days,
+        (CURRENT_DATE - MAX(ct.transaction_date)) as recency_days,
         COUNT(*) as frequency,
         SUM(ct.amount) as monetary_value,
-        NTILE(5) OVER (ORDER BY EXTRACT(DAY FROM (CURRENT_DATE - MAX(ct.transaction_date))) DESC) as recency_score,
+        NTILE(5) OVER (ORDER BY (CURRENT_DATE - MAX(ct.transaction_date)) DESC) as recency_score,
         NTILE(5) OVER (ORDER BY COUNT(*)) as frequency_score,
         NTILE(5) OVER (ORDER BY SUM(ct.amount)) as monetary_score
     FROM customer_transactions ct
@@ -177,7 +177,7 @@ SELECT
         WHEN (recency_score + frequency_score + monetary_score) >= 13 THEN 'Champions'
         WHEN (recency_score + frequency_score + monetary_score) >= 11 THEN 'Loyal Customers'
         WHEN (recency_score + frequency_score + monetary_score) >= 9 THEN 'At Risk'
-        WHEN (recency_score + frequency_score + monetary_score) >= 7 THEN 'Can\'t Lose'
+        WHEN (recency_score + frequency_score + monetary_score) >= 7 THEN 'Can''t Lose'
         WHEN (recency_score + frequency_score + monetary_score) >= 5 THEN 'About to Sleep'
         ELSE 'Lost'
     END as customer_segment
@@ -200,7 +200,7 @@ WITH customer_metrics AS (
         AVG(ct.amount) as avg_order_value,
         MAX(ct.transaction_date) as last_purchase_date,
         MIN(ct.transaction_date) as first_purchase_date,
-        EXTRACT(DAY FROM (MAX(ct.transaction_date) - MIN(ct.transaction_date))) as customer_lifetime_days
+        (MAX(ct.transaction_date) - MIN(ct.transaction_date)) as customer_lifetime_days
     FROM customer_transactions ct
     JOIN customer_profiles cp ON ct.customer_id = cp.customer_id
     GROUP BY ct.customer_id, cp.customer_name, cp.customer_tier, cp.registration_date

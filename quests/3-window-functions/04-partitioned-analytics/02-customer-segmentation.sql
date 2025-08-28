@@ -115,23 +115,23 @@ INSERT INTO customer_transactions VALUES
 
 -- Calculate RFM scores for each customer
 WITH rfm_scores AS (
-    SELECT 
+    SELECT
         customer_id,
         customer_name,
         -- Recency: Days since last purchase
-        DATEDIFF('day', MAX(transaction_date), CURRENT_DATE) as recency_days,
+        (CURRENT_DATE - MAX(transaction_date)) as recency_days,
         -- Frequency: Number of transactions
         COUNT(*) as frequency,
         -- Monetary: Total amount spent
         SUM(transaction_amount) as monetary,
         -- RFM Scores (1-5 scale, 5 being best)
-        NTILE(5) OVER (ORDER BY DATEDIFF('day', MAX(transaction_date), CURRENT_DATE) DESC) as recency_score,
+        NTILE(5) OVER (ORDER BY (CURRENT_DATE - MAX(transaction_date)) DESC) as recency_score,
         NTILE(5) OVER (ORDER BY COUNT(*)) as frequency_score,
         NTILE(5) OVER (ORDER BY SUM(transaction_amount)) as monetary_score
     FROM customer_transactions
     GROUP BY customer_id, customer_name
 )
-SELECT 
+SELECT
     customer_id,
     customer_name,
     recency_days,
@@ -141,11 +141,11 @@ SELECT
     frequency_score,
     monetary_score,
     (recency_score + frequency_score + monetary_score) as rfm_score,
-    CASE 
+    CASE
         WHEN (recency_score + frequency_score + monetary_score) >= 13 THEN 'Champions'
         WHEN (recency_score + frequency_score + monetary_score) >= 11 THEN 'Loyal Customers'
         WHEN (recency_score + frequency_score + monetary_score) >= 9 THEN 'At Risk'
-        WHEN (recency_score + frequency_score + monetary_score) >= 7 THEN 'Can\'t Lose'
+        WHEN (recency_score + frequency_score + monetary_score) >= 7 THEN 'Can''t Lose'
         ELSE 'Lost'
     END as customer_segment
 FROM rfm_scores
@@ -157,10 +157,10 @@ ORDER BY rfm_score DESC;
 
 -- Create detailed RFM segments with percentile analysis
 WITH customer_metrics AS (
-    SELECT 
+    SELECT
         customer_id,
         customer_name,
-        DATEDIFF('day', MAX(transaction_date), CURRENT_DATE) as recency_days,
+        (CURRENT_DATE - MAX(transaction_date)) as recency_days,
         COUNT(*) as frequency,
         SUM(transaction_amount) as monetary,
         AVG(transaction_amount) as avg_transaction_value,
@@ -169,12 +169,12 @@ WITH customer_metrics AS (
     GROUP BY customer_id, customer_name
 ),
 rfm_percentiles AS (
-    SELECT 
+    SELECT
         *,
-        PERCENT_RANK() OVER (ORDER BY recency_days DESC) as recency_percentile,
-        PERCENT_RANK() OVER (ORDER BY frequency) as frequency_percentile,
-        PERCENT_RANK() OVER (ORDER BY monetary) as monetary_percentile,
-        PERCENT_RANK() OVER (ORDER BY avg_transaction_value) as avg_value_percentile
+        ROUND((PERCENT_RANK() OVER (ORDER BY recency_days DESC) * 100)::numeric, 2) as recency_percentile,
+        ROUND((PERCENT_RANK() OVER (ORDER BY frequency) * 100)::numeric, 2) as frequency_percentile,
+        ROUND((PERCENT_RANK() OVER (ORDER BY monetary) * 100)::numeric, 2) as monetary_percentile,
+        ROUND((PERCENT_RANK() OVER (ORDER BY avg_transaction_value) * 100)::numeric, 2) as avg_value_percentile
     FROM customer_metrics
 )
 SELECT 
@@ -215,8 +215,8 @@ WITH behavioral_metrics AS (
         AVG(ct.transaction_amount) as avg_transaction,
         COUNT(DISTINCT ct.product_category) as categories_purchased,
         COUNT(DISTINCT ct.payment_method) as payment_methods_used,
-        DATEDIFF('day', MIN(ct.transaction_date), MAX(ct.transaction_date)) as customer_tenure_days,
-        DATEDIFF('day', MAX(ct.transaction_date), CURRENT_DATE) as days_since_last_purchase
+        (MAX(ct.transaction_date) - MIN(ct.transaction_date)) as customer_tenure_days,
+        (CURRENT_DATE - MAX(ct.transaction_date)) as days_since_last_purchase
     FROM customer_transactions ct
     JOIN customer_profiles cp ON ct.customer_id = cp.customer_id
     GROUP BY ct.customer_id, ct.customer_name, cp.customer_type, cp.total_lifetime_value
@@ -277,22 +277,22 @@ WITH customer_lifetime_metrics AS (
         SUM(ct.transaction_amount) as total_spent_current_period,
         AVG(ct.transaction_amount) as avg_transaction_value,
         COUNT(DISTINCT DATE_TRUNC('month', ct.transaction_date)) as active_months,
-        DATEDIFF('day', cp.registration_date, CURRENT_DATE) as customer_age_days,
-        DATEDIFF('day', MAX(ct.transaction_date), CURRENT_DATE) as days_since_last_purchase
+        (CURRENT_DATE - cp.registration_date) as customer_age_days,
+        (CURRENT_DATE - MAX(ct.transaction_date)) as days_since_last_purchase
     FROM customer_transactions ct
     JOIN customer_profiles cp ON ct.customer_id = cp.customer_id
     GROUP BY ct.customer_id, ct.customer_name, cp.registration_date, cp.total_lifetime_value
 ),
 clv_analysis AS (
-    SELECT 
+    SELECT
         *,
         -- Monthly average revenue
         total_spent_current_period / NULLIF(active_months, 0) as monthly_avg_revenue,
         -- Customer retention rate (months active / total possible months)
-        active_months * 100.0 / NULLIF(DATEDIFF('month', registration_date, CURRENT_DATE), 0) as retention_rate,
+        active_months * 100.0 / NULLIF(EXTRACT(MONTH FROM AGE(CURRENT_DATE, registration_date)), 0) as retention_rate,
         -- Predicted CLV (monthly revenue * retention rate * 12 months)
-        (total_spent_current_period / NULLIF(active_months, 0)) * 
-        (active_months * 100.0 / NULLIF(DATEDIFF('month', registration_date, CURRENT_DATE), 0)) * 12 / 100 as predicted_clv
+        (total_spent_current_period / NULLIF(active_months, 0)) *
+        (active_months * 100.0 / NULLIF(EXTRACT(MONTH FROM AGE(CURRENT_DATE, registration_date)), 0)) * 12 / 100 as predicted_clv
     FROM customer_lifetime_metrics
 )
 SELECT 
