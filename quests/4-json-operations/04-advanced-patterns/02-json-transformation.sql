@@ -170,10 +170,10 @@ INSERT INTO transformation_rules VALUES
         "account_preferences": "preferences_transformation"
     },
     "transformations": {
-        "name": "CONCAT(first_name, ' ', last_name)",
+        "name": "CONCAT(first_name, '' '', last_name)",
         "age_calculation": "EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth))",
         "address_transformation": {
-            "street": "CONCAT(street_number, ' ', street_name)",
+            "street": "CONCAT(street_number, '' '', street_name)",
             "city": "city_name",
             "state": "state_code",
             "zip": "postal_code",
@@ -225,11 +225,11 @@ INSERT INTO transformation_rules VALUES
         "price_object": {
             "amount": "price_amount",
             "currency": "currency_code",
-            "formatted": "CONCAT(currency_code, ' ', price_amount)"
+            "formatted": "CONCAT(currency_code, '' '', price_amount)"
         },
         "inventory_quantity": {
             "quantity": "stock_quantity",
-            "status": "CASE WHEN stock_quantity > 0 THEN 'in_stock' ELSE 'out_of_stock' END"
+            "status": "CASE WHEN stock_quantity > 0 THEN ''in_stock'' ELSE ''out_of_stock'' END"
         },
         "category_object": {
             "id": "category_id",
@@ -311,11 +311,11 @@ SELECT
         'transformation_count', (tr.transformation_mapping->'field_mappings')::jsonb
     ) as transformation_info,
     jsonb_build_object(
-        'source_size', jsonb_array_length(jsonb_object_keys(sd.source_json)),
-        'target_size', jsonb_array_length(jsonb_object_keys(td.transformed_json)),
+        'source_size', (SELECT COUNT(*) FROM jsonb_object_keys(sd.source_json)),
+        'target_size', (SELECT COUNT(*) FROM jsonb_object_keys(td.transformed_json)),
         'transformation_ratio', ROUND(
-            (jsonb_array_length(jsonb_object_keys(td.transformed_json))::DECIMAL / 
-             jsonb_array_length(jsonb_object_keys(sd.source_json))) * 100, 2
+            ((SELECT COUNT(*) FROM jsonb_object_keys(td.transformed_json))::DECIMAL / 
+             (SELECT COUNT(*) FROM jsonb_object_keys(sd.source_json))) * 100, 2
         )
     ) as transformation_metrics
 FROM source_data sd
@@ -331,11 +331,20 @@ SELECT
     CASE 
         WHEN sd.data_type = 'user_profile' THEN
             jsonb_build_object(
-                'original_name', sd.source_json->>'first_name' || ' ' || sd.source_json->>'last_name',
+                'original_name', CASE
+                    WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->>'first_name'
+                    ELSE jsonb(sd.source_json)->>'first_name'
+                END || ' ' || CASE
+                    WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->>'last_name'
+                    ELSE jsonb(sd.source_json)->>'last_name'
+                END,
                 'transformed_name', td.transformed_json->>'name',
                 'age_calculation', td.transformed_json->>'age',
                 'address_transformation', jsonb_build_object(
-                    'original', sd.source_json->'home_address',
+                    'original', CASE
+                        WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->'home_address'
+                        ELSE jsonb(sd.source_json)->'home_address'
+                    END,
                     'transformed', td.transformed_json->'address'
                 )
             )
@@ -343,13 +352,22 @@ SELECT
             jsonb_build_object(
                 'price_transformation', jsonb_build_object(
                     'original', jsonb_build_object(
-                        'amount', sd.source_json->>'price_amount',
-                        'currency', sd.source_json->>'currency_code'
+                        'amount', CASE
+                            WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->>'price_amount'
+                            ELSE jsonb(sd.source_json)->>'price_amount'
+                        END,
+                        'currency', CASE
+                            WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->>'currency_code'
+                            ELSE jsonb(sd.source_json)->>'currency_code'
+                        END
                     ),
                     'transformed', td.transformed_json->'price'
                 ),
                 'inventory_status', jsonb_build_object(
-                    'original_quantity', sd.source_json->>'stock_quantity',
+                    'original_quantity', CASE
+                        WHEN jsonb_typeof(sd.source_json) = 'object' THEN sd.source_json->>'stock_quantity'
+                        ELSE jsonb(sd.source_json)->>'stock_quantity'
+                    END,
                     'transformed_status', td.transformed_json->'inventory'->>'status'
                 )
             )
@@ -369,8 +387,8 @@ SELECT
         'source_properties', jsonb_object_keys(tr.source_schema->'properties'),
         'target_properties', jsonb_object_keys(tr.target_schema->'properties'),
         'mapping_coverage', ROUND(
-            (jsonb_array_length(jsonb_object_keys(tr.transformation_mapping->'field_mappings'))::DECIMAL / 
-             jsonb_array_length(jsonb_object_keys(tr.target_schema->'properties'))) * 100, 2
+            ((SELECT COUNT(*) FROM jsonb_object_keys(tr.transformation_mapping->'field_mappings'))::DECIMAL / 
+             (SELECT COUNT(*) FROM jsonb_object_keys(tr.target_schema->'properties'))) * 100, 2
         ),
         'transformation_rules', jsonb_object_keys(tr.transformation_mapping->'transformations')
     ) as schema_analysis,
@@ -380,7 +398,7 @@ SELECT
             WHEN tr.transformation_mapping->'transformations' != '{}' THEN true
             ELSE false
         END,
-        'transformation_complexity', jsonb_array_length(jsonb_object_keys(tr.transformation_mapping->'transformations'))
+        'transformation_complexity', (SELECT COUNT(*) FROM jsonb_object_keys(tr.transformation_mapping->'transformations'))
     ) as rule_metadata
 FROM transformation_rules tr
 ORDER BY tr.rule_name;
@@ -405,8 +423,12 @@ SELECT
                     AVG((td.transformation_metadata->>'fields_transformed')::INT) FILTER (WHERE tr.rule_name = 'user_profile_rule'), 2
                 ),
                 'success_rate', ROUND(
-                    (COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
-                     COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule')) * 100, 2
+                    CASE 
+                        WHEN COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule') > 0
+                        THEN (COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
+                             COUNT(*) FILTER (WHERE tr.rule_name = 'user_profile_rule')) * 100
+                        ELSE 0
+                    END, 2
                 )
             ),
             'product_inventory_rule', jsonb_build_object(
@@ -415,21 +437,33 @@ SELECT
                     AVG((td.transformation_metadata->>'fields_transformed')::INT) FILTER (WHERE tr.rule_name = 'product_inventory_rule'), 2
                 ),
                 'success_rate', ROUND(
-                    (COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
-                     COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule')) * 100, 2
+                    CASE 
+                        WHEN COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule') > 0
+                        THEN (COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule' AND td.transformation_metadata->>'validation_status' = 'success')::DECIMAL / 
+                             COUNT(*) FILTER (WHERE tr.rule_name = 'product_inventory_rule')) * 100
+                        ELSE 0
+                    END, 2
                 )
             )
         ),
         'optimization_opportunities', jsonb_build_object(
             'high_usage_rules', jsonb_agg(DISTINCT tr.rule_name) FILTER (
-                WHERE COUNT(*) > (SELECT AVG(rule_count) FROM (
-                    SELECT COUNT(*) as rule_count 
-                    FROM transformed_data 
-                    GROUP BY rule_id
-                ) rule_stats)
+                WHERE tr.rule_name IN (
+                    SELECT rule_name FROM (
+                        SELECT tr_inner.rule_name, COUNT(*) as usage_count
+                        FROM transformed_data td_inner
+                        JOIN transformation_rules tr_inner ON td_inner.rule_id = tr_inner.id
+                        GROUP BY tr_inner.rule_name
+                        HAVING COUNT(*) > (SELECT AVG(rule_count) FROM (
+                            SELECT COUNT(*) as rule_count 
+                            FROM transformed_data 
+                            GROUP BY rule_id
+                        ) rule_stats)
+                    ) high_usage
+                )
             ),
             'complex_transformations', jsonb_agg(DISTINCT tr.rule_name) FILTER (
-                WHERE jsonb_array_length(jsonb_object_keys(tr.transformation_mapping->'transformations')) > 3
+                WHERE (SELECT COUNT(*) FROM jsonb_object_keys(tr.transformation_mapping->'transformations')) > 3
             )
         )
     ) as performance_analysis
