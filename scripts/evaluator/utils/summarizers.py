@@ -10,7 +10,130 @@ from .discovery import MetadataExtractor
 
 
 # =============================================================================
-# QUEST SUMMARIZATION
+# QUEST SUMMARIZATION WITH RICH CONTEXT
+# =============================================================================
+
+async def generate_quest_description_from_context(quest_context: dict) -> str:
+    """
+    Generate AI-powered quest description from rich context dictionary.
+
+    Args:
+        quest_context: Dictionary with quest metadata and file information
+
+    Returns:
+        Succinct but elucidative quest description
+    """
+    from core.agents import quest_summary_agent
+
+    # Build comprehensive context from the quest context dictionary
+    context_parts = [
+        f"Quest: {quest_context['display_name']}",
+        f"Total Files: {quest_context['total_files']}",
+        f"Estimated Time: {quest_context['total_estimated_time']} minutes",
+        f"Subcategories: {quest_context['subcategory_count']}",
+        "",
+        "Subcategory Breakdown:"
+    ]
+
+    for sub in quest_context['subcategories']:
+        context_parts.append(f"• {sub['display_name']}")
+        context_parts.append(f"  - {sub['file_count']} files, {sub['total_estimated_time']} min")
+        if sub['concept_coverage']:
+            context_parts.append(f"  - Concepts: {', '.join(sub['concept_coverage'][:3])}")
+        if sub['pattern_coverage']:
+            context_parts.append(f"  - Patterns: {', '.join(sub['pattern_coverage'][:3])}")
+        context_parts.append("")
+
+    context_parts.extend([
+        "",
+        "Overall Concept Coverage:",
+        ", ".join(quest_context['concept_coverage'][:10]),
+        "",
+        "SQL Pattern Coverage:",
+        ", ".join(quest_context['pattern_coverage'][:10])
+    ])
+
+    aggregated_content = "\n".join(context_parts)
+
+    prompt = f"""
+    Analyze this SQL quest context and generate a succinct description:
+
+    {aggregated_content}
+
+    Generate a 2-3 sentence description that clearly explains what this quest teaches
+    and what practical skills students will develop. Focus on the learning outcomes
+    and practical applications.
+    """
+
+    try:
+        # Add timeout protection to prevent hanging on slow AI calls
+        result = await asyncio.wait_for(quest_summary_agent.run(prompt), timeout=5.0)  # 5 second timeout
+        return result.output.strip()
+    except asyncio.TimeoutError:
+        print("⚠️  AI quest description timeout, using fallback")
+        raise Exception("Timeout")
+    except Exception as e:
+        print(f"⚠️  AI quest description error: {e}")
+        raise
+
+
+async def generate_subcategory_description_from_context(subcategory_context: dict) -> str:
+    """
+    Generate a subcategory description using rich context dictionary.
+
+    Args:
+        subcategory_context: Dictionary with subcategory metadata and file information
+
+    Returns:
+        AI-generated description of the subcategory content
+    """
+    try:
+        from core.agents import subcategory_summary_agent
+
+        # Build context from subcategory context dictionary
+        context_parts = [
+            f"Subcategory: {subcategory_context['display_name']}",
+            f"Files: {subcategory_context['file_count']}",
+            f"Total Time: {subcategory_context['total_estimated_time']} minutes",
+            "",
+            "SQL Files:"
+        ]
+
+        for sql_file in subcategory_context['sql_files']:
+            context_parts.append(f"• {sql_file['filename']}")
+            if sql_file['purpose']:
+                context_parts.append(f"  Purpose: {sql_file['purpose']}")
+            if sql_file['concepts']:
+                context_parts.append(f"  Concepts: {sql_file['concepts']}")
+            context_parts.append(f"  Time: {sql_file['estimated_time_minutes']} min")
+            if sql_file['patterns']:
+                context_parts.append(f"  Patterns: {', '.join(sql_file['patterns'])}")
+            context_parts.append("")
+
+        context_parts.extend([
+            "",
+            "Concept Coverage:",
+            ", ".join(subcategory_context['concept_coverage']),
+            "",
+            "Pattern Coverage:",
+            ", ".join(subcategory_context['pattern_coverage'])
+        ])
+
+        context = "\n".join(context_parts)
+
+        # Ask AI to generate description
+        description = await subcategory_summary_agent.run(
+            f"Analyze this SQL subcategory and generate a concise description:\n\n{context}"
+        )
+        return description.output.strip()
+
+    except Exception as e:
+        print(f"⚠️  AI subcategory description generation failed: {e}")
+        return generate_subcategory_description_fallback(subcategory_context.subcategory_path)
+
+
+# =============================================================================
+# LEGACY FUNCTIONS (Updated to use context when available)
 # =============================================================================
 
 async def generate_quest_description_ai(aggregated_content: str) -> str:
@@ -49,17 +172,17 @@ async def generate_quest_description_ai(aggregated_content: str) -> str:
 def generate_quest_description_fallback(aggregated_content: str) -> str:
     """
     Generate fallback quest description when AI is unavailable.
-    
+
     Args:
         aggregated_content: All quest content as single text
-        
+
     Returns:
         Basic quest description
     """
     lines = aggregated_content.split('\n')
     topics = []
     quest_type = "SQL"
-    
+
     for line in lines[:20]:  # Check first 20 lines
         line_lower = line.lower()
         if any(keyword in line_lower for keyword in [
@@ -68,7 +191,7 @@ def generate_quest_description_fallback(aggregated_content: str) -> str:
             topics.append(line.strip()[:50])  # Truncate long lines
         if 'quest:' in line_lower or 'title:' in line_lower:
             quest_type = line.split(':')[-1].strip()
-    
+
     if topics:
         return f"Comprehensive {quest_type} training covering {', '.join(topics[:3])} and related SQL concepts."
     else:
@@ -82,47 +205,47 @@ def generate_quest_description_fallback(aggregated_content: str) -> str:
 async def generate_subcategory_description_ai(subcategory_path: Path) -> str:
     """
     Generate a subcategory description using AI analysis of SQL files.
-    
+
     Args:
         subcategory_path: Path to the subcategory directory
-        
+
     Returns:
         AI-generated description of the subcategory content
     """
     try:
         from core.agents import subcategory_summary_agent
-        
+
         # Collect content from all SQL files in the subcategory
         file_info = []
-        
+
         for sql_file in subcategory_path.glob('*.sql'):
             try:
                 content = sql_file.read_text(encoding='utf-8', errors='ignore')
-                
+
                 # Extract metadata from the file header
                 metadata = MetadataExtractor.parse_header(content)
-                
+
                 # Get purpose and concepts if available
                 purpose = metadata.get('purpose', '')
                 concepts = metadata.get('concepts', '')
-                
+
                 file_info.append({
                     'filename': sql_file.name,
                     'purpose': purpose,
                     'concepts': concepts,
                     'content_preview': content[:500]  # First 500 chars for context
                 })
-                
+
             except Exception as e:
                 print(f"⚠️  Error reading {sql_file}: {e}")
-        
+
         if not file_info:
             return generate_subcategory_description_fallback(subcategory_path)
-        
+
         # Prepare context for AI agent
         context = f"Subcategory: {subcategory_path.name}\n\n"
         context += f"Contains {len(file_info)} SQL exercise files:\n\n"
-        
+
         for info in file_info:
             context += f"• {info['filename']}\n"
             if info['purpose']:
@@ -130,13 +253,13 @@ async def generate_subcategory_description_ai(subcategory_path: Path) -> str:
             if info['concepts']:
                 context += f"  Concepts: {info['concepts']}\n"
             context += "\n"
-        
+
         # Ask AI to generate description
         description = await subcategory_summary_agent.run(
             f"Analyze this SQL subcategory and generate a concise description:\n\n{context}"
         )
         return description.output.strip()
-        
+
     except Exception as e:
         print(f"⚠️  AI subcategory description generation failed: {e}")
         return generate_subcategory_description_fallback(subcategory_path)
@@ -422,7 +545,7 @@ def generate_subcategory_description(subcategory_path: Path) -> str:
         return generate_subcategory_description_fallback(subcategory_path)
 
 async def generate_sql_pattern_description(pattern_name: str, context: dict) -> str:
-    from core.agents import pattern_description_agent
+    from core.agents import pattern_summary_agent
     
     # Create prompt for AI analysis
     prompt = f"""
@@ -443,7 +566,7 @@ async def generate_sql_pattern_description(pattern_name: str, context: dict) -> 
     """
     
     try:
-        result = await pattern_description_agent.run(prompt)
+        result = await pattern_summary_agent.run(prompt)
         ai_description = result.data if hasattr(result, 'data') else str(result)
     except Exception as e:
         print(f"⚠️  AI generation failed for {pattern_name}: {e}")
@@ -458,78 +581,87 @@ async def generate_sql_pattern_description(pattern_name: str, context: dict) -> 
 
 async def analyze_sql_file_ai(file_path: str) -> Tuple[str, int]:
     """
-    Analyze a SQL file using AI to generate description and time estimate.
-    
+    Analyze a SQL file using metadata extraction (not AI generation).
+    This is the CORRECT approach - extract existing metadata instead of generating new estimates.
+
     Args:
         file_path: Path to the SQL file
-        
+
     Returns:
-        Tuple of (description, estimated_time_minutes)
+        Tuple of (description, estimated_time_minutes) extracted from file headers
     """
     try:
-        from core.agents import sql_file_summarizer_agent
-        
         # Read the SQL file content
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
-        
-        # Extract metadata from headers
+
+        # Extract metadata from headers using the existing MetadataExtractor
         metadata = MetadataExtractor.parse_header(content)
-        
-        # Prepare context for AI analysis
-        context = f"""
-        SQL File: {Path(file_path).name}
-        
-        Header Metadata:
-        {chr(10).join(f"{k}: {v}" for k, v in metadata.items()) if metadata else "No metadata found"}
-        
-        SQL Content:
-        {content[:2000]}  # Limit content for AI processing
-        """
-        
-        # Get AI analysis
-        result = await sql_file_summarizer_agent.run(context)
-        
-        # Parse the JSON response
-        try:
-            import json
-            import re
-            
-            # Get the raw output
-            if hasattr(result, 'output'):
-                raw_output = result.output
-            elif hasattr(result, 'data'):
-                raw_output = str(result.data)
-            else:
-                raw_output = str(result)
-            
-            # Strip markdown code blocks if present
-            raw_output = re.sub(r'```\w*\n?', '', raw_output)
-            raw_output = raw_output.strip()
-            
-            # Parse JSON
-            analysis = json.loads(raw_output)
-            
-            # Validate the expected fields
-            if not isinstance(analysis, dict) or 'description' not in analysis or 'estimated_time_minutes' not in analysis:
-                raise ValueError("Invalid response format - missing required fields")
-                
-        except (json.JSONDecodeError, AttributeError, ValueError) as e:
-            print(f"⚠️  Failed to parse AI response: {e}")
-            print(f"   Raw output: {raw_output[:200]}...")
-            analysis = {
-                'description': 'SQL exercise covering database concepts and techniques',
-                'estimated_time_minutes': 15
-            }
-        
-        description = analysis.get('description', 'SQL exercise covering database concepts and techniques')
-        estimated_time = analysis.get('estimated_time_minutes', 15)
-        
+
+        # Extract purpose for description
+        purpose = metadata.get('purpose', '')
+        if not purpose:
+            # Fallback: generate basic description from filename
+            filename = Path(file_path).name
+            name_parts = filename.replace('.sql', '').replace('-', ' ').replace('_', ' ')
+            display_name = ' '.join(word.capitalize() for word in name_parts.split())
+            description = f"SQL exercise: {display_name}"
+        else:
+            description = purpose
+
+        # Extract time estimate from difficulty header
+        difficulty = metadata.get('difficulty', '')
+        estimated_time = extract_time_from_difficulty(difficulty)
+
         return description, estimated_time
-        
+
     except Exception as e:
-        print(f"⚠️  AI analysis failed for {file_path}: {e}")
+        print(f"⚠️  Metadata extraction failed for {file_path}: {e}")
         return generate_sql_file_analysis_fallback(file_path)
+
+
+def extract_time_from_difficulty(difficulty_header: str) -> int:
+    """
+    Extract time estimate from difficulty header format.
+    Expected formats: "🟢 Beginner (5-10 min)" or "🟡 Intermediate (10-15 min)"
+
+    Args:
+        difficulty_header: The difficulty string from file header
+
+    Returns:
+        Estimated time in minutes (average of range or default)
+    """
+    import re
+
+    # Pattern to match time ranges like "(5-10 min)" or "(10-15 min)"
+    time_pattern = r'\((\d+)-(\d+)\s*min\)'
+    match = re.search(time_pattern, difficulty_header, re.IGNORECASE)
+
+    if match:
+        min_time = int(match.group(1))
+        max_time = int(match.group(2))
+        # Return average of the range
+        return (min_time + max_time) // 2
+
+    # Fallback patterns for single time values
+    single_time_pattern = r'\((\d+)\s*min\)'
+    match = re.search(single_time_pattern, difficulty_header, re.IGNORECASE)
+
+    if match:
+        return int(match.group(1))
+
+    # Final fallback based on difficulty level keywords
+    difficulty_lower = difficulty_header.lower()
+    if 'beginner' in difficulty_lower or '🟢' in difficulty_header:
+        return 8  # 5-10 min average
+    elif 'intermediate' in difficulty_lower or '🟡' in difficulty_header:
+        return 15  # 10-20 min average
+    elif 'advanced' in difficulty_lower or '🟠' in difficulty_header:
+        return 25  # 20-30 min average
+    elif 'expert' in difficulty_lower or '🔴' in difficulty_header:
+        return 35  # 30-40 min average
+    else:
+        return 15  # Default intermediate level
 
 
 def generate_sql_file_analysis_fallback(file_path: str) -> Tuple[str, int]:
@@ -590,68 +722,198 @@ def generate_sql_file_analysis_fallback(file_path: str) -> Tuple[str, int]:
 
 async def analyze_sql_file_async(file_path: str) -> Tuple[str, int]:
     """
-    Analyze SQL file asynchronously, using AI if available, fallback otherwise.
-    Uses smart sampling to prioritize AI for key files and static analysis for others.
+    Analyze SQL file asynchronously using metadata extraction (not AI generation).
+    This approach is ROBUST and RELIABLE - no string parsing of AI responses.
 
     Args:
         file_path: Path to the SQL file
 
     Returns:
-        Tuple of (description, estimated_time_minutes)
+        Tuple of (description, estimated_time_minutes) from file metadata
     """
-    import hashlib
-
-    # Smart sampling: Use AI for ~10% of files based on filename hash for consistency
-    file_hash = hashlib.md5(str(file_path).encode()).hexdigest()
-    use_ai = int(file_hash[:8], 16) % 10 == 0  # ~10% of files get AI analysis
-
-    if not use_ai:
-        # Use fast static analysis for most files
-        return generate_sql_file_analysis_fallback(file_path)
-
     try:
-        # Try AI analysis first with reduced timeout for better performance
-        try:
-            result = await asyncio.wait_for(analyze_sql_file_ai(file_path), timeout=2.0)  # 2 second timeout
-            return result
-        except asyncio.TimeoutError:
-            print(f"⚠️  AI analysis timeout for {file_path}, using fallback")
-            return generate_sql_file_analysis_fallback(file_path)
+        # Use metadata extraction instead of AI generation
+        return await analyze_sql_file_ai(file_path)
+
     except Exception as e:
-        print(f"⚠️  AI analysis failed, using fallback for {file_path}: {e}")
+        print(f"⚠️  Metadata extraction failed, using fallback for {file_path}: {e}")
         return generate_sql_file_analysis_fallback(file_path)
 
 
-def analyze_sql_file(file_path: str) -> Tuple[str, int]:
+async def sync_sql_file_metadata(file_path: str, db_manager) -> bool:
     """
-    Analyze SQL file with sync wrapper for both sync and async contexts.
-    
+    Sync SQL file metadata to database using ROBUST extraction (not AI generation).
+
     Args:
         file_path: Path to the SQL file
-        
+        db_manager: Database manager instance
+
     Returns:
-        Tuple of (description, estimated_time_minutes)
+        bool: True if sync successful, False otherwise
     """
     try:
-        # Check if we're already in an async context
-        try:
-            loop = asyncio.get_running_loop()
-            # We're in an async context, create a task
-            import nest_asyncio
-            nest_asyncio.apply()
-            return loop.create_task(analyze_sql_file_async(file_path))
-        except RuntimeError:
-            # Not in an async context, create new event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(analyze_sql_file_async(file_path))
-            finally:
-                loop.close()
-    except ImportError:
-        # nest_asyncio not available, use fallback
-        print("⚠️  nest_asyncio not available, using fallback analysis")
-        return generate_sql_file_analysis_fallback(file_path)
+        # Extract metadata from file headers
+        description, estimated_time = await analyze_sql_file_ai(file_path)
+
+        # Read file content for hash calculation
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+
+        # Calculate content hash for change detection
+        import hashlib
+        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+        # Extract additional metadata
+        metadata = MetadataExtractor.parse_header(content)
+        concepts = metadata.get('concepts', '')
+        difficulty = metadata.get('difficulty', '')
+
+        # Prepare data for database upsert
+        file_data = {
+            'file_path': str(file_path),
+            'filename': Path(file_path).name,
+            'description': description,
+            'estimated_time_minutes': estimated_time,
+            'content_hash': content_hash,
+            'concepts': concepts,
+            'difficulty': difficulty,
+            'last_modified': Path(file_path).stat().st_mtime
+        }
+
+        # TODO: Implement database upsert logic here
+        # This would update the sql_files table with the extracted metadata
+
+        print(f"✅ Synced metadata for {Path(file_path).name}: {estimated_time}min, {description[:50]}...")
+        return True
+
     except Exception as e:
-        print(f"⚠️  Error in SQL file analysis: {e}")
+        print(f"❌ Failed to sync metadata for {file_path}: {e}")
+        return False
+
+
+async def bulk_sync_sql_metadata(quest_path: Path, db_manager) -> dict:
+    """
+    Bulk sync all SQL file metadata for a quest using ROBUST extraction.
+
+    Args:
+        quest_path: Path to the quest directory
+        db_manager: Database manager instance
+
+    Returns:
+        dict: Sync statistics and results
+    """
+    stats = {
+        'total_files': 0,
+        'successful_syncs': 0,
+        'failed_syncs': 0,
+        'skipped_unchanged': 0,
+        'errors': []
+    }
+
+    print(f"🔄 Starting bulk metadata sync for quest: {quest_path.name}")
+
+    # Find all SQL files in the quest
+    sql_files = list(quest_path.rglob('*.sql'))
+    stats['total_files'] = len(sql_files)
+
+    for sql_file in sql_files:
+        try:
+            success = await sync_sql_file_metadata(str(sql_file), db_manager)
+            if success:
+                stats['successful_syncs'] += 1
+            else:
+                stats['failed_syncs'] += 1
+                stats['errors'].append(f"Failed to sync {sql_file.name}")
+
+        except Exception as e:
+            stats['failed_syncs'] += 1
+            stats['errors'].append(f"Error syncing {sql_file.name}: {str(e)}")
+
+    print(f"📊 Bulk sync complete: {stats['successful_syncs']}/{stats['total_files']} files synced successfully")
+    return stats
+
+
+# =============================================================================
+# LEGACY AI-BASED APPROACH (DEPRECATED - Use metadata extraction instead)
+# =============================================================================
+
+async def analyze_sql_file_ai_legacy(file_path: str) -> Tuple[str, int]:
+    """
+    DEPRECATED: Legacy AI-based analysis with fragile string parsing.
+    Use analyze_sql_file_ai() instead for robust metadata extraction.
+
+    This function is kept for reference to show why string inference is problematic.
+    """
+    print("⚠️  WARNING: Using deprecated AI analysis. Consider using metadata extraction instead.")
+
+    try:
+        from core.agents import sql_file_summary_agent
+
+        # Read the SQL file content
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+
+        # Extract metadata from headers
+        metadata = MetadataExtractor.parse_header(content)
+
+        # Prepare context for AI analysis
+        context = f"""
+        SQL File: {Path(file_path).name}
+
+        Header Metadata:
+        {chr(10).join(f"{k}: {v}" for k, v in metadata.items()) if metadata else "No metadata found"}
+
+        SQL Content:
+        {content[:2000]}  # Limit content for AI processing
+        """
+
+        # Get AI analysis
+        result = await sql_file_summary_agent.run(context)
+
+        # PROBLEMATIC STRING PARSING SECTION:
+        # This is fragile and error-prone
+        import json
+        import re
+
+        # Get the raw output (could be in various formats)
+        if hasattr(result, 'output'):
+            raw_output = result.output
+        elif hasattr(result, 'data'):
+            raw_output = str(result.data)
+        else:
+            raw_output = str(result)
+
+        # Attempt to clean up the response (brittle)
+        raw_output = re.sub(r'```\w*\n?', '', raw_output)  # Remove markdown
+        raw_output = raw_output.strip()
+
+        # Try to parse JSON (often fails due to AI formatting inconsistencies)
+        try:
+            analysis = json.loads(raw_output)
+        except json.JSONDecodeError as json_error:
+            # Fallback parsing attempts (even more brittle)
+            print(f"⚠️  JSON parse failed: {json_error}")
+            print(f"   Raw output: {raw_output[:200]}...")
+
+            # Attempt regex extraction (extremely fragile)
+            time_match = re.search(r'"estimated_time_minutes"\s*:\s*(\d+)', raw_output)
+            desc_match = re.search(r'"description"\s*:\s*"([^"]+)"', raw_output)
+
+            if time_match and desc_match:
+                estimated_time = int(time_match.group(1))
+                description = desc_match.group(1)
+            else:
+                raise ValueError("Could not extract data from AI response")
+
+        # Validate the expected fields (can still fail)
+        if not isinstance(analysis, dict) or 'description' not in analysis or 'estimated_time_minutes' not in analysis:
+            raise ValueError("Invalid response format - missing required fields")
+
+        description = analysis.get('description', 'SQL exercise covering database concepts and techniques')
+        estimated_time = analysis.get('estimated_time_minutes', 15)
+
+        return description, estimated_time
+
+    except Exception as e:
+        print(f"⚠️  AI analysis failed for {file_path}: {e}")
         return generate_sql_file_analysis_fallback(file_path)

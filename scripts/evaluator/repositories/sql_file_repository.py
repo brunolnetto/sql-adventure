@@ -12,19 +12,13 @@ class SQLFileRepository(BaseRepository[SQLFile]):
     def __init__(self, session):
         super().__init__(session, SQLFile)
     
-    def _detect_and_associate_patterns(self, sql_file: SQLFile, file_path: str):
+    async def _detect_and_associate_patterns(self, sql_file: SQLFile, file_path: str):
         """Populate description and time estimate using AI analysis"""
         try:
-            import asyncio
             from utils.summarizers import analyze_sql_file_async
 
-            # Get AI analysis asynchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                description, estimated_time = loop.run_until_complete(analyze_sql_file_async(file_path))
-            finally:
-                loop.close()
+            # Get AI analysis asynchronously using the current event loop
+            description, estimated_time = await analyze_sql_file_async(file_path)
 
             # Update the SQL file record with AI analysis
             sql_file.description = description
@@ -67,7 +61,7 @@ class SQLFileRepository(BaseRepository[SQLFile]):
         
         return path_str
 
-    def get_or_create(self, file_path: str) -> Optional[SQLFile]:
+    async def get_or_create(self, file_path: str) -> Optional[SQLFile]:
         """Get existing SQL file record or create new one"""
         try:
             # Normalize the path for consistent lookup and storage
@@ -120,7 +114,7 @@ class SQLFileRepository(BaseRepository[SQLFile]):
                         self.session.commit()
                         
                         # Detect and associate patterns using original file path
-                        self._detect_and_associate_patterns(sql_file, file_path)
+                        await self._detect_and_associate_patterns(sql_file, file_path)
                         
                         self.session.commit()
                         return sql_file

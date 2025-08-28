@@ -28,11 +28,11 @@ from database.tables import (
     EvaluationBase, Quest, Subcategory, SQLFile, SQLPattern,
 )
 from sqlalchemy import text
-from utils.discovery import discover_quests_from_filesystem, generate_sql_patterns, discover_quests_parallel
+from utils.discovery import discover_quests
 from repositories.quest_repository import QuestRepository
 from repositories.sql_file_repository import SQLFileRepository
 from repositories.sql_pattern_repository import SQLPatternRepository
-from database.pattern_data import SQL_PATTERNS
+from utils.pattern_data import SQL_PATTERNS
 
 def cleanup_database_connections():
     """Fast database connection cleanup using SQLAlchemy"""
@@ -106,7 +106,7 @@ async def process_single_sql_file(sql_file_repo, file_path: str):
     """Process a single SQL file asynchronously"""
     try:
         # Get or create the SQL file record (this will trigger AI analysis)
-        sql_file = sql_file_repo.get_or_create(file_path)
+        sql_file = await sql_file_repo.get_or_create(file_path)
         return sql_file is not None
     except Exception as e:
         print(f"❌ Error processing {file_path}: {e}")
@@ -149,6 +149,31 @@ def optimize_schema_operations(engine):
             pass  # Ignore if not supported
 
     return engine
+
+
+def _drop_analytics_views(engine):
+    """Drop analytics views that depend on tables before dropping tables"""
+    views_to_drop = [
+        'evaluation_summary',
+        'recommendations_dashboard', 
+        'recommendations_grouped',
+        'quest_performance',
+        'pattern_analysis',
+        'file_progress'
+    ]
+    
+    try:
+        with engine.connect() as conn:
+            for view in views_to_drop:
+                try:
+                    conn.execute(text(f"DROP VIEW IF EXISTS {view} CASCADE"))
+                    print(f"   🗑️  Dropped view: {view}")
+                except Exception as e:
+                    print(f"   ⚠️  Could not drop view {view}: {e}")
+            conn.commit()
+    except Exception as e:
+        print(f"   ⚠️  Error dropping views: {e}")
+
 
 async def main():
     """Optimized main initialization with performance enhancements"""
@@ -198,6 +223,10 @@ async def main():
             optimized_engine = optimize_schema_operations(db_manager.engine)
 
             # Fast schema recreation without complex timeout handling
+            print("   📉 Dropping existing views...")
+            _drop_analytics_views(optimized_engine)
+            print("   ✅ Views dropped successfully")
+            
             print("   📉 Dropping existing tables...")
             EvaluationBase.metadata.drop_all(optimized_engine, checkfirst=True)
             print("   ✅ Tables dropped successfully")
@@ -224,12 +253,9 @@ async def main():
                 print(f"❌ Quests directory not found: {quests_dir.absolute()}")
                 return False
 
-            # Use parallel discovery when AI is enabled for better performance
-            if disable_ai:
-                quests_data = discover_quests_from_filesystem(quests_dir)
-            else:
-                print("⚡ Using parallel quest discovery with AI descriptions...")
-                quests_data = await discover_quests_parallel(quests_dir)
+            # Discover quests from filesystem
+            print("🔍 Discovering quests from filesystem...")
+            quests_data = discover_quests(quests_dir)
             if not quests_data:
                 print("⚠️  No quests discovered")
                 return False

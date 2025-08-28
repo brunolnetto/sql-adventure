@@ -131,19 +131,39 @@ class SQLEvaluator:
         """Analyze SQL output using OpenAI"""
         
         prompt = f"""
-        Analyze this SQL exercise and provide a structured evaluation:
-        
+        Analyze this SQL exercise and provide a structured evaluation with SPECIFIC, ACTIONABLE recommendations:
+
+        CONTEXT:
         Quest: {quest_name}
         Purpose: {purpose}
         Difficulty: {difficulty}
         Concepts: {concepts}
         SQL Patterns Detected: {', '.join(sql_patterns)}
-        
-        Execution Output:
+
+        SQL EXECUTION OUTPUT:
         {output_content}
-        
-        Please provide your analysis in the following EXACT JSON structure:
-        
+
+        ANALYSIS REQUIREMENTS:
+
+        1. **TECHNICAL ANALYSIS**: Evaluate SQL syntax, performance, correctness
+        2. **EDUCATIONAL ANALYSIS**: Assess learning value, clarity, progression
+        3. **PATTERN ANALYSIS**: Review detected SQL patterns for quality and relevance
+        4. **RECOMMENDATIONS**: Provide 2-4 specific, actionable suggestions
+
+        RECOMMENDATION GUIDELINES:
+        - **BE SPECIFIC**: Instead of "add comments", say "Add a comment explaining why INNER JOIN is used here"
+        - **BE ACTIONABLE**: Provide clear implementation steps
+        - **BE CONTEXT-AWARE**: Consider the learner's level and exercise purpose
+        - **AVOID GENERICISM**: Don't repeat obvious suggestions across similar files
+        - **FOCUS ON LEARNING**: Prioritize educational value over technical perfection
+
+        PRIORITY CRITERIA:
+        - **HIGH**: Blocks learning, syntax errors, fundamental misunderstandings
+        - **MEDIUM**: Important improvements that enhance understanding
+        - **LOW**: Nice-to-have enhancements for advanced learners
+
+        Provide your analysis in this EXACT JSON structure:
+
         {{
           "analysis": {{
             "overall_feedback": "comprehensive feedback combining technical and educational aspects",
@@ -187,13 +207,14 @@ class SQLEvaluator:
             }}
           ]
         }}
-        
-        IMPORTANT: 
+
+        IMPORTANT GUIDELINES:
         - Only include patterns from this list: {', '.join(sql_patterns)}
         - Use EXACT literal values for difficulty_level, quality, grade, overall_assessment, priority, implementation_effort
         - Provide numeric scores as integers (1-10)
         - Provide confidence as decimal (0.0-1.0)
         - Focus on the actual SQL execution results shown above
+        - Make recommendations specific and actionable, not generic
         """
         
         try:

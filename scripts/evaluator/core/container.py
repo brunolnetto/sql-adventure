@@ -73,13 +73,14 @@ def get_container() -> ServiceContainer:
 
 def register_core_services():
     """Register core application services"""
-    from .agents import intent_agent, sql_instructor_agent, quality_assessor_agent, quest_summary_agent
+    from .agents import intent_agent, sql_instructor_agent, quality_assessor_agent, quest_summary_agent, recommendation_specialist_agent
     from ..utils.discovery import MetadataExtractor, detect_sql_patterns
     
     # Register agents
     _container.register_singleton("intent_agent", intent_agent)
     _container.register_singleton("sql_instructor_agent", sql_instructor_agent)
     _container.register_singleton("quality_assessor_agent", quality_assessor_agent)
+    _container.register_singleton("recommendation_specialist_agent", recommendation_specialist_agent)
     _container.register_singleton("quest_summary_agent", quest_summary_agent)
     
     # Register utility functions
