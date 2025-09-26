@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Main PostgreSQL instance - hosts both databases
   postgres:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     container_name: sql-adventure-postgres
     env_file:
